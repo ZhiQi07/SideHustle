@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="sidebar">
+        <h2>SideHustle</h2>
+        <ul class="sidebar-menu">
+            <li>Marketplace</li>
+            <li>Dashboard</li>
+            <li>My Task</li>
+        </ul>
+    </div>
+
+    <div class="main-content">
+        <h1>CREATE NEW TASK</h1>
+        <div style="background: #e9eff6; padding: 30px; border-radius: 20px;">
+            <form method="POST">
+                <label>Task Title</label><br>
+                <input type="text" name="title" style="width: 100%; padding: 10px;" required><br><br>
+
+                <div style="display: flex; gap: 20px;">
+                    <div>
+                        <label>Budget (RM)</label><br>
+                        <input type="number" name="price" required>
+                    </div>
+                    <div>
+                        <label>Deadline</label><br>
+                        <input type="date" name="deadline">
+                    </div>
+                    <div>
+                        <label>Category</label><br>
+                        <select name="category">
+                            <option>Tutoring</option>
+                            <option>Pet Sitting</option>
+                            <option>Delivery</option>
+                        </select>
+                    </div>
+                </div><br>
+
+                <label>Task Description</label><br>
+                <textarea name="description" rows="5" style="width: 100%;"></textarea><br><br>
+                
+                <button type="submit" style="background: #7b9cc2; color: white; border: none; padding: 10px 30px; border-radius: 5px;">Post Task</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="sidebar">
+        <h2>SideHustle</h2>
+        <ul class="sidebar-menu">
+            <li>Marketplace</li>
+            <li>Dashboard</li>
+            <li>My Task</li>
+        </ul>
+    </div>
+
+    <div class="main-content">
+        <h1>MARKETPLACE</h1>
+        <input type="text" placeholder="search bar" style="width: 80%; padding: 10px; border-radius: 20px; border: 1px solid #ddd;"><br><br>
+
+        <div class="task-container">
+            {% for task in tasks %}
+            <div class="card">
+                <h3>{{ task.title }} <span class="price">RM {{ task.price }}</span></h3>
+                <span style="background: #eee; padding: 2px 10px; border-radius: 10px; font-size: 12px;">{{ task.category }}</span>
+                <p style="color: red; font-size: 14px;">{{ task.description }}</p>
+                <hr>
+                <div style="font-size: 12px;">👤 Name <span style="float: right;">⭐ 4.9</span></div>
+                <button class="btn-info">SEE MORE INFO</button>
+            </div>
+            {% endfor %}
+        </div>
+
+        <a href="/post" class="create-btn">+ Create Task</a>
+    </div>
+</body>
+</html>

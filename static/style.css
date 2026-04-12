@@ -1,0 +1,20 @@
+/* General Layout */
+body { font-family: sans-serif; display: flex; margin: 0; background-color: #f4f7f6; }
+
+/* Sidebar */
+.sidebar { width: 200px; height: 100vh; background: white; border-right: 1px solid #ddd; padding: 20px; position: fixed; }
+.sidebar h2 { color: #5a32a8; } /* SideHustle Logo color */
+.sidebar-menu { list-style: none; padding: 0; }
+.sidebar-menu li { padding: 15px 0; border-bottom: 1px solid #eee; cursor: pointer; }
+
+/* Main Content Area */
+.main-content { margin-left: 240px; padding: 40px; width: 100%; }
+
+/* Task Cards */
+.task-container { display: flex; gap: 20px; flex-wrap: wrap; }
+.card { background: white; padding: 20px; border-radius: 15px; width: 250px; border: 1px solid #ddd; box-shadow: 2px 2px 10px rgba(0,0,0,0.1); }
+.price { color: #28a745; font-weight: bold; float: right; }
+.btn-info { width: 100%; padding: 10px; margin-top: 10px; border-radius: 20px; border: 1px solid #5a32a8; background: none; }
+
+/* Floating Button */
+.create-btn { position: fixed; bottom: 30px; right: 30px; background: #7b9cc2; color: white; padding: 15px 25px; border-radius: 30px; text-decoration: none; font-weight: bold; }
