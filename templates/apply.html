@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="center-screen">
+    <a href="{{ url_for('task_detail', task_id=task.id) }}" class="back-link">← Back to Task</a>
+    <div class="form-card">
+        <h1>Apply for task</h1>
+        <form method="POST">
+            <label>Introduce yourself</label>
+            <textarea name="intro" style="width: 100%; height: 80px; margin: 10px 0; border-radius: 10px; border: 1px solid #ddd;"></textarea>
+            
+            <label>Explain why you're a good fit</label>
+            <textarea name="reason" style="width: 100%; height: 80px; margin: 10px 0; border-radius: 10px; border: 1px solid #ddd;"></textarea>
+            
+            <button type="submit" class="btn-primary" style="background: #8e9aaf;">Submit Application</button>
+        </form>
+    </div>
+</body>
+</html>

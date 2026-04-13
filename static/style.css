@@ -1,20 +1,226 @@
-/* General Layout */
-body { font-family: sans-serif; display: flex; margin: 0; background-color: #f4f7f6; }
+/* --- 1. THE "MAGIC" RESET --- */
+* {
+    box-sizing: border-box; /* Keeps padding and buttons INSIDE the boxes */
+    margin: 0;
+    padding: 0;
+}
 
-/* Sidebar */
-.sidebar { width: 200px; height: 100vh; background: white; border-right: 1px solid #ddd; padding: 20px; position: fixed; }
-.sidebar h2 { color: #5a32a8; } /* SideHustle Logo color */
-.sidebar-menu { list-style: none; padding: 0; }
-.sidebar-menu li { padding: 15px 0; border-bottom: 1px solid #eee; cursor: pointer; }
+body {
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background-color: #f4f7f9;
+    color: #333;
+    overflow-x: hidden; /* Prevents horizontal scrolling */
+}
 
-/* Main Content Area */
-.main-content { margin-left: 240px; padding: 40px; width: 100%; }
+/* --- 2. LAYOUT: SIDEBAR & TOP NAV --- */
+.main-layout {
+    display: flex;
+}
 
-/* Task Cards */
-.task-container { display: flex; gap: 20px; flex-wrap: wrap; }
-.card { background: white; padding: 20px; border-radius: 15px; width: 250px; border: 1px solid #ddd; box-shadow: 2px 2px 10px rgba(0,0,0,0.1); }
-.price { color: #28a745; font-weight: bold; float: right; }
-.btn-info { width: 100%; padding: 10px; margin-top: 10px; border-radius: 20px; border: 1px solid #5a32a8; background: none; }
+.sidebar {
+    width: 240px;
+    height: 100vh;
+    background: white;
+    border-right: 1px solid #ddd;
+    position: fixed;
+    top: 0;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 30px 20px;
+    z-index: 3000; /* Sidebar stays on top of everything */
+}
 
-/* Floating Button */
-.create-btn { position: fixed; bottom: 30px; right: 30px; background: #7b9cc2; color: white; padding: 15px 25px; border-radius: 30px; text-decoration: none; font-weight: bold; }
+.sidebar h2 {
+    color: #5a32a8;
+    font-size: 28px;
+    margin-bottom: 40px;
+    text-align: center;
+}
+
+.sidebar-menu a {
+    display: block;
+    padding: 15px;
+    text-decoration: none;
+    color: #444;
+    font-weight: 500;
+    border-radius: 12px;
+    margin-bottom: 10px;
+    transition: 0.3s;
+}
+
+.sidebar-menu a:hover {
+    background: #f0f0f0;
+    color: #5a32a8;
+}
+
+/* THE PURPLE TOP BAR */
+.top-nav {
+    position: fixed;
+    top: 0;           /* Absolute top */
+    left: 240px;      /* Starts after sidebar */
+    right: 0;
+    height: 80px;
+    background-color: #5a32a8; /* MMU Purple */
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 0 50px;
+    z-index: 2000;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.nav-icons {
+    display: flex;
+    align-items: center;
+    gap: 25px;
+    color: white;
+    font-size: 22px;
+}
+
+.profile-circle {
+    width: 45px;
+    height: 45px;
+    background: white;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.3);
+    cursor: pointer;
+}
+
+/* --- 3. MAIN CONTENT (SPACIOUS) --- */
+.content {
+    margin-left: 240px; /* Space for sidebar */
+    margin-top: 80px;  /* Space for top nav */
+    padding: 60px;     /* Breathing room around the edges */
+    width: calc(100% - 240px);
+    min-height: calc(100vh - 80px);
+}
+
+/* --- 4. MARKETPLACE CARDS (BIGGER & WIDER) --- */
+/* --- 4. MARKETPLACE CARDS (3 Tasks Per Row) --- */
+.task-grid {
+    display: grid;
+    /* This tells the browser: "Always make exactly 3 columns" */
+    grid-template-columns: repeat(3, 1fr); 
+    gap: 30px;        /* Space between cards */
+    margin-top: 30px;
+    width: 100%;      /* Ensures it fills the available content space */
+}
+
+.card {
+    background: white;
+    border-radius: 25px;
+    padding: 30px;
+    border: 1px solid #eee;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 420px; /* Keeps all cards the same height */
+}
+
+.card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+}
+
+/* Tags & Labels */
+.tag {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: bold;
+    background: #f0f2f5;
+    margin-right: 8px;
+}
+
+.urgent-tag { background: #ffebee; color: #c62828; }
+.available-tag { background: #e8f5e9; color: #2e7d32; }
+
+/* --- 5. BUTTONS --- */
+.btn-primary {
+    display: block;
+    width: 100%;             /* Stays perfectly INSIDE the box */
+    background: #5a32a8;
+    color: white;
+    padding: 16px;
+    text-align: center;
+    border-radius: 15px;
+    text-decoration: none;
+    font-weight: bold;
+    border: none;
+    margin-top: 20px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-primary:hover {
+    background: #452682;
+}
+
+/* Floating Create Button */
+.fab {
+    position: fixed;
+    bottom: 40px;
+    right: 40px;
+    background: #7b9cc2;
+    color: white;
+    padding: 18px 35px;
+    border-radius: 40px;
+    text-decoration: none;
+    font-weight: bold;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    z-index: 4000;
+}
+
+/* --- 6. CENTERED PAGES (POST & APPLY) --- */
+.center-screen {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    flex-direction: column;
+    background: #f0f2f5;
+    padding: 20px;
+}
+
+.form-card {
+    background: white;
+    padding: 50px;
+    border-radius: 35px;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.08);
+    width: 100%;
+    max-width: 600px; /* Focused form width */
+}
+
+.back-link {
+    text-decoration: none;
+    color: #666;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+/* --- 7. DETAIL PAGE SPECIFICS --- */
+.detail-layout {
+    display: flex;
+    gap: 40px;
+}
+
+.blue-box {
+    background: #e9eff6;
+    padding: 45px;
+    border-radius: 40px;
+    flex: 2;
+}
+
+.side-card {
+    background: #d0dbe9;
+    padding: 35px;
+    border-radius: 30px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Centers budget and apply button */
+}

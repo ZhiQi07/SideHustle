@@ -3,48 +3,46 @@
 <head>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body>
-    <div class="sidebar">
-        <h2>SideHustle</h2>
-        <ul class="sidebar-menu">
-            <li>Marketplace</li>
-            <li>Dashboard</li>
-            <li>My Task</li>
-        </ul>
-    </div>
+<body class="center-screen">
+    <a href="/" class="back-link">← Back to Marketplace</a>
+    <div class="form-card">
+        <h2>CREATE NEW TASK</h2>
+        <form method="POST">
+            <label>Task Title</label>
+            <input type="text" name="title" style="width: 100%; padding: 10px; margin: 10px 0;" required>
 
-    <div class="main-content">
-        <h1>CREATE NEW TASK</h1>
-        <div style="background: #e9eff6; padding: 30px; border-radius: 20px;">
-            <form method="POST">
-                <label>Task Title</label><br>
-                <input type="text" name="title" style="width: 100%; padding: 10px;" required><br><br>
+            <div style="display: flex; gap: 10px;">
+                <div style="flex: 1;">
+                    <label>Budget (RM)</label>
+                    <input type="number" name="price" style="width: 90%; padding: 10px;" required>
+                </div>
+                <div style="flex: 1;">
+                    <label>People Needed</label>
+                    <input type="number" name="capacity" style="width: 90%; padding: 10px;" placeholder="1">
+                </div>
+            </div>
 
-                <div style="display: flex; gap: 20px;">
-                    <div>
-                        <label>Budget (RM)</label><br>
-                        <input type="number" name="price" required>
-                    </div>
-                    <div>
-                        <label>Deadline</label><br>
-                        <input type="date" name="deadline">
-                    </div>
-                    <div>
-                        <label>Category</label><br>
-                        <select name="category">
-                            <option>Tutoring</option>
-                            <option>Pet Sitting</option>
-                            <option>Delivery</option>
-                        </select>
-                    </div>
-                </div><br>
+            <label style="display: block; margin-top: 15px;">Deadline</label>
+            <input type="date" name="deadline" style="width: 100%; padding: 10px;">
 
-                <label>Task Description</label><br>
-                <textarea name="description" rows="5" style="width: 100%;"></textarea><br><br>
-                
-                <button type="submit" style="background: #7b9cc2; color: white; border: none; padding: 10px 30px; border-radius: 5px;">Post Task</button>
-            </form>
-        </div>
+            <label style="display: block; margin-top: 15px;">Category</label>
+            <select name="category" style="width: 100%; padding: 10px;">
+                <option>Moving & Lifting</option>
+                <option>Food & Delivery</option>
+                <option>Academic & Education</option>
+                <option>Creative & Digital</option>
+                <option>Technical & IT</option>
+            </select>
+
+            <label style="display: block; margin-top: 15px;">Description</label>
+            <textarea name="description" style="width: 100%; height: 80px;"></textarea>
+
+            <label style="margin-top: 15px; display: inline-block;">
+                <input type="checkbox" name="urgent"> Mark as <strong>URGENT</strong>
+            </label>
+
+            <button type="submit" class="btn-primary" style="margin-top: 20px;">Post Task</button>
+        </form>
     </div>
 </body>
 </html>
