@@ -28,35 +28,42 @@
                 <div class="profile-circle"></div>
             </div>
         </div>
-
         <div class="content">
-            <h1>MARKETPLACE</h1>
-            
-            <div class="task-grid">
-                {% for task in tasks %}
-                <div class="card">
-                    <div style="display: flex; justify-content: space-between;">
-                        <h3>{{ task.title }}</h3>
-                        <span style="color: #2e7d32; font-weight: bold;">RM {{ task.price }}</span>
-                    </div>
-                    
-                    <div style="margin: 10px 0;">
-                        <span class="tag">{{ task.category }}</span>
-                        {% if task.urgent %}<span class="tag urgent-tag">URGENT</span>{% endif %}
-                    </div>
+            <h1 style="text-align: left; margin-bottom: 20px;">MARKETPLACE</h1>
 
-                    <p>{{ task.description }}</p>
+            <div class="search-container">
+                <form action="/" method="GET" class="search-form">
+                    <input type="text" name="q" placeholder="Search for tasks (e.g. 'delivery', 'tutor')..." value="{{ request.args.get('q', '') }}">
+                    <button type="submit" class="btn-search">🔍 Search</button>
+                </form>
+            </div>
 
-                    <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+                <div class="task-grid">
+                    {% for task in tasks %}
+                    <div class="card">
+                        <div style="display: flex; justify-content: space-between;">
+                            <h3>{{ task.title }}</h3>
+                            <span style="color: #2e7d32; font-weight: bold;">RM {{ task.price }}</span>
+                        </div>
+                        
+                        <div style="margin: 10px 0;">
+                            <span class="tag">{{ task.category }}</span>
+                            {% if task.urgent %}<span class="tag urgent-tag">URGENT</span>{% endif %}
+                        </div>
 
-                    <div style="display: flex; align-items: center; gap: 10px; font-size: 14px;">
-                        <div style="width: 30px; height: 30px; background: #8e9aaf; border-radius: 50%;"></div>
-                        <span><strong>{{ task.user }}</strong></span> <span>⭐ {{ task.rating }}</span>
+                        <p>{{ task.description }}</p>
+
+                        <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+
+                        <div style="display: flex; align-items: center; gap: 10px; font-size: 14px;">
+                            <div style="width: 30px; height: 30px; background: #8e9aaf; border-radius: 50%;"></div>
+                            <span><strong>{{ task.user }}</strong></span> <span>⭐ {{ task.rating }}</span>
+                        </div>
+                        
+                        <a href="{{ url_for('task_detail', task_id=task.id) }}" class="btn-primary">SEE MORE INFO</a>
                     </div>
-                    
-                    <a href="{{ url_for('task_detail', task_id=task.id) }}" class="btn-primary">SEE MORE INFO</a>
+                    {% endfor %}
                 </div>
-                {% endfor %}
             </div>
         </div>
     </div>

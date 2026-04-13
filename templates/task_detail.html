@@ -6,16 +6,31 @@
 <body>
     <div class="main-layout">
         <div class="sidebar">
-            <div style="padding: 20px;">
-                <h2 style="color: #5a32a8;">SideHustle</h2>
-                <a href="/" style="display:block; padding: 10px 0; text-decoration: none; color: black;">🏠 Marketplace</a>
+            <div class="sidebar-top">
+                <h2>SideHustle</h2>
+                <div class="sidebar-menu">
+                    <a href="/">🏠 Marketplace</a>
+                    <a href="#">📊 Dashboard</a>
+                    <a href="#">📋 My Task</a>
+                    <a href="#">👤 Profile</a>
+                </div>
+            </div>
+            <div class="sidebar-bottom">
+                <a href="#" class="menu-item">❓ Help</a>
+            </div>
+        </div>
+        <div class="top-nav">
+            <div class="nav-icons">
+                <span>🔔</span>
+                <span>💬</span>
+                <div class="profile-circle"></div>
             </div>
         </div>
 
         <div class="content">
             <a href="/" class="back-link">← Back to Marketplace</a>
             <div style="display: flex; gap: 30px;">
-                <div style="flex: 2; background: #e9eff6; padding: 40px; border-radius: 30px;">
+                <div style="flex: 2; background: #ced2f4; padding: 40px; border-radius: 30px;">
                     <div style="display: flex; gap: 10px; margin-bottom: 10px;">
                         <span class="tag available-tag">{{ task.status }}</span>
                         <span class="tag" style="background: white;">{{ task.category }}</span>
@@ -36,11 +51,11 @@
                         <p style="margin: 0; color: #555;">Budget</p>
                         <h2 style="font-size: 36px;">RM {{ task.price }}</h2>
                         
-                        <a href="{{ url_for('apply', task_id=task.id) }}" class="btn-primary" style="background: #7b9cc2;">Apply Now</a>
+                        <a href="{{ url_for('apply', task_id=task.id) }}" class="btn-primary" style="background: #6168a8;">Apply Now</a>
                     </div>
 
-                    <div class="card" style="text-align: center; margin-top: 20px;">
-                        <div style="width: 60px; height: 60px; background: #8e9aaf; border-radius: 50%; margin: 0 auto 10px;"></div>
+                    <div style="text-align: center; margin-top: 20px; background: white; padding: 25px; border-radius: 25px; border: 1px solid #eee;">
+                        <div style="width: 60px; height: 60px; background: #3c1a75; border-radius: 50%; margin: 0 auto 10px;"></div>
                         <p style="margin: 0;"><strong>{{ task.user }}</strong></p>
                         <p style="margin: 5px 0;">⭐ {{ task.rating }}</p>
                     </div>

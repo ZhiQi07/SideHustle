@@ -33,7 +33,18 @@ with app.app_context():
 
 @app.route('/')
 def marketplace():
-    all_tasks = Task.query.all()
+    # 1. Get the search term from the URL (e.g., ?q=delivery)
+    query = request.args.get('q')
+    
+    if query:
+        # 2. Filter tasks where the title or description contains the search term
+        all_tasks = Task.query.filter(
+            (Task.title.contains(query)) | (Task.description.contains(query))
+        ).all()
+    else:
+        # 3. If no search, show everything like usual
+        all_tasks = Task.query.all()
+        
     return render_template('marketplace.html', tasks=all_tasks)
 
 @app.route('/post', methods=['GET', 'POST'])
