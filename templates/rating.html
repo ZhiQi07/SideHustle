@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rating System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f7f5fc;
+            margin: 0;
+            padding: 0;
+        }
+
+        .navbar {
+            background-color: #4f5aa6;
+            padding: 15px 30px;
+        }
+
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+            margin-right: 20px;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 40px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 18px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        h1 {
+            color: #4f5aa6;
+        }
+
+        .stars {
+            font-size: 30px;
+            color: #9b73d6;
+            margin: 15px 0;
+        }
+
+        textarea {
+            width: 100%;
+            height: 120px;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            resize: none;
+        }
+
+        button {
+            margin-top: 20px;
+            background-color: #9b73d6;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #8660bd;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <a href="/">Dashboard</a>
+        <a href="/earnings">Earnings</a>
+        <a href="/messages">Messages</a>
+    </div>
+
+    <div class="container">
+        <h1>Review & Rating</h1>
+        <p>Rate your experience after completing a task.</p>
+
+        <h3>Task Completed: Poster Design</h3>
+
+        <div class="stars">★ ★ ★ ★ ☆</div>
+
+        <label for="comment">Leave a comment:</label><br><br>
+        <textarea id="comment" placeholder="Write your feedback here..."></textarea><br>
+
+        <button>Submit Review</button>
+    </div>
+</body>
+</html>

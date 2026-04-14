@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SideHustle Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">SideHustle</div>
+
+    <div class="top-icons">
+      <div class="icon-group">
+        <div class="icon">💬</div>
+        <div>message</div>
+      </div>
+
+      <div class="icon-group">
+        <div class="profile-circle"></div>
+        <div>profile</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="content">
+    <aside class="sidebar">
+      <div>
+        <div class="menu-title">Main Menu</div>
+        <ul class="nav-list">
+          <li class="nav-item"><a href="#"><span>🏪</span><span>Marketplace</span></a></li>
+          <li class="nav-item"><a href="/"><span>🔎</span><span>Dashboard</span></a></li>
+          <li class="nav-item"><a href="/task-tracking"><span>📝</span><span>My task</span></a></li>
+          <li class="nav-item"><a href="#"><span>👤</span><span>Profile</span></a></li>
+        </ul>
+      </div>
+
+      <div class="sidebar-bottom">
+        <div class="setting-row"><span>⚙️</span><span>Setting</span></div>
+        <div class="help-row"><span>ⓘ</span><span>Help</span></div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <section class="stats-row">
+        <a href="/earnings" class="stat-card-link">
+          <div class="stat-card clickable">
+            <div class="stat-heading">
+              <span>Credit</span>
+              <span class="emoji">💵</span>
+            </div>
+            <div class="stat-main">RM 95</div>
+          </div>
+        </a>
+
+        <div class="stat-card">
+          <div class="stat-heading">
+            <span>User Rating</span>
+          </div>
+          <div class="rating-row">
+            <span class="star">★</span>
+            <span>4.9 / 5.0</span>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-heading">
+            <span>Tasks done</span>
+          </div>
+          <div class="tasks-card-text">
+            <span class="small">Welldone!</span>
+            <span class="small">You have done</span>
+            <strong>4 tasks</strong>
+          </div>
+        </div>
+      </section>
+
+      <div class="section-title">
+        <span>Tasks Tracking</span>
+        <span style="font-size: 30px;">📈</span>
+      </div>
+
+      <section class="tracking-box">
+        <div class="task-row clickable-task"
+             onclick="openTaskPopup('Arrange Table', 'Arrange table in room C-206', 'Due date: 20 min left', '67%')">
+          <div class="progress-side">
+            <div class="progress-line">
+              <div class="progress-wrap">
+                <div class="progress-fill" style="width: 67%;"></div>
+              </div>
+              <div class="percent">67%</div>
+            </div>
+            <div class="due-date">20 min left</div>
+          </div>
+          <div class="task-info">Arrange table in room C-206</div>
+          <div class="more">...</div>
+        </div>
+
+        <div class="task-row clickable-task"
+             onclick="openTaskPopup('Task Name', 'Task name / information', 'Due date: 1 hour left', '76%')">
+          <div class="progress-side">
+            <div class="progress-line">
+              <div class="progress-wrap">
+                <div class="progress-fill" style="width: 76%;"></div>
+              </div>
+              <div class="percent">76%</div>
+            </div>
+            <div class="due-date">1 hour left</div>
+          </div>
+          <div class="task-info">Task name / information</div>
+          <div class="more">...</div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="taskPopup" class="popup-overlay">
+    <div class="task-popup-card" onclick="event.stopPropagation()">
+      <h1 id="popupTitle">Job Title</h1>
+
+      <div class="popup-center-content">
+        <p id="popupDesc">Desc</p>
+        <p class="popup-dots">.....</p>
+      </div>
+
+      <div class="popup-bottom">
+        <div>
+          <div id="popupDue" class="popup-due">due date</div>
+          <div id="popupPercent" class="popup-percent">67%</div>
+        </div>
+
+        <button type="button" class="popup-back-btn" onclick="closePopup()">Back</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function openTaskPopup(title, desc, due, percent) {
+      document.getElementById("popupTitle").textContent = title;
+      document.getElementById("popupDesc").textContent = desc;
+      document.getElementById("popupDue").textContent = due;
+      document.getElementById("popupPercent").textContent = percent;
+      document.getElementById("taskPopup").style.display = "flex";
+    }
+
+    function closePopup() {
+      document.getElementById("taskPopup").style.display = "none";
+    }
+
+    document.getElementById("taskPopup").addEventListener("click", function (event) {
+      if (event.target === this) {
+        closePopup();
+      }
+    });
+  </script>
+</body>
+</html>
