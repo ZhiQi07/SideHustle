@@ -1,0 +1,27 @@
+body {
+    display: flex;
+    height: 100vh;
+    margin: 0;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(150deg, #bb8dff, #5462be)
+}
+
+.signup {
+    border-radius: 30px;
+    background-color: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    border: 2px solid #ffffff00;
+    padding: 30px; 
+    width: 350px;
+    height: 400px;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    justify-content: center;
+    color: rgb(0, 0, 0); 
+    font-weight: bold;
+    z-index: 2; 
+    position: relative;
+    box-shadow: 10px 10px 30px rgba(0,0,0,0.2);
+}
