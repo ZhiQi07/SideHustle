@@ -4,155 +4,183 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SideHustle Dashboard</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <a href="/marketplace">Marketplace</a>
+  <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
 </head>
+
 <body>
-  <header class="topbar">
-    <div class="brand">SideHustle</div>
+  <div class="page-wrapper">
 
-    <div class="top-icons">
-      <div class="icon-group">
-        <div class="icon">🔔</div>
-        
-      </div>
+    <div id="dashboardBlur" class="dashboard-blur">
 
-      <div class="icon-group">
-        <div class="profile-circle"></div>
-        
+      <header class="top-nav">
+        <div class="nav-icons">
+          <div>🔔</div>
+          <div class="profile-circle"></div>
+        </div>
+      </header>
+
+      <div class="main-layout">
+
+        <div class="sidebar">
+          <div>
+            <h2>SideHustle</h2>
+
+            <div class="sidebar-menu">
+              <a href="/">🏠 Marketplace</a>
+              <a href="/dashboard">📊 Dashboard</a>
+              <a href="/task-tracking">📋 My Task</a>
+              <a href="#">👤 Profile</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="content">
+
+          <div class="task-grid">
+            <div class="card card-credit" onclick="openEarningsPopup()">
+              <h3>Credit 💵</h3>
+              <h1 class="card-main-value">RM 95</h1>
+            </div>
+
+            <div class="card">
+              <h1>User Rating</h1>
+              <h1 class="card-main-value">⭐ 4.9 / 5.0</h1>
+            </div>
+
+            <div class="card">
+              <h1>Tasks Done</h1>
+              <p class="task-done-text">You have done <strong>4 tasks</strong></p>
+            </div>
+          </div>
+
+          <h2 class="tracking-title">Tasks Tracking 📈</h2>
+
+          <div class="task-row" onclick="openTaskPopup('Arrange table in room C-206', '67%', 'Due date: 20 April 2026')">
+            <div class="progress-side">
+              <div class="progress-line">
+                <div class="progress-wrap">
+                  <div class="progress-fill" style="width:67%;"></div>
+                </div>
+                <div class="percent">67%</div>
+              </div>
+              <div class="due-date">due date</div>
+            </div>
+
+            <div class="task-info">Task name / information</div>
+            <div class="more">...</div>
+          </div>
+
+          <div class="task-row" onclick="openTaskPopup('Help move items to store room', '76%', 'Due date: 22 April 2026')">
+            <div class="progress-side">
+              <div class="progress-line">
+                <div class="progress-wrap">
+                  <div class="progress-fill" style="width:76%;"></div>
+                </div>
+                <div class="percent">76%</div>
+              </div>
+              <div class="due-date">due date</div>
+            </div>
+
+            <div class="task-info">Task name / information</div>
+            <div class="more">...</div>
+          </div>
+
+        </div>
       </div>
     </div>
-  </header>
 
-  <div class="content">
-    <aside class="sidebar">
-      <div>
-        <div class="menu-title">Main Menu</div>
-        <ul class="nav-list">
-          <li class="nav-item"><a href="#"><span>🏪</span><span>Marketplace</span></a></li>
-          <li class="nav-item"><a href="/"><span>🔎</span><span>Dashboard</span></a></li>
-          <li class="nav-item"><a href="/task-tracking"><span>📝</span><span>My task</span></a></li>
-          <li class="nav-item"><a href="#"><span>👤</span><span>Profile</span></a></li>
-        </ul>
-      </div>
+    <!-- Credit Popup -->
+    <div id="earningsPopup" class="popup-overlay" onclick="closePopupOutside(event, 'earningsPopup', 'closeEarningsPopup')">
+      <div class="popup-card">
+        <div class="popup-title">Earnings History</div>
 
-      <div class="sidebar-bottom">
-        <div class="setting-row"><span>⚙️</span><span>Setting</span></div>
-        <div class="help-row"><span>ⓘ</span><span>Help</span></div>
-      </div>
-    </aside>
+        <table class="earnings-table">
+          <thead>
+            <tr>
+              <th>Activity</th>
+              <th>Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Delivery task completed</td>
+              <td class="amount">+RM 25</td>
+            </tr>
+            <tr>
+              <td>Helper service booking</td>
+              <td class="amount">+RM 18</td>
+            </tr>
+            <tr>
+              <td>Marketplace order finished</td>
+              <td class="amount">+RM 30</td>
+            </tr>
+            <tr>
+              <td>Extra side job payment</td>
+              <td class="amount">+RM 22</td>
+            </tr>
+          </tbody>
+        </table>
 
-    <main class="main">
-      <section class="stats-row">
-        <a href="/earnings" class="stat-card-link">
-          <div class="stat-card clickable">
-            <div class="stat-heading">
-              <span>Credit</span>
-              <span class="emoji">💵</span>
-            </div>
-            <div class="stat-main">RM 95</div>
-          </div>
-        </a>
-
-        <div class="stat-card">
-          <div class="stat-heading">
-            <span>User Rating</span>
-          </div>
-          <div class="rating-row">
-            <span class="star">★</span>
-            <span>4.9 / 5.0</span>
-          </div>
+        <div class="back-wrap">
+          <button class="back-btn" onclick="closeEarningsPopup()">Back</button>
         </div>
-
-        <div class="stat-card">
-          <div class="stat-heading">
-            <span>Tasks done</span>
-          </div>
-          <div class="tasks-card-text">
-            <span class="small">Welldone!</span>
-            <span class="small">You have done</span>
-            <strong>4 tasks</strong>
-          </div>
-        </div>
-      </section>
-
-      <div class="section-title">
-        <span>Tasks Tracking</span>
-        <span style="font-size: 30px;">📈</span>
-      </div>
-
-      <section class="tracking-box">
-        <div class="task-row clickable-task"
-             onclick="openTaskPopup('Arrange Table', 'Arrange table in room C-206', 'Due date: 20 min left', '67%')">
-          <div class="progress-side">
-            <div class="progress-line">
-              <div class="progress-wrap">
-                <div class="progress-fill" style="width: 67%;"></div>
-              </div>
-              <div class="percent">67%</div>
-            </div>
-            <div class="due-date">20 min left</div>
-          </div>
-          <div class="task-info">Arrange table in room C-206</div>
-          <div class="more">...</div>
-        </div>
-
-        <div class="task-row clickable-task"
-             onclick="openTaskPopup('Task Name', 'Task name / information', 'Due date: 1 hour left', '76%')">
-          <div class="progress-side">
-            <div class="progress-line">
-              <div class="progress-wrap">
-                <div class="progress-fill" style="width: 76%;"></div>
-              </div>
-              <div class="percent">76%</div>
-            </div>
-            <div class="due-date">1 hour left</div>
-          </div>
-          <div class="task-info">Task name / information</div>
-          <div class="more">...</div>
-        </div>
-      </section>
-    </main>
-  </div>
-
-  <div id="taskPopup" class="popup-overlay">
-    <div class="task-popup-card" onclick="event.stopPropagation()">
-      <h1 id="popupTitle">Job Title</h1>
-
-      <div class="popup-center-content">
-        <p id="popupDesc">Desc</p>
-        <p class="popup-dots">.....</p>
-      </div>
-
-      <div class="popup-bottom">
-        <div>
-          <div id="popupDue" class="popup-due">due date</div>
-          <div id="popupPercent" class="popup-percent">67%</div>
-        </div>
-
-        <button type="button" class="popup-back-btn" onclick="closePopup()">Back</button>
       </div>
     </div>
+
+    <!-- Task Popup -->
+    <div id="taskPopup" class="popup-overlay" onclick="closePopupOutside(event, 'taskPopup', 'closeTaskPopup')">
+      <div class="popup-card task-popup-card">
+        <div class="popup-title">Task Information</div>
+
+        <div class="task-popup-content">
+          <p><strong>Task:</strong> <span id="popupTaskName">-</span></p>
+          <p><strong>Progress:</strong> <span id="popupTaskPercent">-</span></p>
+          <p><strong>Status:</strong> In Progress</p>
+          <p><strong>Deadline:</strong> <span id="popupTaskDeadline">-</span></p>
+        </div>
+
+        <div class="back-wrap">
+          <button class="back-btn" onclick="closeTaskPopup()">Back</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <script>
-    function openTaskPopup(title, desc, due, percent) {
-      document.getElementById("popupTitle").textContent = title;
-      document.getElementById("popupDesc").textContent = desc;
-      document.getElementById("popupDue").textContent = due;
-      document.getElementById("popupPercent").textContent = percent;
-      document.getElementById("taskPopup").style.display = "flex";
+    function openEarningsPopup() {
+      document.getElementById("earningsPopup").classList.add("show");
+      document.getElementById("dashboardBlur").classList.add("blur-active");
     }
 
-    function closePopup() {
-      document.getElementById("taskPopup").style.display = "none";
+    function closeEarningsPopup() {
+      document.getElementById("earningsPopup").classList.remove("show");
+      document.getElementById("dashboardBlur").classList.remove("blur-active");
     }
 
-    document.getElementById("taskPopup").addEventListener("click", function (event) {
-      if (event.target === this) {
-        closePopup();
+    function openTaskPopup(taskName, percent, deadline) {
+      document.getElementById("popupTaskName").textContent = taskName;
+      document.getElementById("popupTaskPercent").textContent = percent;
+      document.getElementById("popupTaskDeadline").textContent = deadline;
+
+      document.getElementById("taskPopup").classList.add("show");
+      document.getElementById("dashboardBlur").classList.add("blur-active");
+    }
+
+    function closeTaskPopup() {
+      document.getElementById("taskPopup").classList.remove("show");
+      document.getElementById("dashboardBlur").classList.remove("blur-active");
+    }
+
+    function closePopupOutside(event, popupId, closeFunctionName) {
+      if (event.target.id === popupId) {
+        if (closeFunctionName === "closeEarningsPopup") {
+          closeEarningsPopup();
+        } else if (closeFunctionName === "closeTaskPopup") {
+          closeTaskPopup();
+        }
       }
-    });
+    }
   </script>
 </body>
 </html>
