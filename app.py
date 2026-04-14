@@ -40,7 +40,24 @@ with app.app_context():
 
 # --- ROUTES ---
 
-@app.route('/signup',methods=['GET', 'POST'])
+@app.route('/', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+
+        #Look for user in the database
+        user = User.query.filter_by(username=username, password=password).first()
+
+        if user: 
+            session['user_id'] = user.id
+            session['is_admin'] = user.is_admin
+            return redirect(url_for('marketplace'))
+        else:
+            flash("Invalid credentials!")
+    return render_template('login.html')
+
+@app.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
         new_user = User(
@@ -52,52 +69,7 @@ def signup():
         return redirect(url_for('login'))
     return render_template('signup.html')
 
-@app.route('/login', methods=['GET', 'POST',])
-def login():
-    if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
-        user = User.query.filter_by(username=username, password=password).first()
-
-        if user: 
-            session['user_id'] = user.id
-            session['is_admin'] = user.is_admin
-            return redirect(url_for('marketplace'))
-        else:
-            flash("Invalid credentials!")
-    return render_template('login.html')
-
-@app.route('/profile', methods=['GET,' 'POST'])
-def profile():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    
-    user = User.query.get(session['user_id'])
-
-    if request.method == 'POST':
-        #Update feature: list skills
-        user.skills = request.form.get('skills')
-        db.session.commit()
-        flash("Profile Updated!")
-
-    return render_template('profile.html', user=user)
-
-@app.route('/logout"')
-def logout():
-    session.clear()
-    return redirect(url_for('login'))
-
-#Admin Dashboard
-@app.route('/admin')
-def admin_dashboard():
-    if not session.get('is_admin'):
-        return "Access Denied!", 403
-    
-    all_users = User.query.all()
-    all_tasks = Task.query.all()
-    return render_template('admin.html', users=all_users, tasks=all_tasks)
-
-@app.route('/')
+@app.route('/marketplace')
 def marketplace():
     # 1. Get the search term from the URL (e.g., ?q=delivery)
     query = request.args.get('q')
