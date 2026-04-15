@@ -15,8 +15,9 @@ db = SQLAlchemy(app)
 # The User Model (LSC)
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(50), unique=True, nullable=False)
-    password = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(150), unique=True, nullable=False)
+    username = db.Column(db.String(150), nullable=False)
+    password = db.Column(db.String(150), nullable=False)
     skills = db.Column(db.Text, default="No skills listed") #Profile Setup feature
     is_admin = db.Column(db.Boolean, default=False) #Admin Dashboard feature
 
@@ -43,11 +44,11 @@ with app.app_context():
 @app.route('/', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        username = request.form.get('username')
+        email = request.form.get('email')
         password = request.form.get('password')
 
         #Look for user in the database
-        user = User.query.filter_by(username=username, password=password).first()
+        user = User.query.filter_by(email=email, password=password).first()
 
         if user: 
             session['user_id'] = user.id
@@ -61,6 +62,7 @@ def login():
 def signup():
     if request.method == 'POST':
         new_user = User(
+            email=request.form.get('email'),
             username=request.form.get('username'),
             password=request.form.get('password')
         )

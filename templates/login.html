@@ -10,15 +10,36 @@
         </div>
     </div>
     <div class="right-login">
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            {% for message in messages %}
+              <p style="color: #ff4d4d; font-size: 13px; font-weight: bold; margin-bottom: 10px;">{{ message }}</p>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+        
         <h2>
             LOGIN
         </h2>
         <form action="{{ url_for('login') }}" method="POST">
-            <input type="text" name="username" placeholder="Username" required><br><br>
-            <input type="password" name="password" placeholder="Password" required><br><br>
-            <button type="submit">Login</button>
+            <div class="input-container">
+                <label class="input-icon user-icon"></label>
+                <input type="email" name="email" placeholder="EMAIL ADDRESS" class="modern-input" required>
+                <label class="input-icon lock-icon"></label>
+                <input type="password" name="password" placeholder="Password" class="modern-input" required>
+                <label class="input-icon eye-icon"></label>
+            </div>
+
+            <div class="forgot-container">
+                <a href="/forgot" class="forgot-link">FORGOT PASSWORD</a>
+            </div>
+            
+            <button type="submit" class="purple-btn">LOGIN</button>
         </form>
-        <p>Don't have an account? <a href="{{ url_for('signup') }}">Sign up here</a></p>
+
+        <p class="auth-box-footer">
+            Don't have an account? <a href="{{ url_for('signup') }}" class="inline-link">Sign up here</a>
+        </p>
     </div>
 </body>
 </html>
