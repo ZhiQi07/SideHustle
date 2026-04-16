@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SideHustle Earnings</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+  <style>
+    .popup-page {
+      min-height: 100vh;
+      background: rgba(20, 27, 52, 0.18);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 30px;
+    }
+
+    .popup-card {
+      width: 760px;
+      max-width: 100%;
+      background: #ffffff;
+      border-radius: 18px;
+      padding: 28px;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.16);
+      border: 1px solid #e8e8e8;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .popup-title {
+      font-size: 28px;
+      font-weight: 700;
+      color: #222;
+      margin-bottom: 2px;
+    }
+
+    .earnings-table {
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+      border-radius: 12px;
+    }
+
+    .earnings-table th,
+    .earnings-table td {
+      padding: 16px 18px;
+      text-align: left;
+      border-bottom: 1px solid #e8ecf5;
+      font-size: 17px;
+    }
+
+    .earnings-table th {
+      background: #f5f7fc;
+      color: #334;
+      font-weight: 700;
+    }
+
+    .earnings-table td:last-child,
+    .earnings-table th:last-child {
+      text-align: right;
+      width: 170px;
+    }
+
+    .amount {
+      color: #4f5aa6;
+      font-weight: 700;
+    }
+
+    .back-wrap {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 4px;
+    }
+
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 110px;
+      height: 44px;
+      padding: 0 20px;
+      border: 1.5px solid #cfd7ea;
+      border-radius: 8px;
+      background: #ffffff;
+      color: #2d3c6c;
+      text-decoration: none;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .back-btn:hover {
+      background: #f7f9ff;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="popup-page">
+    <div class="popup-card">
+      <div class="popup-title">Earnings History</div>
+
+      <table class="earnings-table">
+        <thead>
+          <tr>
+            <th>Activity</th>
+            <th>Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Delivery task completed</td>
+            <td class="amount">+RM 25</td>
+          </tr>
+          <tr>
+            <td>Helper service booking</td>
+            <td class="amount">+RM 18</td>
+          </tr>
+          <tr>
+            <td>Marketplace order finished</td>
+            <td class="amount">+RM 30</td>
+          </tr>
+          <tr>
+            <td>Extra side job payment</td>
+            <td class="amount">+RM 22</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="back-wrap">
+        <a href="/dashboard" class="back-btn">Back</a>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

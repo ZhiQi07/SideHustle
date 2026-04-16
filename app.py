@@ -5,22 +5,22 @@ import os
 app = Flask(__name__)
 app.secret_key = "mmu_secret_key" #Login Sessions
 
-# 1. Database Configuration
+# Database Configuration
 basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'database.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
-# The User Model (LSC)
+# Task Model
+# The User Model (Add this back!)
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
     password = db.Column(db.String(100), nullable=False)
-    skills = db.Column(db.Text, default="No skills listed") #Profile Setup feature
-    is_admin = db.Column(db.Boolean, default=False) #Admin Dashboard feature
-
-# 2. The Task Model
+    skills = db.Column(db.Text, default="No skills listed")
+    is_admin = db.Column(db.Boolean, default=False)
+    
 class Task(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
@@ -34,11 +34,10 @@ class Task(db.Model):
     deadline = db.Column(db.String(50))
     capacity = db.Column(db.Integer, default=1)
 
-# Create the database
 with app.app_context():
     db.create_all()
 
-# --- ROUTES ---
+# ROUTES
 
 @app.route('/', methods=['GET', 'POST'])
 def login():
@@ -71,16 +70,13 @@ def signup():
 
 @app.route('/marketplace')
 def marketplace():
-    # 1. Get the search term from the URL (e.g., ?q=delivery)
     query = request.args.get('q')
-    
+
     if query:
-        # 2. Filter tasks where the title or description contains the search term
         all_tasks = Task.query.filter(
             (Task.title.contains(query)) | (Task.description.contains(query))
         ).all()
     else:
-        # 3. If no search, show everything like usual
         all_tasks = Task.query.all()
 
     #Search logged-in user exxist (LSC)
@@ -90,6 +86,15 @@ def marketplace():
         
     #Pass both tasks and the user to the HTML
     return render_template('marketplace.html', tasks=all_tasks, user=current_user)
+
+@app.route('/dashboard')
+def dashboard():
+    return render_template('dashboard.html')
+
+# ✅ 新加这个，Credit 会连来这里
+@app.route('/earnings')
+def earnings():
+    return render_template('earnings.html')
 
 @app.route('/post', methods=['GET', 'POST'])
 def post_task():
@@ -113,7 +118,6 @@ def task_detail(task_id):
     task = Task.query.get_or_404(task_id)
     return render_template('task_detail.html', task=task)
 
-# ADD THIS ROUTE BACK - This is likely why you got the BuildError
 @app.route('/apply/<int:task_id>', methods=['GET', 'POST'])
 def apply(task_id):
     task = Task.query.get_or_404(task_id)

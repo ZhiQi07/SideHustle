@@ -107,6 +107,13 @@ body {
     max-width: 1100px; /* This prevents the cards from becoming giant rectangles */
 }
 
+.card-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  flex: 1;
+}
+
 .card {
     background: white;
     border-radius: 25px;
