@@ -56,6 +56,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
+    position: relative;
 }
 
 .modern-input {
@@ -114,32 +115,6 @@ body {
 .inline-link {
     color: #718fb1;
     text-decoration: underline;
-}
-
-.input-icon {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 20px;
-    height: 20px;
-    background-size: contain;
-    background-repeat: no-repeat;
-    opacity: 0.5;
-}
-
-.user-icon {
-    right: 15px;
-    background-image: url('../static/user-icon.png');
-}
-
-.lock-icon {
-    right: 45px;
-    background-image: url('../static/lock-icon.png');
-}
-
-.eye-icon {
-    right: 15px;
-    background-image: url('../static/eye-icon.png');
 }
 
 .auth-box-footer {

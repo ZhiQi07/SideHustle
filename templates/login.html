@@ -2,6 +2,7 @@
 <html>
     <head>
         <link rel="stylesheet" href="{{ url_for('static', filename='login.css') }}">
+        <link rel='stylesheet' href='https://cdn-uicons.flaticon.com/uicons-regular-rounded/css/uicons-regular-rounded.css'>
     </head>
 <body>
     <div class="left-branding">
@@ -23,11 +24,8 @@
         </h2>
         <form action="{{ url_for('login') }}" method="POST">
             <div class="input-container">
-                <label class="input-icon user-icon"></label>
                 <input type="email" name="email" placeholder="EMAIL ADDRESS" class="modern-input" required>
-                <label class="input-icon lock-icon"></label>
                 <input type="password" name="password" placeholder="Password" class="modern-input" required>
-                <label class="input-icon eye-icon"></label>
             </div>
 
             <div class="forgot-container">

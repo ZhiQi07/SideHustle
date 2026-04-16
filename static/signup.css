@@ -14,7 +14,6 @@ body {
     backdrop-filter: blur(10px);
     border: 2px solid #ffffff00;
     padding: 40px; 
-    padding-left: 80px;
     width: 450px;
     height: 500px;
     display: flex;
@@ -43,6 +42,7 @@ body {
     box-sizing: border-box;
     margin-bottom: 12px;
     outline: none;
+    text-align: left;
 }
 
 .modern-input::placeholder {
@@ -50,9 +50,6 @@ body {
     text-transform: uppercase;
 }
 
-.signup {
-    height: 600px;
-}
 
 .password-check {
     list-style-type: none;

@@ -2,9 +2,18 @@
 <html>
     <head>
         <link rel="stylesheet" href="{{ url_for('static', filename='signup.css') }}">
+        <link rel='stylesheet' href='https://cdn-uicons.flaticon.com/uicons-regular-rounded/css/uicons-regular-rounded.css'>
     </head>
     <body>
         <div class=signup>
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    {% for message in messages %}
+                        <p style="color: #ff4d4d; font-size: 13px; font-weight: bold; margin-bottom: 10px;">{{ message }}</p>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
             <h2>Create An Account</h2>
             <div class="input-container">
                 <form action="{{ url_for('signup') }}" method="POST">
