@@ -1,8 +1,9 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, session, flash
 from flask_sqlalchemy import SQLAlchemy
 import os
 
 app = Flask(__name__)
+app.secret_key = "mmu_secret_key" #Login Sessions
 
 # Database Configuration
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -12,6 +13,14 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 # Task Model
+# The User Model (Add this back!)
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(50), unique=True, nullable=False)
+    password = db.Column(db.String(100), nullable=False)
+    skills = db.Column(db.Text, default="No skills listed")
+    is_admin = db.Column(db.Boolean, default=False)
+    
 class Task(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
@@ -30,7 +39,36 @@ with app.app_context():
 
 # ROUTES
 
-@app.route('/')
+@app.route('/', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+
+        #Look for user in the database
+        user = User.query.filter_by(username=username, password=password).first()
+
+        if user: 
+            session['user_id'] = user.id
+            session['is_admin'] = user.is_admin
+            return redirect(url_for('marketplace'))
+        else:
+            flash("Invalid credentials!")
+    return render_template('login.html')
+
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
+    if request.method == 'POST':
+        new_user = User(
+            username=request.form.get('username'),
+            password=request.form.get('password')
+        )
+        db.session.add(new_user)
+        db.session.commit()
+        return redirect(url_for('login'))
+    return render_template('signup.html')
+
+@app.route('/marketplace')
 def marketplace():
     query = request.args.get('q')
 
@@ -41,7 +79,13 @@ def marketplace():
     else:
         all_tasks = Task.query.all()
 
-    return render_template('marketplace.html', tasks=all_tasks)
+    #Search logged-in user exxist (LSC)
+    current_user = None
+    if 'user_id' in session:
+        current_user = User.query.get(session['user_id'])
+        
+    #Pass both tasks and the user to the HTML
+    return render_template('marketplace.html', tasks=all_tasks, user=current_user)
 
 @app.route('/dashboard')
 def dashboard():
