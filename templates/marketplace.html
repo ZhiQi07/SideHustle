@@ -10,7 +10,7 @@
             <div class="sidebar-top">
                 <h2>SideHustle</h2>
                 <div class="sidebar-menu">
-                    <a href="/">🏠 Marketplace</a>
+                    <a href="{{ url_for('marketplace') }}">🏠 Marketplace</a>
                     <a href="#">📊 Dashboard</a>
                     <a href="#">📋 My Task</a>
                     <a href="#">👤 Profile</a>
@@ -23,6 +23,9 @@
 
         <div class="top-nav">
             <div class="nav-icons">
+                {% if user %}
+                    <span style="margin-right: 10px;">Hello, <strong>{{ user.username }}</strong></span>
+                {% endif %}
                 <span>🔔</span>
                 <div class="profile-circle"></div>
             </div>
@@ -31,7 +34,7 @@
             <h1 style="text-align: left; margin-bottom: 20px;">MARKETPLACE</h1>
 
             <div class="search-container">
-                <form action="/" method="GET" class="search-form">
+                <form action="{{ url_for('marketplace') }}" method="GET" class="search-form">
                     <input type="text" name="q" placeholder="Search for tasks (e.g. 'delivery', 'tutor')..." value="{{ request.args.get('q', '') }}">
                     <button type="submit" class="btn-search">🔍 Search</button>
                 </form>
