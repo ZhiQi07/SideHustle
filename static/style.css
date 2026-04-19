@@ -274,3 +274,44 @@ body {
     background: #452682;
     transform: scale(1.05);
 }
+
+/* Styling for the Dropdown next to Search */
+.nav-select {
+    padding: 10px;
+    border-radius: 30px;
+    border: 2px solid #ddd;
+    outline: none;
+    background: white;
+}
+
+/* Container for the Chips */
+.category-chips {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+    flex-wrap: wrap; /* Allows them to wrap to the next line on small screens */
+    justify-content: center;
+}
+
+/* Individual Chip Style */
+.chip {
+    text-decoration: none;
+    padding: 10px 20px;
+    border-radius: 25px;
+    background-color: #d9c6ff; /* Light purple like your image */
+    color: #4e1865;
+    font-weight: 600;
+    font-size: 14px;
+    transition: 0.3s;
+}
+
+/* When a chip is hovered */
+.chip:hover {
+    background-color: #d9c6ff;
+}
+
+/* The Active/Selected Chip */
+.chip.active {
+    background-color: #5a32a8; /* Bright blue like your image */
+    color: white;
+}

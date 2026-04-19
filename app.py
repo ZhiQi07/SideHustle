@@ -71,13 +71,17 @@ def signup():
 @app.route('/marketplace')
 def marketplace():
     query = request.args.get('q')
+    category = request.args.get('cat')
+
+    tasks_filter = Task.query
 
     if query:
-        all_tasks = Task.query.filter(
-            (Task.title.contains(query)) | (Task.description.contains(query))
-        ).all()
-    else:
-        all_tasks = Task.query.all()
+        tasks_filter = tasks_filter.filter((Task.title.contains(query)) | (Task.description.contains(query)))
+    
+    if category:
+        tasks_filter = tasks_filter.filter(Task.category == category)
+
+    all_tasks = tasks_filter.all()
 
     #Search logged-in user exxist (LSC)
     current_user = None
