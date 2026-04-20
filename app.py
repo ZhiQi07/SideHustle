@@ -129,5 +129,10 @@ def apply(task_id):
         return redirect(url_for('marketplace'))
     return render_template('apply.html', task=task)
 
+@app.route('/my-task')
+def my_task():
+    # This renders the new HTML file you just created
+    return render_template('my_task.html')
+
 if __name__ == '__main__':
     app.run(debug=True)

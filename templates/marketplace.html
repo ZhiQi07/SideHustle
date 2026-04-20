@@ -13,7 +13,7 @@
                 <div class="sidebar-menu">
                     <a href="{{ url_for('marketplace') }}">🏠 Marketplace</a>
                     <a href="/dashboard">📊 Dashboard</a>
-                    <a href="#">📋 My Task</a>
+                    <a href="{{ url_for('my_task') }}">📋 My Task</a>
                     <a href="#">👤 Profile</a>
                 </div>
             </div>
@@ -36,7 +36,10 @@
 
             <div class="search-container">
                 <form action="{{ url_for('marketplace') }}" method="GET" class="search-form">
-                    <input type="text" name="q" placeholder="Search tasks..." value="{{ request.args.get('q', '') }}">
+                    <div class="search-input-wrapper">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" name="q" placeholder="Search for anything..." value="{{ request.args.get('q', '') }}">
+                    </div>
                     
                     <select name="cat" class="nav-select">
                         <option value="">All Categories</option>
@@ -47,16 +50,15 @@
                         <option value="Technical & IT" {% if request.args.get('cat') == 'Technical & IT' %}selected{% endif %}>Technical & IT</option>
                     </select>
                     
-                    <button type="submit" class="btn-search">🔍 Search</button>
+                    <button type="submit" class="btn-search">Search</button>
                 </form>
 
                 <div class="category-chips">
                     <a href="{{ url_for('marketplace') }}" class="chip {% if not request.args.get('cat') %}active{% endif %}">All Tasks</a>
-                    <a href="{{ url_for('marketplace', cat='Moving & Lifting') }}" class="chip {% if request.args.get('cat') == 'Moving & Lifting' %}active{% endif %}">Moving</a>
-                    <a href="{{ url_for('marketplace', cat='Food & Delivery') }}" class="chip {% if request.args.get('cat') == 'Food & Delivery' %}active{% endif %}">Food</a>
-                    <a href="{{ url_for('marketplace', cat='Academic & Education') }}" class="chip {% if request.args.get('cat') == 'Academic & Education' %}active{% endif %}">Academic</a>
-                    <a href="{{ url_for('marketplace', cat='Creative & Digital') }}" class="chip {% if request.args.get('cat') == 'Creative & Digital' %}active{% endif %}">Creative</a>
-                    <a href="{{ url_for('marketplace', cat='Technical & IT') }}" class="chip {% if request.args.get('cat') == 'Technical & IT' %}active{% endif %}">Technical</a>
+                    <a href="{{ url_for('marketplace', cat='Moving & Lifting') }}" class="chip {% if request.args.get('cat') == 'Moving & Lifting' %}active{% endif %}">Moving & Lifting</a>
+                    <a href="{{ url_for('marketplace', cat='Food & Delivery') }}" class="chip {% if request.args.get('cat') == 'Food & Delivery' %}active{% endif %}">Food & Delivery</a>
+                    <a href="{{ url_for('marketplace', cat='Academic & Education') }}" class="chip {% if request.args.get('cat') == 'Academic & Education' %}active{% endif %}">Academic & Education</a>
+                    <a href="{{ url_for('marketplace', cat='Creative & Digital') }}" class="chip {% if request.args.get('cat') == 'Creative & Digital' %}active{% endif %}">Creative & Digital</a>
                 </div>
             </div>
 
