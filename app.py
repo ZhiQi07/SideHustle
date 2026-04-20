@@ -201,10 +201,11 @@ def view_applicants(task_id):
         return redirect(url_for('login'))
         
     task = Task.query.get_or_404(task_id)
-    # Find all applications for this specific task
+    # This searches the Application table for any record matching this task's ID
     apps = Application.query.filter_by(task_id=task_id).all()
     
     return render_template('view_applicants.html', task=task, apps=apps)
+
 
 if __name__ == '__main__':
     app.run(debug=True)

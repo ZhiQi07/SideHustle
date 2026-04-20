@@ -66,7 +66,7 @@
                 {% elif view == 'applied' %}
                     {% for task in applied %}
                         <div class="card">
-                            <h3>(Helper View) {{ task.title }}</h3>
+                            <h3>{{ task.title }}</h3>
                             <p>Progress: {{ task.progress }}%</p>
                         </div>
                     {% endfor %}

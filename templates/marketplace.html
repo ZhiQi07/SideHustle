@@ -59,6 +59,10 @@
                     <a href="{{ url_for('marketplace', cat='Food & Delivery') }}" class="chip {% if request.args.get('cat') == 'Food & Delivery' %}active{% endif %}">Food & Delivery</a>
                     <a href="{{ url_for('marketplace', cat='Academic & Education') }}" class="chip {% if request.args.get('cat') == 'Academic & Education' %}active{% endif %}">Academic & Education</a>
                     <a href="{{ url_for('marketplace', cat='Creative & Digital') }}" class="chip {% if request.args.get('cat') == 'Creative & Digital' %}active{% endif %}">Creative & Digital</a>
+                    <a href="{{ url_for('marketplace', cat='Technical & IT') }}" 
+                    class="chip {% if request.args.get('cat') == 'Technical & IT' %}active{% endif %}">
+   Technical & IT
+</a>
                 </div>
             </div>
 

@@ -418,3 +418,40 @@ body {
     border-radius: 5px;
     font-weight: bold;
 }
+
+/* --- APPLICANT ACTION BUTTONS --- */
+
+/* Hire Button: Purple/Solid */
+.btn-hire {
+    text-decoration: none;
+    padding: 10px 25px;
+    background-color: #5a32a8; /* MMU Purple */
+    color: white;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 14px;
+    transition: 0.3s;
+}
+
+.btn-hire:hover {
+    background-color: #452682;
+    transform: translateY(-2px);
+}
+
+/* Reject Button: Red/Outline */
+.btn-reject {
+    text-decoration: none;
+    padding: 10px 25px;
+    background-color: transparent;
+    color: #d32f2f; /* Red for warning */
+    border: 1.5px solid #d32f2f;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 14px;
+    transition: 0.3s;
+}
+
+.btn-reject:hover {
+    background-color: #ffebee;
+    transform: translateY(-2px);
+}
