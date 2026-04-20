@@ -341,14 +341,14 @@ body {
     text-decoration: none;
     padding: 12px 25px;
     border-radius: 30px;
-    background: #e0e4ff;
+    background: #e0d0ff;
     color: #5a32a8;
     font-weight: bold;
     transition: 0.3s;
 }
 
 .tab-btn.active {
-    background: #1a3a8a; /* Dark blue from your drawing */
+    background: #5a32a8; /* Dark blue from your drawing */
     color: white;
 }
 
@@ -412,8 +412,8 @@ body {
 
 .tag-in-progress {
     font-size: 10px;
-    background: #e3f2fd;
-    color: #1976d2;
+    background: #e4d7ff;
+    color: #5a32a8;
     padding: 4px 8px;
     border-radius: 5px;
     font-weight: bold;

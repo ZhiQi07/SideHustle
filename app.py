@@ -33,6 +33,8 @@ class Task(db.Model):
     urgent = db.Column(db.Boolean, default=False)
     deadline = db.Column(db.String(50))
     capacity = db.Column(db.Integer, default=1)
+    tasker = db.Column(db.String(50)) # Stores the username of the person hired
+    progress = db.Column(db.Integer, default=0) # Stores 0, 25, 50, 75, or 100
 
 with app.app_context():
     db.create_all()
@@ -129,10 +131,25 @@ def apply(task_id):
         return redirect(url_for('marketplace'))
     return render_template('apply.html', task=task)
 
-@app.route('/my-task')
+@app.route('/my_task')
 def my_task():
-    # This renders the new HTML file you just created
-    return render_template('my_task.html')
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    current_user = User.query.get(session['user_id'])
+    
+    # NEW: Get the 'view' from the URL. Default is 'created'
+    view = request.args.get('view', 'created')
+
+    # Fetch data same as before
+    created_tasks = Task.query.filter_by(user=current_user.username).all()
+    applied_tasks = Task.query.filter_by(tasker=current_user.username).all()
+
+    return render_template('my_task.html', 
+                           created=created_tasks, 
+                           applied=applied_tasks, 
+                           view=view, # Pass 'view' to HTML
+                           user=current_user)
 
 if __name__ == '__main__':
     app.run(debug=True)
