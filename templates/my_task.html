@@ -37,49 +37,41 @@
             </div>
 
             <div class="task-grid">
-                {% for task in created %}
-                <div class="card">
-                    <div class="card-header">
-                        <span class="tag">{{ task.category }}</span>
-                        <span class="status-text">{{ task.status }}</span>
-                    </div>
-                    <h3>{{ task.title }}</h3>
-                    <p>{{ task.description }}</p>
-                    
-                    <div class="card-footer">
-                        {% if task.status == 'Available' %}
-                            <span>Wait for applicants...</span>
-                            <a href="{{ url_for('task_detail', task_id=task.id) }}" class="btn-outline">View Details</a>
-                        {% else %}
-                            <span>Hired: <strong>{{ task.tasker }}</strong></span>
-                            <span>{{ task.progress }}% Done</span>
-                        {% endif %}
-                    </div>
-                </div>
-                {% endfor %}
+                {% if view == 'created' %}
+                    {% for task in created %}
+                        <div class="card">
+                            <div class="card-header">
+                                <span class="tag">{{ task.category }}</span>
+                                <span class="status-text">{{ task.status }}</span>
+                            </div>
 
-                {% for task in applied %}
-                <div class="card">
-                    <div class="card-header">
-                        <span class="tag">{{ task.category }}</span>
-                        <span class="tag-in-progress">{{ task.status }}</span>
-                    </div>
-                    <h3>{{ task.title }}</h3>
-                    
-                    <div class="progress-container">
-                        <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px;">
-                            <span>{{ task.progress }}% COMPLETED</span>
-                        </div>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: {{ task.progress | default(0) }}%;"></div>
-                        </div>
-                    </div>
+                            <h3>{{ task.title }}</h3>
+                            <p style="color: #666; font-size: 14px; margin-top: 5px;">
+                                {{ task.description }}
+                            </p>
+                            
+                            <div class="card-footer" style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;">
+                                <div style="display: flex; align-items: center; gap: 5px;">
+                                    <span>👥</span>
+                                    <strong>{{ task.get_applicant_count() }}</strong> applicants
+                                </div>
 
-                    <div class="card-footer" style="margin-top: 15px;">
-                        <span>Client: <strong>{{ task.user }}</strong></span>
-                    </div>
-                </div>
-                {% endfor %}
+                                <a href="{{ url_for('view_applicants', task_id=task.id) }}" class="btn-outline">
+                                    Review Applicants →
+                                </a>
+                            </div>
+                        </div>
+                    {% endfor %}
+
+                {% elif view == 'applied' %}
+                    {% for task in applied %}
+                        <div class="card">
+                            <h3>(Helper View) {{ task.title }}</h3>
+                            <p>Progress: {{ task.progress }}%</p>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
             </div>
         </div>
     </div>

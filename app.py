@@ -36,6 +36,18 @@ class Task(db.Model):
     tasker = db.Column(db.String(50)) # Stores the username of the person hired
     progress = db.Column(db.Integer, default=0) # Stores 0, 25, 50, 75, or 100
 
+    def get_applicant_count(self):
+        # This counts how many applications have this task's ID
+        return Application.query.filter_by(task_id=self.id).count()
+
+class Application(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    task_id = db.Column(db.Integer, db.ForeignKey('task.id'), nullable=False)
+    applicant_username = db.Column(db.String(50), nullable=False)
+    intro = db.Column(db.Text)
+    reason = db.Column(db.Text)
+    status = db.Column(db.String(20), default='Pending')
+
 with app.app_context():
     db.create_all()
 
@@ -104,7 +116,15 @@ def earnings():
 
 @app.route('/post', methods=['GET', 'POST'])
 def post_task():
+    # 1. Safety Check: Make sure the user is actually logged in
+    if 'user_id' not in session:
+        flash("Please login to post a task!")
+        return redirect(url_for('login'))
+
     if request.method == 'POST':
+        # 2. Get the actual user object from the database using the session ID
+        current_user = User.query.get(session['user_id'])
+
         new_task = Task(
             title=request.form.get('title'),
             price=float(request.form.get('price')),
@@ -112,11 +132,16 @@ def post_task():
             category=request.form.get('category'),
             deadline=request.form.get('deadline'),
             capacity=request.form.get('capacity'),
-            urgent=True if request.form.get('urgent') else False
+            urgent=True if request.form.get('urgent') else False,
+            # 3. FIX: Assign the logged-in username to the 'user' field
+            user=current_user.username 
         )
         db.session.add(new_task)
         db.session.commit()
-        return redirect(url_for('marketplace'))
+        
+        # After posting, go see it in My Task!
+        return redirect(url_for('my_task')) 
+        
     return render_template('post_task.html')
 
 @app.route('/task/<int:task_id>')
@@ -126,9 +151,27 @@ def task_detail(task_id):
 
 @app.route('/apply/<int:task_id>', methods=['GET', 'POST'])
 def apply(task_id):
+    if 'user_id' not in session:
+        flash("Please login to apply!")
+        return redirect(url_for('login'))
+
     task = Task.query.get_or_404(task_id)
+    current_user = User.query.get(session['user_id'])
+
     if request.method == 'POST':
+        # Create a new Application record in the database
+        new_app = Application(
+            task_id=task.id,
+            applicant_username=current_user.username,
+            intro=request.form.get('intro'),
+            reason=request.form.get('reason')
+        )
+        db.session.add(new_app)
+        db.session.commit()
+        
+        flash("Application submitted successfully!")
         return redirect(url_for('marketplace'))
+
     return render_template('apply.html', task=task)
 
 @app.route('/my_task')
@@ -143,13 +186,25 @@ def my_task():
 
     # Fetch data same as before
     created_tasks = Task.query.filter_by(user=current_user.username).all()
-    applied_tasks = Task.query.filter_by(tasker=current_user.username).all()
+    applications = Application.query.filter_by(applicant_username=current_user.username).all()
+    applied_tasks = [Task.query.get(app.task_id) for app in applications]
 
     return render_template('my_task.html', 
                            created=created_tasks, 
                            applied=applied_tasks, 
                            view=view, # Pass 'view' to HTML
                            user=current_user)
+
+@app.route('/view-applicants/<int:task_id>')
+def view_applicants(task_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+        
+    task = Task.query.get_or_404(task_id)
+    # Find all applications for this specific task
+    apps = Application.query.filter_by(task_id=task_id).all()
+    
+    return render_template('view_applicants.html', task=task, apps=apps)
 
 if __name__ == '__main__':
     app.run(debug=True)
