@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Database Viewer</title>
+</head>
+<body>
+
+<h1>📦 Tasks</h1>
+<ul>
+  {% for t in tasks %}
+    <li>{{ t.id }} - {{ t.title }} - RM {{ t.price }} - {{ t.status }}</li>
+  {% endfor %}
+</ul>
+
+<h1>💰 Earnings</h1>
+<ul>
+  {% for e in earnings %}
+    <li>{{ e.id }} - {{ e.activity }} - RM {{ e.amount }}</li>
+  {% endfor %}
+</ul>
+
+<h1>⭐ Reviews</h1>
+<ul>
+  {% for r in reviews %}
+    <li>{{ r.id }} - Score: {{ r.score }}</li>
+  {% endfor %}
+</ul>
+
+</body>
+</html>

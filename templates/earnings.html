@@ -1,138 +1,123 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SideHustle Earnings</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-
-  <style>
-    .popup-page {
-      min-height: 100vh;
-      background: rgba(20, 27, 52, 0.18);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 30px;
-    }
-
-    .popup-card {
-      width: 760px;
-      max-width: 100%;
-      background: #ffffff;
-      border-radius: 18px;
-      padding: 28px;
-      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.16);
-      border: 1px solid #e8e8e8;
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-    }
-
-    .popup-title {
-      font-size: 28px;
-      font-weight: 700;
-      color: #222;
-      margin-bottom: 2px;
-    }
-
-    .earnings-table {
-      width: 100%;
-      border-collapse: collapse;
-      overflow: hidden;
-      border-radius: 12px;
-    }
-
-    .earnings-table th,
-    .earnings-table td {
-      padding: 16px 18px;
-      text-align: left;
-      border-bottom: 1px solid #e8ecf5;
-      font-size: 17px;
-    }
-
-    .earnings-table th {
-      background: #f5f7fc;
-      color: #334;
-      font-weight: 700;
-    }
-
-    .earnings-table td:last-child,
-    .earnings-table th:last-child {
-      text-align: right;
-      width: 170px;
-    }
-
-    .amount {
-      color: #4f5aa6;
-      font-weight: 700;
-    }
-
-    .back-wrap {
-      display: flex;
-      justify-content: flex-end;
-      margin-top: 4px;
-    }
-
-    .back-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 110px;
-      height: 44px;
-      padding: 0 20px;
-      border: 1.5px solid #cfd7ea;
-      border-radius: 8px;
-      background: #ffffff;
-      color: #2d3c6c;
-      text-decoration: none;
-      font-size: 18px;
-      font-weight: 600;
-    }
-
-    .back-btn:hover {
-      background: #f7f9ff;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SideHustle Earnings</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+    
+    <style>
+        /* 针对 Earnings 页面内容的微调 */
+        .earnings-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 30px;
+        }
+        .earnings-summary-row {
+            display: flex;
+            gap: 20px;
+        }
+        .summary-card-small {
+            background: white;
+            border-radius: 20px;
+            padding: 20px 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            min-width: 180px;
+        }
+        .history-card {
+            background: white;
+            border-radius: 25px;
+            padding: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px;
+            background: #f8faff;
+            border-radius: 15px;
+            margin-bottom: 15px;
+        }
+        .amount-text {
+            font-weight: bold;
+            color: #5a32a8;
+            font-size: 18px;
+        }
+    </style>
 </head>
+
 <body>
+    <div class="main-layout">
+        <aside class="sidebar">
+            <div class="logo">SideHustle</div>
+            <div class="sidebar-menu">
+                <a href="{{ url_for('marketplace') }}">🏠 Marketplace</a>
+                <a href="{{ url_for('dashboard') }}">📊 Dashboard</a>
+                <a href="#">👤 Profile</a>
+            </div>
+            <div class="help-link">❓ Help</div>
+        </aside>
 
-  <div class="popup-page">
-    <div class="popup-card">
-      <div class="popup-title">Earnings History</div>
+        <div class="content-wrapper">
+            <header class="top-nav">
+                <div class="nav-icons">
+                    <span class="welcome-text">Hello, <strong>{{ username if username else 'Qing' }}</strong></span>
+                    <span class="bell-icon" style="color: white; font-size: 20px; margin-right: 10px;">🔔</span>
+                    <div class="profile-circle"></div>
+                </div>
+            </header>
 
-      <table class="earnings-table">
-        <thead>
-          <tr>
-            <th>Activity</th>
-            <th>Amount</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Delivery task completed</td>
-            <td class="amount">+RM 25</td>
-          </tr>
-          <tr>
-            <td>Helper service booking</td>
-            <td class="amount">+RM 18</td>
-          </tr>
-          <tr>
-            <td>Marketplace order finished</td>
-            <td class="amount">+RM 30</td>
-          </tr>
-          <tr>
-            <td>Extra side job payment</td>
-            <td class="amount">+RM 22</td>
-          </tr>
-        </tbody>
-      </table>
+            <main class="main-content">
+                <div class="earnings-header">
+                    <div class="title-section">
+                        <h1 style="font-size: 32px; font-weight: 800;">Earnings</h1>
+                        <p style="color: #666;">Track all your completed work payments in one place.</p>
+                    </div>
 
-      <div class="back-wrap">
-        <a href="/dashboard" class="back-btn">Back</a>
-      </div>
+                    <div class="earnings-summary-row">
+                        <div class="summary-card-small">
+                            <span style="color: #999; font-size: 14px;">Total Records</span>
+                            <h2 style="font-size: 28px; color: #5a32a8;">{{ earnings_list|length }}</h2>
+                        </div>
+                        <div class="summary-card-small">
+                            <span style="color: #999; font-size: 14px;">Total Credit</span>
+                            <h2 style="font-size: 28px; color: #5a32a8;">RM {{ '%.0f'|format(total_credit) }}</h2>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="history-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                        <h2 style="font-size: 24px;">Earnings History</h2>
+                        <span style="background: #f0f0f0; padding: 5px 15px; border-radius: 20px; font-size: 12px; color: #888;">
+                            Loaded from database / demo
+                        </span>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; font-weight: bold; padding: 0 20px 10px; color: #666;">
+                        <span>Activity</span>
+                        <span>Amount</span>
+                    </div>
+
+                    <div class="history-list">
+                        {% for earning in earnings_list %}
+                        <div class="history-item">
+                            <div>
+                                <div style="font-weight: 600;">{{ earning.activity }}</div>
+                                <div style="font-size: 12px; color: #999;">Record ID: {{ earning.id }}</div>
+                            </div>
+                            <div class="amount-text">+RM {{ '%.0f'|format(earning.amount) }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <div style="text-align: right; margin-top: 20px;">
+                        <a href="{{ url_for('dashboard') }}" style="text-decoration: none; color: #666; font-weight: bold; border: 1px solid #ccc; padding: 10px 20px; border-radius: 10px;">Back</a>
+                    </div>
+                </div>
+            </main>
+        </div>
     </div>
-  </div>
-
 </body>
 </html>
