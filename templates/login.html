@@ -6,6 +6,7 @@
     </head>
 <body>
     <div class="left-branding">
+        <img src="{{ url_for('static', filename='SideHustle_logo4.png') }}" class="brand-logo" alt="Logo">
         <div>
             <h1>SideHustle</h1>
         </div>
@@ -24,7 +25,7 @@
         </h2>
         <form action="{{ url_for('login') }}" method="POST">
             <div class="input-container">
-                <input type="email" name="email" placeholder="EMAIL ADDRESS" class="modern-input" required>
+                <input type="email" name="email" placeholder="EMAIL ADDRESS" class="modern-input" style="text-transform: lowercase;"  pattern=".*@student\.mmu\.edu\.my" title="Please use your official MMU student email (@student.mmu.edu.my)" required>
                 <input type="password" name="password" placeholder="Password" class="modern-input" required>
             </div>
 
