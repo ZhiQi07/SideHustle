@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat - {{ task.title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        #chat-box { height: 400px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; background: #f9f9f9; }
+        .message { margin-bottom: 8px; padding: 5px 10px; border-radius: 5px; }
+        .my-msg { background: #dcf8c6; text-align: right; }
+        .others-msg { background: #fff; border: 1px solid #eee; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Chatting about: {{ task.title }}</h2>
+        <p>User: <strong>{{ user.username }}</strong></p>
+
+        <div id="chat-box">
+            </div>
+
+        <div class="input-area">
+            <input type="text" id="message-input" placeholder="Type a message..." style="width: 80%;">
+            <button id="send-btn">Send</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    
+    <script>
+        // 定义一些变量给 js file 用
+        const ROOM_ID = "{{ task.id }}";
+        const USERNAME = "{{ user.username }}";
+    </script>
+    <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+</body>
+</html>

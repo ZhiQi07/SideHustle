@@ -3,6 +3,11 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import func, text
 import os
 import random
+from flask_socketio import SocketIO, emit, join_room
+
+# 初始化 SocketIO
+# cors_allowed_origins="*" 是为了防止调试时出现跨域错误
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 
 app = Flask(__name__)
@@ -44,6 +49,20 @@ class Task(db.Model):
     urgent = db.Column(db.Boolean, default=False)
     deadline = db.Column(db.String(50))
     capacity = db.Column(db.Integer, default=1)
+    tasker = db.Column(db.String(50)) # Stores the username of the person hired
+    progress = db.Column(db.Integer, default=0) # Stores 0, 25, 50, 75, or 100
+
+    def get_applicant_count(self):
+        # This counts how many applications have this task's ID
+        return Application.query.filter_by(task_id=self.id).count()
+
+class Application(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    task_id = db.Column(db.Integer, db.ForeignKey('task.id'), nullable=False)
+    applicant_username = db.Column(db.String(50), nullable=False)
+    intro = db.Column(db.Text)
+    reason = db.Column(db.Text)
+    status = db.Column(db.String(20), default='Pending')
 
 
 class Earning(db.Model):
@@ -185,6 +204,18 @@ with app.app_context():
 # ROUTES
 # =========================
 
+
+@app.route('/chat/<int:task_id>')
+def chat(task_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    task = Task.query.get_or_404(task_id)
+    current_user = User.query.get(session['user_id'])
+    
+    return render_template('chat.html', task=task, user=current_user)
+
+
 # LOGIN
 @app.route('/', methods=['GET', 'POST'])
 def login():
@@ -231,24 +262,18 @@ def signup():
 # MARKETPLACE
 @app.route('/marketplace')
 def marketplace():
-    query = request.args.get('q', '').strip()
-    demo_mode = use_demo_data()
+    query = request.args.get('q')
+    category = request.args.get('cat')
 
-    if demo_mode:
-        all_tasks = get_demo_tasks()
+    tasks_filter = Task.query
 
-        if query:
-            all_tasks = [
-                task for task in all_tasks
-                if query.lower() in task["title"].lower() or query.lower() in task["description"].lower()
-            ]
-    else:
-        if query:
-            all_tasks = Task.query.filter(
-                (Task.title.contains(query)) | (Task.description.contains(query))
-            ).all()
-        else:
-            all_tasks = Task.query.all()
+    if query:
+        tasks_filter = tasks_filter.filter((Task.title.contains(query)) | (Task.description.contains(query)))
+    
+    if category:
+        tasks_filter = tasks_filter.filter(Task.category == category)
+
+    all_tasks = tasks_filter.all()
 
     current_user = None
     if 'user_id' in session:
@@ -343,6 +368,11 @@ def task_tracking():
 # POST TASK
 @app.route('/post', methods=['GET', 'POST'])
 def post_task():
+    # 1. Safety Check: Make sure the user is actually logged in
+    if 'user_id' not in session:
+        flash("Please login to post a task!")
+        return redirect(url_for('login'))
+
     if request.method == 'POST':
         capacity_value = request.form.get('capacity')
 
@@ -393,8 +423,22 @@ def apply(task_id):
         return render_template('apply.html', task=task)
 
     task = Task.query.get_or_404(task_id)
+    current_user = User.query.get(session['user_id'])
+
     if request.method == 'POST':
+        # Create a new Application record in the database
+        new_app = Application(
+            task_id=task.id,
+            applicant_username=current_user.username,
+            intro=request.form.get('intro'),
+            reason=request.form.get('reason')
+        )
+        db.session.add(new_app)
+        db.session.commit()
+        
+        flash("Application submitted successfully!")
         return redirect(url_for('marketplace'))
+
     return render_template('apply.html', task=task)
 
 
@@ -532,5 +576,53 @@ def logout():
 # =========================
 # RUN
 # =========================
+@app.route('/my_task')
+def my_task():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    current_user = User.query.get(session['user_id'])
+    
+    # NEW: Get the 'view' from the URL. Default is 'created'
+    view = request.args.get('view', 'created')
+
+    # Fetch data same as before
+    created_tasks = Task.query.filter_by(user=current_user.username).all()
+    applications = Application.query.filter_by(applicant_username=current_user.username).all()
+    applied_tasks = [Task.query.get(app.task_id) for app in applications]
+
+    return render_template('my_task.html', 
+                           created=created_tasks, 
+                           applied=applied_tasks, 
+                           view=view, # Pass 'view' to HTML
+                           user=current_user)
+
+@app.route('/view-applicants/<int:task_id>')
+def view_applicants(task_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+        
+    task = Task.query.get_or_404(task_id)
+    # This searches the Application table for any record matching this task's ID
+    apps = Application.query.filter_by(task_id=task_id).all()
+    
+    return render_template('view_applicants.html', task=task, apps=apps)
+
+
+@socketio.on('join')
+def on_join(data):
+    room = data['room']
+    join_room(room)
+    print(f"用户进入了房间: {room}")
+
+@socketio.on('send_message')
+def handle_send_message(data):
+    room = data['room']
+    # 发送消息给同一个房间（room）里的所有人
+    emit('receive_message', data, room=room)
+
+
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    # 这样写
+    socketio.run(app, debug=True, port=8000)

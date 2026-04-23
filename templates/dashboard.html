@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SideHustle Dashboard</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
 </head>
 <body>
     <div class="main-layout">
@@ -13,6 +14,7 @@
             <div class="sidebar-menu">
                 <a href="{{ url_for('marketplace') }}">🏠 Marketplace</a>
                 <a href="{{ url_for('dashboard') }}" class="active-link">📊 Dashboard</a>
+                <a href="{{ url_for('my_task') }}">📋 My Task</a>
                 <a href="#">👤 Profile</a>
             </div>
             <div class="help-link">❓ Help</div>
@@ -20,12 +22,12 @@
 
         <div class="content-wrapper">
             <header class="top-nav">
-    <div class="nav-icons">
-        <span class="welcome-text">Hello, <strong>{{ username if username else 'Qing' }}</strong></span>
-        <span class="bell-icon" style="font-size: 20px; cursor: pointer;">🔔</span>
-        <div class="profile-circle"></div>
-          </div>
-      </header>
+                <div class="nav-icons">
+                    <span class="welcome-text">Hello, <strong>{{ username if username else 'Qing' }}</strong></span>
+                    <span class="bell-icon" style="font-size: 20px; cursor: pointer;">🔔</span>
+                    <div class="profile-circle"></div>
+                </div>
+            </header>
 
             <main class="main-content">
                 <div class="cards-row">
@@ -33,61 +35,45 @@
                         <div class="summary-card">
                             <div class="card-title">Credit 💵</div>
                             <div class="card-value">
-                                  RM {{ total_credit if total_credit else 0 }}
-                              </div>
-                            <div class="card-menu">...</div>
+                                RM {{ total_credit if total_credit else 0 }}
+                            </div>
                         </div>
                     </a>
 
                     <div class="summary-card">
                         <div class="card-title">User Rating</div>
                         <div class="card-value">
-                                ⭐ {{ average_rating }} / 5.0
-                            </div>
+                            ⭐ {{ average_rating }} / 5.0
+                        </div>
                     </div>
 
                     <div class="summary-card">
                         <div class="card-title">Tasks Done</div>
-                        <div class="card-subtext">Welldone! You have done 5 tasks</div>
+                        <div class="card-value">{{ tasks_done }}</div>
+                        <div class="card-subtext">Tasks completed successfully!</div>
                     </div>
                 </div>
 
                 <div class="tasks-tracking-section">
                     <h2 class="tracking-section-title">Tasks Tracking 📈</h2>
                     <div class="tracking-list-wrapper">
-                        
-                        <div class="tracking-row" onclick="openTaskPopup('Arrange table in room C-206', '67%', 'In Progress', '20 April 2026')">
+                        {% for item in tracking_list %}
+                        <div class="tracking-row" onclick="openTaskPopup('{{ item.task_title }}', '{{ item.progress }}%', 'In Progress', '{{ item.due_date }}')">
                             <div class="tracking-progress-side">
-                                <div class="tracking-progress-box">
+                                <div class="tracking-progress-inline">
                                     <div class="tracking-progress-bar">
-                                        <div class="tracking-progress-fill" style="width: 67%;"></div>
+                                        <div class="tracking-progress-fill" style="width: {{ item.progress }}%;"></div>
                                     </div>
-                                    <span class="tracking-percent">67%</span>
+                                    <span class="tracking-percent">{{ item.progress }}%</span>
                                 </div>
-                                <div class="due-date">due date</div>
+                                <div class="due-date">Due: {{ item.due_date }}</div>
                             </div>
                             <div class="tracking-info-box">
-                                Arrange table in room C-206
+                                {{ item.task_title }}
                             </div>
                             <div class="tracking-menu-btn">⋮</div>
                         </div>
-
-                        <div class="tracking-row" onclick="openTaskPopup('Edit club promo video', '80%', 'Pending Review', '24 April 2026')">
-                            <div class="tracking-progress-side">
-                                <div class="tracking-progress-box">
-                                    <div class="tracking-progress-bar">
-                                        <div class="tracking-progress-fill" style="width: 80%;"></div>
-                                    </div>
-                                    <span class="tracking-percent">80%</span>
-                                </div>
-                                <div class="due-date">due date</div>
-                            </div>
-                            <div class="tracking-info-box">
-                                Edit club promo video
-                            </div>
-                            <div class="tracking-menu-btn">⋮</div>
-                        </div>
-
+                        {% endfor %}
                     </div>
                 </div>
             </main>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="main-layout">
+        <div class="sidebar">
+            <div class="sidebar-top">
+                <h2>SideHustle</h2>
+                <div class="sidebar-menu">
+                    <a href="{{ url_for('marketplace') }}">🏠 Marketplace</a>
+                    <a href="/dashboard">📊 Dashboard</a>
+                    <a href="{{ url_for('my_task') }}">📋 My Task</a>
+                    <a href="#">👤 Profile</a>
+                    <a href="{{ url_for('chat', task_id=task.id) }}">Chat with Tasker</a>
+                </div>
+            </div>
+            <div class="sidebar-bottom">
+                <a href="#" class="menu-item">❓ Help</a>
+            </div>
+        </div>
+
+        <div class="top-nav">
+            <div class="nav-icons">
+                <span>🔔</span>
+                <div class="profile-circle"></div>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="task-tabs">
+                <a href="{{ url_for('my_task', view='created') }}" 
+                class="tab-btn {% if view == 'created' %}active{% endif %}">Created Tasks</a>
+                
+                <a href="{{ url_for('my_task', view='applied') }}" 
+                class="tab-btn {% if view == 'applied' %}active{% endif %}">Applied Tasks</a>
+            </div>
+
+            <div class="task-grid">
+                {% if view == 'created' %}
+                    {% for task in created %}
+                        <div class="card">
+                            <div class="card-header">
+                                <span class="tag">{{ task.category }}</span>
+                                <span class="status-text">{{ task.status }}</span>
+                            </div>
+
+                            <h3>{{ task.title }}</h3>
+                            <p style="color: #666; font-size: 14px; margin-top: 5px;">
+                                {{ task.description }}
+                            </p>
+                            
+                            <div class="card-footer" style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;">
+                                <div style="display: flex; align-items: center; gap: 5px;">
+                                    <span>👥</span>
+                                    <strong>{{ task.get_applicant_count() }}</strong> applicants
+                                </div>
+
+                                <a href="{{ url_for('view_applicants', task_id=task.id) }}" class="btn-outline">
+                                    Review Applicants →
+                                </a>
+                            </div>
+                        </div>
+                    {% endfor %}
+
+                {% elif view == 'applied' %}
+                    {% for task in applied %}
+                        <div class="card">
+                            <h3>{{ task.title }}</h3>
+                            <p>Progress: {{ task.progress }}%</p>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+            </div>
+        </div>
+    </div>
+</body>
+</html>
