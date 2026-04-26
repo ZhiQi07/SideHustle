@@ -30,14 +30,17 @@
             {% else %}
                 <div style="display: flex; flex-direction: column; gap: 20px;">
                     {% for app in apps %}
-                    <div class="card" style="min-height: auto;">
-                        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
-                            <div class="profile-circle" style="background: #5a32a8; width: 40px; height: 40px;"></div>
-                            <div>
-                                <h3 style="margin: 0;">{{ app.applicant_username }}</h3>
-                                <span style="font-size: 12px; color: #888;">Status: {{ app.status }}</span>
+                        <div class="card" style="min-height: auto;">
+                            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+                                <div class="profile-circle" style="background: #5a32a8; width: 40px; height: 40px;"></div>
+                                
+                                <div>
+                                    <h3 style="margin: 0;">{{ app.applicant_username }}</h3>
+                                    <span style="font-size: 12px; color: {% if app.status == 'Rejected' %}#d32f2f{% elif app.status == 'Hired' %}#2e7d32{% else %}#888{% endif %};">
+                                        Status: <strong>{{ app.status }}</strong>
+                                    </span>
+                                </div>
                             </div>
-                        </div>
 
                         <div style="background: #f8f9fa; padding: 15px; border-radius: 15px; margin-bottom: 10px;">
                             <strong>Introduction:</strong>
@@ -51,7 +54,7 @@
 
                     <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px;">
                         
-                        <a href="#" class="btn-reject">Reject User</a>
+                        <a href="{{ url_for('reject_applicant', app_id=app.id) }}" class="btn-reject">Reject User</a>
 
                         <a href="{{ url_for('hire_applicant', app_id=app.id) }}" class="btn-hire">Hire User</a>
 

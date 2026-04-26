@@ -88,10 +88,45 @@
                     {% endfor %}
 
                 {% elif view == 'applied' %}
-                    {% for task in applied %}
+                    {% for app in applied %}
+                        {% set task = Task.query.get(app.task_id) %}
                         <div class="card">
+                            <div class="card-header">
+                                <span class="tag">{{ task.category }}</span>
+                                <span class="tag" style="background: {% if app.status == 'Hired' %}#e8f5e9; color: #2e7d32;{% elif app.status == 'Rejected' %}#ffebee; color: #c62828;{% else %}#fff3e0; color: #ef6c00;{% endif %}">
+                                    {{ app.status | upper }}
+                                </span>
+                            </div>
+
                             <h3>{{ task.title }}</h3>
-                            <p>Progress: {{ task.progress }}%</p>
+                            <p style="color: #666; font-size: 14px; margin-top: 5px;">Client: <strong>{{ task.user }}</strong></p>
+
+                            {% if app.status == 'Hired' %}
+                                <div class="card-footer" style="flex-direction: column; align-items: flex-start; gap: 15px; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;">
+                                    
+                                    <div style="width: 100%;">
+                                        <div class="progress-header">
+                                            <span>Your Progress</span>
+                                            <span class="progress-percent">{{ task.progress }}%</span>
+                                        </div>
+                                        <div class="progress-bar">
+                                            <div class="progress-fill" style="width: {{ task.progress }}%;"></div>
+                                        </div>
+                                    </div>
+
+                                    <div style="display: flex; gap: 10px; width: 100%;">
+                                        <a href="#" class="btn-outline" style="flex: 1; text-align: center; padding: 10px;">
+                                            Update Progress
+                                        </a>
+
+                                        <a href="#" class="btn-primary btn-message" style="margin-top: 0; flex: 1; font-size: 12px; padding: 10px;">💬 Message Client</a>
+                                    </div>
+                                </div>
+                            {% elif app.status == 'Rejected' %}
+                                <p style="color: #d32f2f; font-size: 13px; margin-top: 15px;">Sorry, the client has chosen another tasker for this job.</p>
+                            {% else %}
+                                <p style="color: #666; font-size: 13px; margin-top: 15px;">Your application is being reviewed. Check back soon!</p>
+                            {% endif %}
                         </div>
                     {% endfor %}
                 {% endif %}

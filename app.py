@@ -180,20 +180,19 @@ def my_task():
         return redirect(url_for('login'))
 
     current_user = User.query.get(session['user_id'])
-    
-    # NEW: Get the 'view' from the URL. Default is 'created'
     view = request.args.get('view', 'created')
 
-    # Fetch data same as before
     created_tasks = Task.query.filter_by(user=current_user.username).all()
-    applications = Application.query.filter_by(applicant_username=current_user.username).all()
-    applied_tasks = [Task.query.get(app.task_id) for app in applications]
+    
+    # FIX: Send the Application objects so we can see the status (Pending/Hired/Rejected)
+    my_applications = Application.query.filter_by(applicant_username=current_user.username).all()
 
     return render_template('my_task.html', 
                            created=created_tasks, 
-                           applied=applied_tasks, 
-                           view=view, # Pass 'view' to HTML
-                           user=current_user)
+                           applied=my_applications, # This is now a list of Applications
+                           view=view, 
+                           user=current_user,
+                           Task=Task)
 
 @app.route('/view-applicants/<int:task_id>')
 def view_applicants(task_id):
@@ -226,6 +225,43 @@ def hire_applicant(app_id):
     
     flash(f"You have hired {application.applicant_username}!")
     return redirect(url_for('my_task', view='created'))
+
+@app.route('/reject_applicant/<int:app_id>')
+def reject_applicant(app_id):
+    # 1. Security: Ensure the user is logged in
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    # 2. Find the application using its ID
+    application = Application.query.get_or_404(app_id)
+    
+    # 3. Update the status to 'Rejected'
+    application.status = 'Rejected'
+    
+    # 4. Save the change to the database
+    db.session.commit()
+
+    flash("Applicant has been rejected.")
+    
+    # 5. Redirect back to the list so you can see the update
+    return redirect(url_for('view_applicants', task_id=application.task_id))
+
+@app.route('/update_progress/<int:task_id>', methods=['POST'])
+def update_progress(task_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    task = Task.query.get_or_404(task_id)
+    
+    # Get the new progress value from the dropdown
+    new_progress = request.form.get('progress')
+    
+    if new_progress:
+        task.progress = int(new_progress)
+        db.session.commit()
+        flash(f"Progress updated to {new_progress}%!")
+        
+    return redirect(url_for('my_task', view='applied'))
 
 if __name__ == '__main__':
     app.run(debug=True)
