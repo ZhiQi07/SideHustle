@@ -50,15 +50,39 @@
                                 {{ task.description }}
                             </p>
                             
-                            <div class="card-footer" style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;">
-                                <div style="display: flex; align-items: center; gap: 5px;">
-                                    <span>👥</span>
-                                    <strong>{{ task.get_applicant_count() }}</strong> applicants
-                                </div>
+                            <div class="card-footer" style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;">  
+                                {% if not task.tasker %}
+                                    <div style="display: flex; align-items: center; gap: 5px;">
+                                        <span>👥</span>
+                                        <strong>{{ task.get_applicant_count() }}</strong> applicants
+                                    </div>
+                                    <a href="{{ url_for('view_applicants', task_id=task.id) }}" class="btn-outline">Review Applicants →</a>
+                                
+                                {% else %}
+                                    <div style="width: 100%;">
+                                        <div class="hired-info-box">
+                                            <div class="user-meta">
+                                                <div class="mini-profile"></div> 
+                                                <span>Hired: <strong>{{ task.tasker }}</strong></span>
+                                            </div>
+                                            <a href="#" class="btn-outline" style="padding: 5px 12px; font-size: 11px;">Profile</a>
+                                        </div>
 
-                                <a href="{{ url_for('view_applicants', task_id=task.id) }}" class="btn-outline">
-                                    Review Applicants →
-                                </a>
+                                        <div class="progress-header">
+                                            <span>Project Progress</span>
+                                            <span class="progress-percent">{{ task.progress }}%</span>
+                                        </div>
+                                        
+                                        <div class="progress-bar">
+                                            <div class="progress-fill" style="width: {{ task.progress | default(0) }}%;"></div>
+                                        </div>
+
+                                        <a href="#" class="btn-primary btn-message">
+                                            💬 Message Helper
+                                        </a>
+                                    </div>
+                                {% endif %}
+
                             </div>
                         </div>
                     {% endfor %}

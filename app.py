@@ -206,6 +206,26 @@ def view_applicants(task_id):
     
     return render_template('view_applicants.html', task=task, apps=apps)
 
+@app.route('/hire-applicant/<int:app_id>')
+def hire_applicant(app_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    # 1. Find the application and the task
+    application = Application.query.get_or_404(app_id)
+    task = Task.query.get(application.task_id)
+
+    # 2. Update the Task: Hire the user and change status
+    task.status = 'Assigned'
+    task.tasker = application.applicant_username
+    
+    # 3. Update the Application status
+    application.status = 'Hired'
+    
+    db.session.commit()
+    
+    flash(f"You have hired {application.applicant_username}!")
+    return redirect(url_for('my_task', view='created'))
 
 if __name__ == '__main__':
     app.run(debug=True)
