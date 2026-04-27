@@ -5,10 +5,12 @@
 </head>
 <body>
 
+
+
 <h1>📦 Tasks</h1>
 <ul>
   {% for t in tasks %}
-    <li>{{ t.id }} - {{ t.title }} - RM {{ t.price }} - {{ t.status }}</li>
+   <li>ID: {{ t.id }} | Title: {{ t.title }} | User: <strong>{{ t.user }}</strong></li>
   {% endfor %}
 </ul>
 

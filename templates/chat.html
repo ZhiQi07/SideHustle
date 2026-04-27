@@ -1,36 +1,163 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
     <title>Chat - {{ task.title }}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
-        #chat-box { height: 400px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; background: #f9f9f9; }
-        .message { margin-bottom: 8px; padding: 5px 10px; border-radius: 5px; }
-        .my-msg { background: #dcf8c6; text-align: right; }
-        .others-msg { background: #fff; border: 1px solid #eee; }
+        /* 聊天页面的专属简单样式 */
+        body { font-family: sans-serif; margin: 0; background-color: #f5f5f5; }
+        
+        .chat-header {
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            background: white;
+            border-bottom: 1px solid #ddd;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        #chat-box {
+            height: calc(100vh - 160px);
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .message {
+            max-width: 70%;
+            padding: 10px 15px;
+            border-radius: 15px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        /* 对方的消息：靠左，白色 */
+        .others-msg {
+            align-self: flex-start;
+            background-color: white;
+            border: 1px solid #eee;
+        }
+
+        /* 我的消息：靠右，浅绿色 */
+        .my-msg {
+            align-self: flex-end;
+            background-color: #dcf8c6;
+            text-align: right;
+        }
+
+        .input-area {
+            padding: 15px;
+            background: white;
+            display: flex;
+            gap: 10px;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        #message-input {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            outline: none;
+        }
+
+        .btn-send {
+            padding: 0 20px;
+            background: #4a148c;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h2>Chatting about: {{ task.title }}</h2>
-        <p>User: <strong>{{ user.username }}</strong></p>
 
-        <div id="chat-box">
-            </div>
-
-        <div class="input-area">
-            <input type="text" id="message-input" placeholder="Type a message..." style="width: 80%;">
-            <button id="send-btn">Send</button>
+    <div class="chat-header">
+        <a href="{{ url_for('my_task') }}" style="padding: 8px 18px; background: #eee; border-radius: 20px; color: #333; text-decoration: none; font-weight: bold; font-size: 13px;">
+            ← Back
+        </a>
+        <div>
+            <h2 style="margin: 0; font-size: 16px;">Chatting about: {{ task.title }}</h2>
+            <small style="color: #888;">User: <strong>{{ user.username }}</strong></small>
         </div>
     </div>
 
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-    
+    <div id="chat-box">
+        {% for m in history %}
+            <div class="message {% if m.sender == user.username %}my-msg{% else %}others-msg{% endif %}">
+                <strong>{{ 'Me' if m.sender == user.username else m.sender }}:</strong> {{ m.content }}
+            </div>
+        {% endfor %}
+    </div>
+
+    <div class="input-area">
+        <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off">
+        <button id="send-btn" class="btn-send">Send</button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <script>
-        // 定义一些变量给 js file 用
+        const socket = io();
         const ROOM_ID = "{{ task.id }}";
         const USERNAME = "{{ user.username }}";
+
+        const chatBox = document.getElementById('chat-box');
+        const messageInput = document.getElementById('message-input');
+        const sendBtn = document.getElementById('send-btn');
+
+        // 自动滚动到底部
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        // 加入房间
+        socket.emit('join', { room: ROOM_ID, username: USERNAME });
+
+        // 发送逻辑
+        function doSend() {
+            const msg = messageInput.value;
+            if (msg.trim() !== "") {
+                socket.emit('send_message', {
+                    room: ROOM_ID,
+                    username: USERNAME,
+                    message: msg
+                });
+                messageInput.value = "";
+            }
+        }
+
+        sendBtn.onclick = doSend;
+
+        // --- 这里就是你要的回车发送代码 ---
+        messageInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                doSend();
+            }
+        });
+
+        // 接收新消息
+        socket.on('receive_message', (data) => {
+            const msgDiv = document.createElement('div');
+            msgDiv.classList.add('message');
+            if (data.username === USERNAME) {
+                msgDiv.classList.add('my-msg');
+                msgDiv.innerHTML = `<strong>Me:</strong> ${data.message}`;
+            } else {
+                msgDiv.classList.add('others-msg');
+                msgDiv.innerHTML = `<strong>${data.username}:</strong> ${data.message}`;
+            }
+            chatBox.appendChild(msgDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        });
     </script>
-    <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
 </body>
 </html>

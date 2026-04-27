@@ -13,7 +13,7 @@
                     <a href="/dashboard">📊 Dashboard</a>
                     <a href="{{ url_for('my_task') }}">📋 My Task</a>
                     <a href="#">👤 Profile</a>
-                    <a href="{{ url_for('chat', task_id=task.id) }}">Chat with Tasker</a>
+                    
                 </div>
             </div>
             <div class="sidebar-bottom">
@@ -60,6 +60,7 @@
                                 <a href="{{ url_for('view_applicants', task_id=task.id) }}" class="btn-outline">
                                     Review Applicants →
                                 </a>
+                                <a href="{{ url_for('chat', task_id=task.id) }}" class="btn-chat">💬 Chat</a>
                             </div>
                         </div>
                     {% endfor %}
@@ -69,6 +70,12 @@
                         <div class="card">
                             <h3>{{ task.title }}</h3>
                             <p>Progress: {{ task.progress }}%</p>
+                            
+                            <div class="card-footer" style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px;">
+                                <a href="{{ url_for('chat', task_id=task.id) }}" class="btn-chat" style="text-decoration: none; color: #4a148c; font-weight: bold;">
+                                    💬 Chat with Tasker
+                                </a>
+                            </div>
                         </div>
                     {% endfor %}
                 {% endif %}
