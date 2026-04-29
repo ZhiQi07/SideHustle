@@ -4,13 +4,13 @@ body {
     margin: 0;
     justify-content: center;
     align-items: center;
-    background: linear-gradient(150deg, #9b73d6, #4f5aa6);
+    background: linear-gradient(150deg, #c8a3ff, #7182ee);
     font-family: 'Arial', sans-serif;
 }
 
 .left-branding {
     border-radius: 30px;
-    background-color: #bc9eea;
+    background-color: #f1e7fe;
     padding: 30px; 
     width: 450px;
     height: 500px;
@@ -18,7 +18,7 @@ body {
     align-items: center;
     flex-direction: column;
     justify-content: center;
-    color: white; 
+    color:#795fa2; 
     font-weight: bold;
     z-index: 2; 
     position: relative;
@@ -34,7 +34,7 @@ body {
 
 .right-login {
     border-radius: 30px;
-    background-color: rgba(255, 255, 255, 0.7);
+    background-color: rgba(244, 233, 255, 0.7);
     backdrop-filter: blur(10px);
     border: 2px solid #ffffff00;
     padding: 40px; 

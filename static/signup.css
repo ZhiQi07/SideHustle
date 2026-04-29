@@ -15,7 +15,8 @@ body {
     border: 2px solid #ffffff00;
     padding: 40px; 
     width: 450px;
-    height: 500px;
+    height: auto;
+    min-height: 580px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -50,6 +51,14 @@ body {
     text-transform: uppercase;
 }
 
+.select-input {
+    color: #000;
+    cursor: pointer;
+}
+
+.select-input:invalid {
+    color: #9e9e9e;
+}
 
 .password-check {
     list-style-type: none;

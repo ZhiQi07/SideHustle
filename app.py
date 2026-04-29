@@ -1,8 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from flask_sqlalchemy import SQLAlchemy
 import os
-from flask_mail import Mail, Message
-import random
+import re
 
 app = Flask(__name__)
 app.secret_key = "mmu_secret_key" #Login Sessions
@@ -12,13 +11,6 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'database.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-app.config['MAIL_PORT'] = 587
-app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'your-email@gmail.com' # Your email
-app.config['MAIL_PASSWORD'] = 'your-app-password'    # Your App Password
-mail = Mail(app)
-
 db = SQLAlchemy(app)
 
 # The User Model (LSC)
@@ -27,6 +19,8 @@ class User(db.Model):
     email = db.Column(db.String(150), unique=True, nullable=False)
     username = db.Column(db.String(150), nullable=False)
     password = db.Column(db.String(150), nullable=False)
+    security_question = db.Column(db.String(200), nullable=False)
+    security_answer = db.Column(db.String(200), nullable=False)
     skills = db.Column(db.Text, default="No skills listed") #Profile Setup feature
     is_admin = db.Column(db.Boolean, default=False) #Admin Dashboard feature
 
@@ -78,6 +72,8 @@ def signup():
         username = request.form.get('username')
         password = request.form.get('password')
         confirm_password = request.form.get('confirm_password')
+        sec_question = request.form.get('security_question')
+        sec_answer = request.form.get('security_answer').strip().lower()
 
         user_exists = User.query.filter_by(email=email).first()
         if user_exists:
@@ -95,56 +91,82 @@ def signup():
         new_user = User(
             email=email,
             username=username,
-            password=password
+            password=password,
+            security_question=sec_question,
+            security_answer=sec_answer
         )
         db.session.add(new_user)
         db.session.commit()
         return redirect(url_for('login'))
     return render_template('signup.html')
 
-@app.route('/forgot', methods=['GET', 'POST'])
+@app.route('/forgot-password', methods=['GET', 'POST'])
 def forgot_password():
     if request.method == 'POST':
         email = request.form.get('email').lower()
-        
-        # Verify if the email is in MMU database
-        user = User.query.filter_by(email=email).first()
-        
-        if user:
-            # 1. Generate a random 5-digit code
-            otp = str(random.randint(10000, 99999))
-            session['reset_otp'] = otp # Save code in session to check later
-            session['reset_email'] = email
 
-            # 2. Send the actual email
-            msg = Message('SideHustle Password Reset Code',
-                          sender='your-email@gmail.com',
-                          recipients=[email])
-            msg.body = f"Your verification code is: {otp}"
-            mail.send(msg)
-
-            return render_template('forgot.html', show_modal=True) 
-        else:
-            flash("Email not found in our records!")
+        if not email.endswith('@student.mmu.edu.my'):
+            flash("Only MMU student emails are allowed!")
             return redirect(url_for('forgot_password'))
-            
-    return render_template('forgot.html', show_modal=False)
+        
+        user = User.query.filter_by(email=email).first()
+        if user:
+            session['reset_email'] = email
+            return render_template('forgot_password.html', show_modal=True, question=user.security_question)
+        else:
+            flash("Email not found!")
+    return render_template('forgot_password.html', show_modal=False)
 
-@app.route('/verify_code', methods=['POST'])
-def verify_code():
-    # 3. Combine the 5 boxes into one string
-    user_code = (request.form.get('d1') + request.form.get('d2') + 
-                 request.form.get('d3') + request.form.get('d4') + 
-                 request.form.get('d5'))
+@app.route('/verify-secret', methods=['POST'])
+def verify_secret():
+    email = session.get('reset_email')
+
+    if not email:
+        return redirect(url_for('forgot_password'))
     
-    # 4. Compare with the code we sent
-    if user_code == session.get('reset_otp'):
-        flash("Code verified! Check your email for the next steps.")
-        return redirect(url_for('login')) #need to change to reset password
+    user = User.query.filter_by(email=email).first()
+    answer = request.form.get('security_answer').strip().lower()
+
+    if answer == user.security_answer:
+        return redirect(url_for('reset_password_page'))
     else:
-        flash("Invalid code! Please try again.")
-        # Re-render with modal open if code is wrong
-        return render_template('forgot.html', show_modal=True)
+        flash("Incorrect answer. Please try again.")
+        # Re-render with the popup open if they get it wrong
+        return render_template('forgot_password.html', show_modal=True, question=user.security_question)
+    
+@app.route('/reset-password-page')
+def reset_password_page():
+    if 'reset_email' not in session:
+        return redirect(url_for('forgot_password'))
+    return render_template('reset_password.html')
+
+@app.route('/update-password', methods=['POST'])
+def update_password():
+    email = session.get('reset_email')
+    new_password = request.form.get('new_password')
+    confirm_password = request.form.get('confirm_new_password')
+
+    if not email:
+        return redirect(url_for('forgot_password'))
+    
+    password_pattern = r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d|.*[@$!%*?&]).{8,}$"
+    if not re.match(password_pattern, new_password):
+        flash("Password does not meet requirements!")
+        return redirect(url_for('reset_password_page'))
+
+    if new_password != confirm_password:
+        flash("Passwords do not match!")
+        return redirect(url_for('reset_password_page'))
+
+    user = User.query.filter_by(email=email).first()
+    if user:
+        user.password = new_password
+        db.session.commit()
+        session.pop('reset_email', None)
+        flash("Password updated! Please login with your new password.")
+        return redirect(url_for('login'))
+    
+    return redirect(url_for('forgot_password'))
 
 @app.route('/marketplace')
 def marketplace():
