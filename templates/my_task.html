@@ -2,6 +2,75 @@
 <html>
 <head>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* 弹窗面板样式 */
+        .progress-popover {
+            display: none;
+            position: absolute;
+            bottom: 75px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #f5f5f5;
+            border-radius: 15px;
+            padding: 15px;
+            width: 190px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            z-index: 1000;
+            border: 1px solid #eee;
+        }
+
+        /* 弹窗小三角箭头 */
+        .progress-popover::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -10px;
+            border-width: 10px;
+            border-style: solid;
+            border-color: #f5f5f5 transparent transparent transparent;
+        }
+
+        .popover-title {
+            font-size: 12px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .range-slider {
+            width: 100%;
+            margin: 10px 0;
+            cursor: pointer;
+        }
+
+        .confirm-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: #333;
+            cursor: pointer;
+            padding: 0;
+            transition: transform 0.2s;
+        }
+
+        .confirm-btn:hover {
+            transform: scale(1.2);
+            color: #2e7d32;
+        }
+        
+        .card-footer {
+            position: relative;
+        }
+
+        .check-link {
+            font-size: 10px;
+            color: #666;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
     <div class="main-layout">
@@ -10,10 +79,9 @@
                 <h2>SideHustle</h2>
                 <div class="sidebar-menu">
                     <a href="{{ url_for('marketplace') }}">🏠 Marketplace</a>
-                    <a href="/dashboard">📊 Dashboard</a>
+                    <a href="{{ url_for('dashboard') }}">📊 Dashboard</a>
                     <a href="{{ url_for('my_task') }}">📋 My Task</a>
                     <a href="#">👤 Profile</a>
-                    
                 </div>
             </div>
             <div class="sidebar-bottom">
@@ -45,43 +113,132 @@
                                 <span class="tag">{{ task.category }}</span>
                                 <span class="status-text">{{ task.status }}</span>
                             </div>
-
                             <h3>{{ task.title }}</h3>
-                            <p style="color: #666; font-size: 14px; margin-top: 5px;">
-                                {{ task.description }}
-                            </p>
-                            
-                            <div class="card-footer" style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;">
-                                <div style="display: flex; align-items: center; gap: 5px;">
-                                    <span>👥</span>
-                                    <strong>{{ task.get_applicant_count() }}</strong> applicants
-                                </div>
-
-                                <a href="{{ url_for('view_applicants', task_id=task.id) }}" class="btn-outline">
-                                    Review Applicants →
-                                </a>
-                                <a href="{{ url_for('chat', task_id=task.id) }}" class="btn-chat">💬 Chat</a>
+                            <p>{{ task.description }}</p>
+                            <div class="card-footer" style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px;">
+                                {% if not task.tasker %}
+                                    <a href="{{ url_for('view_applicants', task_id=task.id) }}" class="btn-outline">Review Applicants →</a>
+                                {% else %}
+                                    <div style="width: 100%;">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                            <span style="font-size: 12px; color: #4caf50;">Hired: <strong>{{ task.tasker }}</strong></span>
+                                            <span style="font-size: 12px; color: #666;">{{ task.progress }}%</span>
+                                        </div>
+                                        <div class="progress-bar" style="margin-bottom: 15px;">
+                                            <div class="progress-fill" style="width: {{ task.progress }}%;"></div>
+                                        </div>
+                                        <a href="{{ url_for('chat', task_id=task.id) }}" class="btn-primary" style="display: block; text-align: center; padding: 10px; text-decoration: none;">💬 Message Helper</a>
+                                    </div>
+                                {% endif %}
                             </div>
                         </div>
                     {% endfor %}
 
                 {% elif view == 'applied' %}
-                    {% for task in applied %}
-                        <div class="card">
-                            <h3>{{ task.title }}</h3>
-                            <p>Progress: {{ task.progress }}%</p>
-                            
-                            <div class="card-footer" style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px;">
-                                <a href="{{ url_for('chat', task_id=task.id) }}" class="btn-chat" style="text-decoration: none; color: #4a148c; font-weight: bold;">
-                                    💬 Chat with Tasker
-                                </a>
+                    {% for app in applied %}
+                        {% set task = Task.query.get(app.task_id) %}
+                        {% if task %}
+                            <div class="card">
+                                <div class="card-header">
+                                    <span class="tag">{{ task.category }}</span>
+                                    <span class="tag" style="background: {% if app.status == 'Hired' %}#e8f5e9; color: #2e7d32;{% elif app.status == 'Rejected' %}#ffebee; color: #c62828;{% else %}#fff3e0; color: #ef6c00;{% endif %}">
+                                        {{ app.status | upper }}
+                                    </span>
+                                </div>
+
+                                <h3>{{ task.title }}</h3>
+                                <p style="color: #666; font-size: 14px; margin-top: 5px;">Client: <strong>{{ task.user }}</strong></p>
+
+                                {% if app.status == 'Hired' %}
+                                    <div class="card-footer" style="flex-direction: column; align-items: flex-start; gap: 15px; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; position: relative;">
+                                        
+                                        <div style="width: 100%;">
+                                            <div class="progress-header">
+                                                <span>Your Progress</span>
+                                                <span class="progress-percent" id="display-percent-{{ task.id }}">{{ task.progress }}%</span>
+                                            </div>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill" id="fill-{{ task.id }}" style="width: {{ task.progress }}%;"></div>
+                                            </div>
+                                        </div>
+
+                                        <div style="display: flex; gap: 10px; width: 100%;">
+                                            {% if task.progress < 100 %}
+                                                <button type="button" class="btn-outline" style="flex: 1; text-align: center; padding: 10px; cursor: pointer;" 
+                                                        onclick="togglePop('{{ task.id }}')">Update Progress</button>
+
+                                                <div id="pop-{{ task.id }}" class="progress-popover">
+                                                    <span class="popover-title">Set Progress: <span id="val-{{ task.id }}">{{ task.progress }}%</span></span>
+                                                    
+                                                    <form action="{{ url_for('update_progress', task_id=task.id) }}" method="POST" onsubmit="return confirmSubmission('{{ task.id }}', {{ task.progress }})">
+                                                        <input type="range" name="progress" class="range-slider" id="slider-{{ task.id }}"
+                                                               min="0" max="100" step="10" value="{{ task.progress }}" 
+                                                               oninput="lockSlider('{{ task.id }}', {{ task.progress }}, this.value)">
+                                                        
+                                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+                                                            <span class="check-link" onclick="alert('Note: Progress can only move forward.')">Check it out</span>
+                                                            <button type="submit" class="confirm-btn">✓</button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            {% else %}
+                                                <a href="{{ url_for('rate_user', task_id=task.id, target_user=task.user) }}" class="btn-primary" style="flex: 1; text-align: center; background-color: #ff9800; border: none; margin-top: 0; font-size: 12px; padding: 10px;">⭐ Rate Client</a>
+                                            {% endif %}
+                                            <a href="{{ url_for('chat', task_id=task.id) }}" class="btn-primary btn-message" style="margin-top: 0; flex: 1; font-size: 12px; padding: 10px; text-align: center;">💬 Message Client</a>
+                                        </div>
+                                    </div>
+                                {% elif app.status == 'Rejected' %}
+                                    <p style="color: #d32f2f; font-size: 13px; margin-top: 15px;">Sorry, the client has chosen another tasker for this job.</p>
+                                {% else %}
+                                    <p style="color: #666; font-size: 13px; margin-top: 15px;">Your application is being reviewed. Check back soon!</p>
+                                {% endif %}
                             </div>
-                        </div>
+                        {% endif %} 
                     {% endfor %}
                 {% endif %}
+            </div> 
+        </div> 
+    </div> 
 
-            </div>
-        </div>
-    </div>
+    <script>
+    function togglePop(id) {
+        const pop = document.getElementById('pop-' + id);
+        if (pop.style.display === 'block') {
+            pop.style.display = 'none';
+        } else {
+            document.querySelectorAll('.progress-popover').forEach(p => p.style.display = 'none');
+            pop.style.display = 'block';
+        }
+    }
+
+    function lockSlider(id, originalVal, newVal) {
+        const slider = document.getElementById('slider-' + id);
+        const displaySpan = document.getElementById('val-' + id);
+        
+        if (parseInt(newVal) < parseInt(originalVal)) {
+            slider.value = originalVal;
+            displaySpan.innerText = originalVal + '%';
+        } else {
+            displaySpan.innerText = newVal + '%';
+        }
+    }
+
+    function confirmSubmission(id, originalVal) {
+        const slider = document.getElementById('slider-' + id);
+        const newVal = parseInt(slider.value);
+        
+        if (newVal < originalVal) {
+            alert("Bug Prevention: You cannot submit a lower progress value than the current one!");
+            return false;
+        }
+        return true;
+    }
+
+    window.onclick = function(event) {
+        if (!event.target.matches('.btn-outline') && !event.target.closest('.progress-popover')) {
+            document.querySelectorAll('.progress-popover').forEach(p => p.style.display = 'none');
+        }
+    }
+    </script>
 </body>
 </html>

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SideHustle Dashboard</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
 </head>
 <body>
     <div class="main-layout">
@@ -13,7 +13,7 @@
             <div class="logo">SideHustle</div>
             <div class="sidebar-menu">
                 <a href="{{ url_for('marketplace') }}">🏠 Marketplace</a>
-                <a href="{{ url_for('dashboard') }}" class="active-link">📊 Dashboard</a>
+                <a href="{{ url_for('dashboard') }}" class="active">📊 Dashboard</a>
                 <a href="{{ url_for('my_task') }}">📋 My Task</a>
                 <a href="#">👤 Profile</a>
             </div>
@@ -21,74 +21,80 @@
         </aside>
 
         <div class="content-wrapper">
-            <header class="top-nav">
-                <div class="nav-icons">
-                    <span class="welcome-text">Hello, <strong>{{ username if username else 'Qing' }}</strong></span>
-                    <span class="bell-icon" style="font-size: 20px; cursor: pointer;">🔔</span>
-                    <div class="profile-circle"></div>
+            <header class="top-nav" style="height: 80px; background-color: #5a32a8; display: flex; align-items: center; justify-content: flex-end; padding: 0 40px; color: white;">
+                <div class="nav-icons" style="display: flex; align-items: center; gap: 15px;">
+                    <span>Hello, <strong>{{ username if username else 'Qing' }}</strong></span>
+                    <span style="font-size: 20px; cursor: pointer;">🔔</span>
+                    <div class="profile-circle" style="width: 40px; height: 40px; background: white; border-radius: 50%;"></div>
                 </div>
             </header>
 
             <main class="main-content">
                 <div class="cards-row">
-                    <a href="{{ url_for('earnings') }}" style="text-decoration: none; color: inherit; flex: 1;">
-                        <div class="summary-card">
-                            <div class="card-title">Credit 💵</div>
-                            <div class="card-value">
-                                RM {{ total_credit if total_credit else 0 }}
-                            </div>
-                        </div>
-                    </a>
-
+                   <a href="{{ url_for('earnings') }}" style="text-decoration: none; color: inherit;">
+    <div class="summary-card">
+        <div class="card-title">Credit 💵</div>
+        <div class="card-value">RM {{ total_credit if total_credit is not none else '0.0' }}</div>
+        <!-- 提示用户可以点击 -->
+        <div style="font-size: 11px; color: #5a32a8; margin-top: 5px;">View History →</div>
+    </div>
+</a>
                     <div class="summary-card">
                         <div class="card-title">User Rating</div>
-                        <div class="card-value">
-                            ⭐ {{ average_rating }} / 5.0
-                        </div>
+                        <div class="card-value">⭐ {{ average_rating }} / 5.0</div>
                     </div>
-
                     <div class="summary-card">
                         <div class="card-title">Tasks Done</div>
-                        <div class="card-value">{{ tasks_done }}</div>
-                        <div class="card-subtext">Tasks completed successfully!</div>
+                        <div class="card-value">{{ tasks_done if tasks_done is not none else '0' }}</div>
                     </div>
                 </div>
 
-                <div class="tasks-tracking-section">
-                    <h2 class="tracking-section-title">Tasks Tracking 📈</h2>
-                    <div class="tracking-list-wrapper">
+                <h2 class="tracking-section-title">Tasks Tracking 📈</h2>
+                <div class="tracking-list-wrapper">
+                    {% if tracking_list %}
                         {% for item in tracking_list %}
-                        <div class="tracking-row" onclick="openTaskPopup('{{ item.task_title }}', '{{ item.progress }}%', 'In Progress', '{{ item.due_date }}')">
+                        <!-- 如果任务已完成，添加一个特殊的样式 (opacity 0.7) -->
+                        <div class="tracking-row" 
+                             style="{% if item.status == 'Completed' %}opacity: 0.75;{% endif %}"
+                             onclick="openTaskPopup('{{ item.title }}', '{{ item.progress }}%', '{{ item.status }}', '{{ item.deadline }}')">
+                            
                             <div class="tracking-progress-side">
                                 <div class="tracking-progress-inline">
                                     <div class="tracking-progress-bar">
-                                        <div class="tracking-progress-fill" style="width: {{ item.progress }}%;"></div>
+                                        <!-- 如果完成，进度条颜色变绿 (#2e7d32) -->
+                                        <div class="tracking-progress-fill" 
+                                             style="width: {{ item.progress }}%; {% if item.status == 'Completed' %}background-color: #2e7d32;{% endif %}"></div>
                                     </div>
                                     <span class="tracking-percent">{{ item.progress }}%</span>
                                 </div>
-                                <div class="due-date">Due: {{ item.due_date }}</div>
+                                <div class="due-date">
+                                    {% if item.status == 'Completed' %}
+                                        ✅ Finished
+                                    {% else %}
+                                        Due: {{ item.deadline if item.deadline else 'Not set' }}
+                                    {% endif %}
+                                </div>
                             </div>
-                            <div class="tracking-info-box">
-                                {{ item.task_title }}
-                            </div>
+                            <div class="tracking-info-box">{{ item.title }}</div>
                             <div class="tracking-menu-btn">⋮</div>
                         </div>
                         {% endfor %}
-                    </div>
+                    {% else %}
+                        <p style="text-align: center; color: #999; padding: 40px;">No tasks found.</p>
+                    {% endif %}
                 </div>
             </main>
         </div>
     </div>
 
+    <!-- Popup 弹窗部分 -->
     <div class="tracking-popup-overlay" id="popupOverlay">
         <div class="tracking-popup">
-            <h3 style="margin-bottom: 20px; font-size: 22px;">Task Information</h3>
-            <div class="popup-body" style="text-align: left; line-height: 2.2;">
-                <p><strong>Task:</strong> <span id="p-task"></span></p>
-                <p><strong>Progress:</strong> <span id="p-progress"></span></p>
-                <p><strong>Status:</strong> <span id="p-status"></span></p>
-                <p><strong>Deadline:</strong> <span id="p-deadline"></span></p>
-            </div>
+            <h3 style="margin-bottom: 20px;">Task Information</h3>
+            <p><strong>Task:</strong> <span id="p-task"></span></p>
+            <p><strong>Progress:</strong> <span id="p-progress"></span></p>
+            <p><strong>Status:</strong> <span id="p-status"></span></p> <!-- 增加了状态显示 -->
+            <p><strong>Deadline:</strong> <span id="p-deadline"></span></p>
             <div style="text-align: right; margin-top: 25px;">
                 <button class="popup-back-btn" onclick="closePopup()">Back</button>
             </div>
@@ -100,17 +106,11 @@
             document.getElementById('p-task').innerText = task;
             document.getElementById('p-progress').innerText = progress;
             document.getElementById('p-status').innerText = status;
-            document.getElementById('p-deadline').innerText = "Due date: " + deadline;
+            document.getElementById('p-deadline').innerText = deadline;
             document.getElementById('popupOverlay').classList.add('show');
         }
-
         function closePopup() {
             document.getElementById('popupOverlay').classList.remove('show');
-        }
-
-        window.onclick = function(event) {
-            let overlay = document.getElementById('popupOverlay');
-            if (event.target == overlay) closePopup();
         }
     </script>
 </body>

@@ -419,8 +419,6 @@ body {
     font-weight: bold;
 }
 
-/* --- APPLICANT ACTION BUTTONS --- */
-
 /* Hire Button: Purple/Solid */
 .btn-hire {
     text-decoration: none;
@@ -454,4 +452,51 @@ body {
 .btn-reject:hover {
     background-color: #ffebee;
     transform: translateY(-2px);
+}
+
+.hired-info-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    background: #f8f9fa;
+    padding: 10px;
+    border-radius: 15px;
+}
+
+/* Grouping the profile circle and name together */
+.user-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+}
+
+/* The "Project Progress" text row */
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+    font-size: 13px;
+}
+
+.progress-percent {
+    color: #5a32a8;
+    font-weight: bold;
+}
+
+/* A specific color for the Message button */
+.btn-message {
+    background-color: #8e9aaf !important; /* Soft blue-gray */
+    font-size: 14px;
+    padding: 12px;
+}
+
+/* Ensuring the profile is always a circle */
+.mini-profile {
+    width: 30px;
+    height: 30px;
+    background: #ccc;
+    border-radius: 50%;
+    flex-shrink: 0;
 }

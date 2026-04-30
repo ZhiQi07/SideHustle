@@ -1,4 +1,4 @@
-/* --- 1. 全局重置 --- */
+/* --- 1. 基础布局修复 (解决滑不动的问题) --- */
 * {
     box-sizing: border-box;
     margin: 0;
@@ -9,56 +9,104 @@ body {
     font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     background-color: #f4f7f9;
     color: #333;
+    /* 允许滚动，去掉 hidden */
+    overflow-y: auto; 
     overflow-x: hidden;
 }
 
-/* --- 2. 主内容 --- */
-/* --- 2. 主内容 --- */
-.main-content {
-    /* 保留左外边距以避开侧边栏，但将右外边距也设为自动 */
-    margin-left: auto; 
-    margin-right: auto;
-    
-    /* 核心修改：将左右内边距设为 auto 以在剩余空间内居中 */
-    /* 如果你希望内容在视觉上更靠中间，可以增加 padding 或缩小 max-width */
-    margin-top: 100px;
-    padding: 30px;
-    
-    /* 这里的宽度计算和最大宽度是关键 */
-    width: 100%;
-    max-width: 1600px; /* 稍微缩小最大宽度，会让居中效果在宽屏上更明显 */
-    
-    /* 确保容器水平居中的标准做法 */
-    display: block;
+/* --- 2. 侧边栏 (1:1 复制自你的 style.css) --- */
+.sidebar {
+    width: 240px;
+    height: 100vh;
+    background: white;
+    border-right: 1px solid #ddd;
+    position: fixed;
+    top: 0;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 30px 20px;
+    z-index: 3000;
 }
 
-/* 如果你觉得卡片那一行还不够居中，可以确保 cards-row 占据 100% 宽度并水平居中 */
+.sidebar .logo {
+    color: #5a32a8;
+    font-size: 28px;
+    margin-bottom: 40px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.sidebar-menu a {
+    display: block;
+    padding: 15px;
+    text-decoration: none;
+    color: #444;
+    font-weight: 500;
+    border-radius: 12px;
+    margin-bottom: 10px;
+    transition: 0.3s;
+}
+
+/* 悬停与选中效果 */
+.sidebar-menu a:hover, 
+.sidebar-menu a.active {
+    background: #f0f0f0;
+    color: #5a32a8;
+    font-weight: bold;
+}
+
+/* --- 3. 顶部紫色导航栏 (同步 style.css) --- */
+.top-nav {
+    position: fixed;
+    top: 0;
+    left: 240px;
+    right: 0;
+    height: 80px;
+    background-color: #5a32a8;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 0 50px;
+    z-index: 2000;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+/* --- 4. 内容区域区域 --- */
+.content-wrapper {
+    margin-left: 240px; /* 避开侧边栏 */
+    margin-top: 80px;  /* 避开顶部栏 */
+    padding: 40px 30px;
+    width: calc(100% - 240px);
+    box-sizing: border-box;
+    /* 核心：确保内容溢出时可以滚动 */
+    min-height: calc(100vh - 80px);
+}
+
+/* --- 5. 顶部统计卡片 (Cards Row) --- */
 .cards-row {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 20px; /* Reduced from 30px for a tighter look */
+    gap: 25px;
     margin-bottom: 50px;
     width: 100%;
 }
 
 .summary-card {
-    background: #dfe8f5;
+    background: #dfe8f5; /* 配合你图二的颜色 */
     border-radius: 25px;
-    padding: 30px;  /* 从25px增加到30px，让卡片内边距更大 */
-    min-height: 180px;  /* 从160px增加到180px，让卡片更高 */
-    position: relative;
-    transition: transform 0.25s ease, box-shadow 0.25s ease;
-}
-
-.card-value {
-    font-size: 36px;  /* 从32px增加到36px，数字更大更明显 */
-    font-weight: bold;
-    text-align: center;
+    padding: 30px;
+    min-height: 180px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    transition: transform 0.25s ease;
 }
 
 .summary-card:hover {
-    transform: translateY(-8px) scale(1.02);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+    transform: translateY(-5px);
 }
 
 .card-title {
@@ -67,96 +115,93 @@ body {
     margin-bottom: 15px;
 }
 
-
-
-.card-subtext {
-    margin-top: 10px;
+.card-value {
+    font-size: 36px;
+    font-weight: bold;
 }
 
-/* --- 6. TASK TRACKING --- */
+/* --- 6. 任务追踪列表 (同步你要求的布局) --- */
 .tracking-section-title {
     font-size: 24px;
-    margin-bottom: 20px;
+    margin-bottom: 25px;
     font-weight: bold;
 }
 
 .tracking-list-wrapper {
-    margin-top: 20px;
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 20px;
 }
 
 .tracking-row {
     display: grid;
-    grid-template-columns: 340px 1fr 40px;
+    grid-template-columns: 340px 1fr 40px; /* 340px 给进度条 */
     align-items: center;
-    gap: 15px;
+    gap: 20px;
     background: #dfe8f5;
-    border-radius: 15px;
-    padding: 15px 20px;
-    margin-bottom: 0;
+    border-radius: 20px;
+    padding: 25px 30px; /* 增加 padding 防止看起来太扁 */
     cursor: pointer;
-    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    transition: 0.25s;
 }
 
 .tracking-row:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 16px 35px rgba(0, 0, 0, 0.10);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.05);
 }
 
 .tracking-progress-side {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 10px;
 }
 
 .tracking-progress-inline {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 15px;
 }
 
 .tracking-progress-bar {
-    width: 160px;
+    flex: 1;
     height: 16px;
     background: #c6d4f5;
-    border-radius: 999px;
+    border-radius: 10px;
     overflow: hidden;
 }
 
 .tracking-progress-fill {
     height: 100%;
     background: #4f88ff;
-    border-radius: 999px;
+    border-radius: 10px;
+    transition: width 0.5s ease;
 }
 
 .tracking-percent {
     font-weight: bold;
-    font-size: 16px;
+    font-size: 18px;
 }
 
 .due-date {
-    font-size: 13px;
-    font-weight: 600;
-    margin-left: 2px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #555;
 }
 
 .tracking-info-box {
     background: white;
-    border-radius: 12px;
-    padding: 15px;
+    border-radius: 15px;
+    padding: 20px;
     text-align: center;
     font-weight: bold;
+    min-height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
 }
 
-.tracking-menu-btn {
-    cursor: pointer;
-    font-size: 20px;
-    text-align: center;
-}
-
-/* --- 7. POPUP --- */
+/* --- 7. POPUP 弹窗样式 (保留你之前的定义) --- */
 .tracking-popup-overlay {
     position: fixed;
     inset: 0;
@@ -168,23 +213,21 @@ body {
     backdrop-filter: blur(4px);
 }
 
-.tracking-popup-overlay.show {
-    display: flex;
-}
+.tracking-popup-overlay.show { display: flex; }
 
 .tracking-popup {
     background: white;
     width: 420px;
-    padding: 30px;
-    border-radius: 20px;
+    padding: 35px;
+    border-radius: 25px;
 }
 
 .popup-back-btn {
     background: #5a32a8;
     color: white;
     border: none;
-    padding: 10px 20px;
-    border-radius: 10px;
+    padding: 12px 25px;
+    border-radius: 12px;
     cursor: pointer;
 }
 
@@ -193,9 +236,5 @@ body {
     padding: 15px;
     color: #888;
     cursor: pointer;
-}
-
-.content-wrapper {
-    margin-left: 240px; /* This pushes the entire content area past the sidebar */
-    width: calc(100% - 240px);
+    font-size: 14px;
 }

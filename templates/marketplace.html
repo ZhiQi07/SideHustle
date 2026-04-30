@@ -13,7 +13,7 @@
                 <h2>SideHustle</h2>
                 <div class="sidebar-menu">
                     <a href="{{ url_for('marketplace') }}">🏠 Marketplace</a>
-                    <a href="/dashboard">📊 Dashboard</a>
+                    <a href="{{ url_for('dashboard') }}">📊 Dashboard</a>
                     <a href="{{ url_for('my_task') }}">📋 My Task</a>
                     <a href="#">👤 Profile</a>
                 </div>
@@ -68,34 +68,42 @@
                 </div>
             </div>
 
-            <div class="task-grid">
-                {% for task in tasks %}
-                <div class="card">
-                    <div style="display: flex; justify-content: space-between;">
-                        <h3>{{ task.title }}</h3>
-                        <span style="color: #2e7d32; font-weight: bold;">RM {{ task.price }}</span>
-                    </div>
-                    
-                    <div style="margin: 10px 0;">
-                        <span class="tag">{{ task.category }}</span>
-                        {% if task.urgent %}<span class="tag urgent-tag">URGENT</span>{% endif %}
-                    </div>
-
-                    <p>{{ task.description }}</p>
-
-                    <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
-
-                    <div style="display: flex; align-items: center; gap: 10px; font-size: 14px;">
-                        <div style="width: 30px; height: 30px; background: #8e9aaf; border-radius: 50%;"></div>
-                        <span><strong>{{ task.user }}</strong></span> <span>⭐ {{ task.rating }}</span>
-                    </div>
-                    
-                    <a href="{{ url_for('task_detail', task_id=task.id) }}" class="btn-primary">SEE MORE INFO</a>
+           <div class="task-grid">
+    {% if tasks %}
+        {% for task in tasks %}
+            <div class="card">
+                <div style="display: flex; justify-content: space-between;">
+                    <h3>{{ task.title }}</h3>
+                    <span style="color: #2e7d32; font-weight: bold;">RM {{ task.price }}</span>
                 </div>
-                {% endfor %}
+                
+                <div style="margin: 10px 0;">
+                    <span class="tag">{{ task.category }}</span>
+                    {% if task.urgent %}<span class="tag urgent-tag">URGENT</span>{% endif %}
+                </div>
+
+                <p>{{ task.description }}</p>
+
+                <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+
+                <div style="display: flex; align-items: center; gap: 10px; font-size: 14px;">
+                    <!-- 这里可以使用发布者的头像或默认圆圈 -->
+                    <div style="width: 30px; height: 30px; background: #8e9aaf; border-radius: 50%;"></div>
+                    <span><strong>{{ task.user }}</strong></span> 
+                    <!-- 确保后端传了 rating 字段，否则会显示为空 -->
+                    <span>⭐ {{ task.rating if task.rating else '5.0' }}</span>
+                </div>
+                
+                <a href="{{ url_for('task_detail', task_id=task.id) }}" class="btn-primary">SEE MORE INFO</a>
             </div>
+        {% endfor %}
+    {% else %}
+        <!-- 当没有任务时的空状态显示 -->
+        <div style="grid-column: 1 / -1; text-align: center; padding: 50px;">
+            <p style="color: #666; font-size: 18px;">No tasks available right now. 📦</p>
         </div>
-    </div>
+    {% endif %}
+</div> <!-- 闭合 task-grid -->
 
     <a href="{{ url_for('post_task') }}" class="fab">+ Create Task</a>
 </body>

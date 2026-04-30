@@ -3,6 +3,7 @@ from flask_socketio import SocketIO, emit, join_room
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import func, text
 import os
+from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = "mmu_secret_key"
@@ -43,10 +44,13 @@ class Task(db.Model):
     tasker = db.Column(db.String(50)) # 执行者
     deadline = db.Column(db.String(50))
     capacity = db.Column(db.Integer, default=1)
+    tasker = db.Column(db.String(50)) # Stores the username of the person hired
+    progress = db.Column(db.Integer, default=0) # Stores 0, 25, 50, 75, or 100
     urgent = db.Column(db.Boolean, default=False)
-    progress = db.Column(db.Integer, default=0)
+
 
     def get_applicant_count(self):
+        # This counts how many applications have this task's ID
         return Application.query.filter_by(task_id=self.id).count()
 
 class Application(db.Model):
@@ -56,6 +60,10 @@ class Application(db.Model):
     intro = db.Column(db.Text)
     reason = db.Column(db.Text)
     status = db.Column(db.String(20), default='Pending')
+
+    def get_applicant_count(self):
+        return Application.query.filter_by(task_id=self.id).count()
+
 
 class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -111,27 +119,94 @@ def signup():
         return redirect(url_for('login'))
     return render_template('signup.html')
 
+@app.route('/marketplace')
+def marketplace():
+    query = request.args.get('q')
+    category = request.args.get('cat')
+
+    # 核心修改：默认只查询状态为 'Available' 的任务，防止显示已领取的任务
+    tasks_filter = Task.query.filter_by(status='Available')
+
+    if query:
+        tasks_filter = tasks_filter.filter((Task.title.contains(query)) | (Task.description.contains(query)))
+    
+    if category:
+        tasks_filter = tasks_filter.filter(Task.category == category)
+
+    all_tasks = tasks_filter.all()
+
+    # 获取当前登录用户信息，用于页面顶部的欢迎语
+    current_user = None
+    if 'user_id' in session:
+        current_user = db.session.get(User, session['user_id'])
+        
+    return render_template('marketplace.html', tasks=all_tasks, user=current_user)
+
+
+
 @app.route('/dashboard')
 def dashboard():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
     user = db.session.get(User, session['user_id'])
+    avg_rating = round(user.total_rating / user.review_count, 1) if user.review_count > 0 else 5.0
     
-    # 自动计算平均分
-    avg_rating = round(user.total_rating / user.review_count, 1) if user.review_count > 0 else 0.0
-    
-    # 获取正在进行中的任务（Tasks Tracking）
-    tracking_list = Task.query.filter_by(tasker=user.username).filter(Task.status == 'In Progress').all()
+    # --- 修改这里：删掉 .filter(Task.status != 'Completed') ---
+    # 这样无论是进行中还是已完成的任务，都会显示在 Tracking 列表里
+    tracking_list = Task.query.filter_by(tasker=user.username).all()
     
     return render_template(
         'dashboard.html',
+        username=user.username,
         total_credit=user.credit,
         average_rating=avg_rating,
         tasks_done=user.tasks_completed,
-        tracking_list=tracking_list,
-        user=user
+        tracking_list=tracking_list # 现在的列表包含所有你接过手的任务
     )
+
+
+@app.route('/update_progress/<int:task_id>', methods=['POST'])
+def update_progress(task_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    new_progress = int(request.form.get('progress', 0))
+    task = db.session.get(Task, task_id)
+    user = db.session.get(User, session['user_id'])
+    
+    # 核心结算逻辑
+    if new_progress == 100 and task.status != 'Completed':
+        task.status = 'Completed'
+        
+        if user.tasks_completed is None:
+            user.tasks_completed = 0
+        user.tasks_completed += 1
+        
+        if hasattr(task, 'price') and task.price:
+            if user.credit is None:
+                user.credit = 0.0
+            user.credit += task.price
+            
+            # --- 修复后的部分：使用 activity 而不是 description ---
+            new_earning = Earning(
+                user_id=user.id,
+                activity=f"Completed Task: {task.title}", # 对应模型中的 activity 字段
+                amount=task.price,
+                timestamp=datetime.now()
+            )
+            db.session.add(new_earning)
+            # --------------------------------------------------
+            
+        print(f"SUCCESS: {user.username} 结算成功！任务：{task.title}")
+
+    task.progress = new_progress
+    db.session.commit()
+    
+    return redirect(url_for('my_task', view='applied'))
+
+
+
 
 @app.route('/earnings')
 def earnings():
@@ -149,29 +224,35 @@ def earnings():
     )
 
 
-@app.route('/marketplace')
-def marketplace():
-    tasks = Task.query.filter_by(status='Available').all()
-    user = db.session.get(User, session.get('user_id')) if 'user_id' in session else None
-    return render_template('marketplace.html', tasks=tasks, user=user)
 
 @app.route('/post', methods=['GET', 'POST'])
 def post_task():
-    if 'user_id' not in session: return redirect(url_for('login'))
+    # 1. Safety Check: Make sure the user is actually logged in
+    if 'user_id' not in session:
+        flash("Please login to post a task!")
+        return redirect(url_for('login'))
+
     if request.method == 'POST':
-        user = db.session.get(User, session['user_id'])
+        # 2. Get the actual user object from the database using the session ID
+        current_user = User.query.get(session['user_id'])
+
         new_task = Task(
             title=request.form.get('title'),
             price=float(request.form.get('price')),
             description=request.form.get('description'),
             category=request.form.get('category'),
-            user=user.username,
             deadline=request.form.get('deadline'),
-            urgent=True if request.form.get('urgent') else False
+            capacity=request.form.get('capacity'),
+            urgent=True if request.form.get('urgent') else False,
+            # 3. FIX: Assign the logged-in username to the 'user' field
+            user=current_user.username 
         )
         db.session.add(new_task)
         db.session.commit()
-        return redirect(url_for('marketplace'))
+        
+        # After posting, go see it in My Task!
+        return redirect(url_for('my_task')) 
+        
     return render_template('post_task.html')
 
 
@@ -191,8 +272,8 @@ def patch_database():
         
         # 检查 Task 表是否缺少 tasker 字段
         task_cols = [row[1] for row in conn.execute(text("PRAGMA table_info(task)")).fetchall()]
-        if "tasker" not in task_cols:
-            conn.execute(text("ALTER TABLE task ADD COLUMN tasker VARCHAR(50)"))
+        if "urgent" not in task_cols:
+            conn.execute(text("ALTER TABLE task ADD COLUMN urgent BOOLEAN DEFAULT 0"))
         
         conn.commit()
         print("✅ Database columns patched successfully!")
@@ -212,117 +293,164 @@ def task_tracking(task_id):
     return f"This is tracking page for Task {task_id}. Developing..."
 
 
-@app.route('/my_task')
-def my_task():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    
-    user = db.session.get(User, session['user_id'])
-    view = request.args.get('view', 'created')
-    
-    # 1. 我创建的任务 (我作为 Tasker/Client 发布出去的)
-    created = Task.query.filter_by(user=user.username).all()
-    
-    # 2. 我申请的任务 (核心修改点)
-    # 第一步：去 Application 表里查：这个用户申请了哪些任务的 ID
-    user_applications = Application.query.filter_by(applicant_username=user.username).all()
-    
-    # 第二步：根据这些 ID，去 Task 表里把对应的任务对象找出来
-    applied_task_ids = [app.task_id for app in user_applications]
-    applied = Task.query.filter(Task.id.in_(applied_task_ids)).all() if applied_task_ids else []
-    
-    return render_template(
-        'my_task.html', 
-        created=created, 
-        applied=applied, 
-        view=view, 
-        user=user
-    )
-
-
-@app.route('/view_applicants/<int:task_id>')
-def view_applicants(task_id):
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    task = Task.query.get_or_404(task_id)
-    # 查找所有申请这个任务的人
-    apps = Application.query.filter_by(task_id=task_id).all()
-    return render_template('view_applicants.html', task=task, apps=apps)
-
-
 @app.route('/apply/<int:task_id>', methods=['GET', 'POST'])
 def apply(task_id):
     if 'user_id' not in session:
+        flash("Please login to apply!")
         return redirect(url_for('login'))
+
     task = Task.query.get_or_404(task_id)
-    user = db.session.get(User, session['user_id'])
+    current_user = User.query.get(session['user_id'])
 
     if request.method == 'POST':
+        # Create a new Application record in the database
         new_app = Application(
             task_id=task.id,
-            applicant_username=user.username,
+            applicant_username=current_user.username,
             intro=request.form.get('intro'),
             reason=request.form.get('reason')
         )
         db.session.add(new_app)
         db.session.commit()
-        flash("Application submitted!")
+        
+        flash("Application submitted successfully!")
         return redirect(url_for('marketplace'))
-    
+
     return render_template('apply.html', task=task)
+
+@app.route('/my_task')
+def my_task():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    current_user = User.query.get(session['user_id'])
+    view = request.args.get('view', 'created')
+
+    created_tasks = Task.query.filter_by(user=current_user.username).all()
+    
+    # FIX: Send the Application objects so we can see the status (Pending/Hired/Rejected)
+    my_applications = Application.query.filter_by(applicant_username=current_user.username).all()
+
+    return render_template('my_task.html', 
+                           created=created_tasks, 
+                           applied=my_applications, # This is now a list of Applications
+                           view=view, 
+                           user=current_user,
+                           Task=Task)
+
+@app.route('/view-applicants/<int:task_id>')
+def view_applicants(task_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+        
+    task = Task.query.get_or_404(task_id)
+    # This searches the Application table for any record matching this task's ID
+    apps = Application.query.filter_by(task_id=task_id).all()
+    
+    return render_template('view_applicants.html', task=task, apps=apps)
+
+@app.route('/hire-applicant/<int:app_id>')
+def hire_applicant(app_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    # 1. Find the application and the task
+    application = Application.query.get_or_404(app_id)
+    task = Task.query.get(application.task_id)
+
+    # 2. Update the Task: Hire the user and change status
+    task.status = 'Assigned'
+    task.tasker = application.applicant_username
+    
+    # 3. Update the Application status
+    application.status = 'Hired'
+    
+    db.session.commit()
+    
+    flash(f"You have hired {application.applicant_username}!")
+    return redirect(url_for('my_task', view='created'))
+
+@app.route('/reject_applicant/<int:app_id>')
+def reject_applicant(app_id):
+    # 1. Security: Ensure the user is logged in
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    # 2. Find the application using its ID
+    application = Application.query.get_or_404(app_id)
+    
+    # 3. Update the status to 'Rejected'
+    application.status = 'Rejected'
+    
+    # 4. Save the change to the database
+    db.session.commit()
+
+    flash("Applicant has been rejected.")
+    
+    # 5. Redirect back to the list so you can see the update
+    return redirect(url_for('view_applicants', task_id=application.task_id))
+
+
+
+
+
+
 
 
 
 
 @app.route('/chat/<int:task_id>')
 def chat(task_id):
-    if 'user_id' not in session: return redirect(url_for('login'))
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
     task = Task.query.get_or_404(task_id)
-    user = db.session.get(User, session['user_id'])
+    user = User.query.get(session['user_id'])
+    
+    # 获取该任务的历史聊天记录（假设你已经定义了 Message 模型）
     history = Message.query.filter_by(task_id=task_id).order_by(Message.timestamp.asc()).all()
+    
     return render_template('chat.html', task=task, user=user, history=history)
 
-# --- 任务完成自动结账逻辑 ---
-@app.route('/complete_task/<int:task_id>')
-def complete_task(task_id):
-    task = Task.query.get_or_404(task_id)
-    if task.status != 'Completed':
-        task.status = 'Completed'
-        # 给做任务的人加钱
-        worker = User.query.filter_by(username=task.tasker).first()
-        if worker:
-            worker.credit += task.price
-            worker.tasks_completed += 1
-            # 记录一笔账单
-            new_earning = Earning(user_id=worker.id, activity=f"Completed: {task.title}", amount=task.price)
-            db.session.add(new_earning)
-        db.session.commit()
-    return redirect(url_for('dashboard'))
 
-@app.route('/logout')
-def logout():
-    session.clear()
-    return redirect(url_for('login'))
+@app.route('/rate_user/<int:task_id>/<target_user>')
+def rate_user(task_id, target_user):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    # 暂时先跳转回 my_task 页面，或者你可以先 return 一个简单的字符串测试
+    # 以后你可以在这里 render_template 一个评价页面
+    return f"<h1>Rating System Coming Soon!</h1><p>Task ID: {task_id}</p><p>Rating for: {target_user}</p><a href='/my_task'>Go Back</a>"
 
-# --- SocketIO ---
+
+
+
 @socketio.on('join')
 def on_join(data):
-    join_room(data['room'])
+    username = data['username']
+    room = data['room']
+    join_room(room)
+    print(f"用户 {username} 加入了房间 {room}")[cite: 11]
 
 @socketio.on('send_message')
-def handle_send_message(data):
-    new_msg = Message(task_id=data['room'], sender=data['username'], content=data['message'])
+def handle_message(data):
+    room = data['room']
+    # 将消息广播给房间里的所有人，包括发送者
+    emit('receive_message', data, room=room)
+    
+    # 可选：将聊天记录保存到数据库
+    new_msg = Message(
+        task_id=int(room), 
+        sender=data['username'], 
+        content=data['message']
+    )
     db.session.add(new_msg)
     db.session.commit()
-    emit('receive_message', data, room=data['room'])
 
-@app.route('/reset-db')
-def reset_db():
-    with app.app_context():
-        db.drop_all()   # 删掉所有表
-        db.create_all() # 重新按新模型建表
-    return "Database has been reset! Please sign up a new account."
 
 
 if __name__ == '__main__':
+    with app.app_context():
+        # 在启动前先修补数据库结构
+        patch_database() 
     socketio.run(app, debug=True, port=8000)
