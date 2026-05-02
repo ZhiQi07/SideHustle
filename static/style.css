@@ -500,3 +500,75 @@ body {
     border-radius: 50%;
     flex-shrink: 0;
 }
+
+
+
+/* --- 8. UNREAD NOTIFICATION SYSTEM (NEW) --- */
+
+/* 1. 按钮上的数字红点 - 这里的 z-index 设为 10 确保在按钮文字上方 */
+.unread-badge {
+    position: absolute;
+    top: -8px;
+    right: -5px;
+    background: #ff4d4f;
+    color: white;
+    border-radius: 50%;
+    padding: 2px 6px;
+    font-size: 10px;
+    font-weight: bold;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    z-index: 10;
+}
+
+/* 2. 侧边栏和 Tab 的小圆点 (无数字)[cite: 1] */
+.dot-small {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: #ff4d4f;
+    border-radius: 50%;
+    margin-left: 5px;
+    vertical-align: middle;
+    border: 1px solid white;
+}
+
+/* 3. 统一按钮组布局 - 确保 100% 进度时两个按钮并排[cite: 1] */
+.btn-flex-container {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+}
+
+/* 4. 评价按钮样式[cite: 1] */
+.btn-rate {
+    flex: 1;
+    text-align: center;
+    background-color: #ff9800; /* 橙色区分评价功能 */
+    color: white;
+    border: none;
+    font-size: 12px;
+    padding: 10px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: 0.2s;
+}
+
+.btn-rate:hover {
+    background-color: #e68a00;
+}
+
+/* 5. 消息按钮样式 (占据卡片一半宽度时使用)[cite: 1] */
+.btn-msg-half {
+    flex: 1;
+    text-align: center;
+    background-color: #8e94a5; /* 沿用你原本的蓝灰色[cite: 1] */
+    color: white;
+    font-size: 12px;
+    padding: 10px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: bold;
+    position: relative; /* 必须有这个，红点才能对齐按钮 */
+}

@@ -19,7 +19,6 @@
             border: 1px solid #eee;
         }
 
-        /* 弹窗小三角箭头 */
         .progress-popover::after {
             content: "";
             position: absolute;
@@ -70,6 +69,67 @@
             text-decoration: underline;
             cursor: pointer;
         }
+
+        /* 未读消息红点样式 */
+        .unread-badge {
+            position: absolute;
+            top: -8px;
+            right: -5px;
+            background: #ff4d4f;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 10px;
+            font-weight: bold;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            z-index: 10;
+        }
+
+        /* 侧边栏和 Tab 的小圆点样式[cite: 1, 2] */
+        .dot-small {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #ff4d4f;
+            border-radius: 50%;
+            margin-left: 5px;
+            vertical-align: middle;
+            border: 1px solid white;
+        }
+
+        /* 统一按钮样式 */
+        .btn-flex-container {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .btn-rate {
+            flex: 1;
+            text-align: center;
+            background-color: #ff9800;
+            color: white;
+            border: none;
+            font-size: 12px;
+            padding: 10px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .btn-msg-half {
+            flex: 1;
+            text-align: center;
+            background-color: #8e94a5;
+            color: white;
+            font-size: 12px;
+            padding: 10px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            position: relative;
+        }
     </style>
 </head>
 <body>
@@ -80,7 +140,13 @@
                 <div class="sidebar-menu">
                     <a href="{{ url_for('marketplace') }}">🏠 Marketplace</a>
                     <a href="{{ url_for('dashboard') }}">📊 Dashboard</a>
-                    <a href="{{ url_for('my_task') }}">📋 My Task</a>
+                    <!-- 在 My Task 后面加红点逻辑[cite: 1, 2] -->
+                    <a href="{{ url_for('my_task') }}" style="position: relative;">
+                        📋 My Task
+                        {% if user.count_total_unread('all') > 0 %}
+                            <span id="global-unread-dot" class="dot-small"></span>
+                        {% endif %}
+                    </a>
                     <a href="#">👤 Profile</a>
                 </div>
             </div>
@@ -98,11 +164,22 @@
 
         <div class="content">
             <div class="task-tabs">
+                <!-- 在 Tab 文字后面加红点逻辑[cite: 1, 2] -->
                 <a href="{{ url_for('my_task', view='created') }}" 
-                class="tab-btn {% if view == 'created' %}active{% endif %}">Created Tasks</a>
+                   class="tab-btn {% if view == 'created' %}active{% endif %}" style="position: relative;">
+                    Created Tasks
+                    {% if user.count_total_unread('created') > 0 %}
+                        <span id="created-unread-dot" class="dot-small"></span>
+                    {% endif %}
+                </a>
                 
                 <a href="{{ url_for('my_task', view='applied') }}" 
-                class="tab-btn {% if view == 'applied' %}active{% endif %}">Applied Tasks</a>
+                   class="tab-btn {% if view == 'applied' %}active{% endif %}" style="position: relative;">
+                    Applied Tasks
+                    {% if user.count_total_unread('applied') > 0 %}
+                        <span id="applied-unread-dot" class="dot-small"></span>
+                    {% endif %}
+                </a>
             </div>
 
             <div class="task-grid">
@@ -111,7 +188,7 @@
                         <div class="card">
                             <div class="card-header">
                                 <span class="tag">{{ task.category }}</span>
-                                <span class="status-text">{{ task.status }}</span>
+                                <span class="tag" style="background: #f0f0f0; color: #666;">{{ task.status | upper }}</span>
                             </div>
                             <h3>{{ task.title }}</h3>
                             <p>{{ task.description }}</p>
@@ -127,7 +204,20 @@
                                         <div class="progress-bar" style="margin-bottom: 15px;">
                                             <div class="progress-fill" style="width: {{ task.progress }}%;"></div>
                                         </div>
-                                        <a href="{{ url_for('chat', task_id=task.id) }}" class="btn-primary" style="display: block; text-align: center; padding: 10px; text-decoration: none;">💬 Message Helper</a>
+
+                                        <div class="btn-flex-container">
+                                            {% if task.progress == 100 %}
+                                                <a href="{{ url_for('rate_user', task_id=task.id, target_user=task.tasker) }}" class="btn-rate">⭐ Rate Tasker</a>
+                                            {% endif %}
+                                            
+                                            <a href="{{ url_for('chat', task_id=task.id) }}" class="btn-msg-half">
+                                                💬 Message Helper
+                                                {% set unread = task.get_unread_count(user.username) %}
+                                                {% if unread > 0 %}
+                                                    <span id="badge-{{ task.id }}" class="unread-badge">{{ unread }}</span>
+                                                {% endif %}
+                                            </a>
+                                        </div>
                                     </div>
                                 {% endif %}
                             </div>
@@ -162,7 +252,7 @@
                                             </div>
                                         </div>
 
-                                        <div style="display: flex; gap: 10px; width: 100%;">
+                                        <div class="btn-flex-container">
                                             {% if task.progress < 100 %}
                                                 <button type="button" class="btn-outline" style="flex: 1; text-align: center; padding: 10px; cursor: pointer;" 
                                                         onclick="togglePop('{{ task.id }}')">Update Progress</button>
@@ -176,15 +266,22 @@
                                                                oninput="lockSlider('{{ task.id }}', {{ task.progress }}, this.value)">
                                                         
                                                         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
-                                                            <span class="check-link" onclick="alert('Note: Progress can only move forward.')">Check it out</span>
+                                                            <span class="check-link" onclick="alert('Note: Progress can only move forward once it has been updated.')">Check it out</span>
                                                             <button type="submit" class="confirm-btn">✓</button>
                                                         </div>
                                                     </form>
                                                 </div>
                                             {% else %}
-                                                <a href="{{ url_for('rate_user', task_id=task.id, target_user=task.user) }}" class="btn-primary" style="flex: 1; text-align: center; background-color: #ff9800; border: none; margin-top: 0; font-size: 12px; padding: 10px;">⭐ Rate Client</a>
+                                                <a href="{{ url_for('rate_user', task_id=task.id, target_user=task.user) }}" class="btn-rate">⭐ Rate Client</a>
                                             {% endif %}
-                                            <a href="{{ url_for('chat', task_id=task.id) }}" class="btn-primary btn-message" style="margin-top: 0; flex: 1; font-size: 12px; padding: 10px; text-align: center;">💬 Message Client</a>
+                                            
+                                            <a href="{{ url_for('chat', task_id=task.id) }}" class="btn-msg-half">
+                                                💬 Message Client
+                                                {% set unread = task.get_unread_count(user.username) %}
+                                                {% if unread > 0 %}
+                                                    <span id="badge-{{ task.id }}" class="unread-badge">{{ unread }}</span>
+                                                {% endif %}
+                                            </a>
                                         </div>
                                     </div>
                                 {% elif app.status == 'Rejected' %}
@@ -200,7 +297,24 @@
         </div> 
     </div> 
 
+    <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
     <script>
+    const socket = io();
+
+    socket.on('clear_unread', function(data) {
+        const badge = document.getElementById('badge-' + data.task_id);
+        if (badge) {
+            badge.style.display = 'none';
+        }
+        // 同步隐藏全局红点[cite: 2]
+        const globalDot = document.getElementById('global-unread-dot');
+        const createdDot = document.getElementById('created-unread-dot');
+        const appliedDot = document.getElementById('applied-unread-dot');
+        if (globalDot) globalDot.style.display = 'none';
+        if (createdDot) createdDot.style.display = 'none';
+        if (appliedDot) appliedDot.style.display = 'none';
+    });
+
     function togglePop(id) {
         const pop = document.getElementById('pop-' + id);
         if (pop.style.display === 'block') {

@@ -27,11 +27,27 @@ class User(db.Model):
     password = db.Column(db.String(100), nullable=False)
     skills = db.Column(db.Text, default="No skills listed")
     is_admin = db.Column(db.Boolean, default=False)
-    # --- 新增的 Dashboard 字段 ---
     credit = db.Column(db.Float, default=0.0)
     total_rating = db.Column(db.Float, default=5.0)
     review_count = db.Column(db.Integer, default=1)
     tasks_completed = db.Column(db.Integer, default=0)
+
+    # --- 把下面这个函数粘贴在这里 ---
+    # 确保 def 前面有 4 个空格，不要套在别的函数里
+    def count_total_unread(self, role='all'):
+        if role == 'created':
+            tasks = Task.query.filter_by(user=self.username).all()
+        elif role == 'applied':
+            tasks = Task.query.filter_by(tasker=self.username).all()
+        else:
+            tasks = Task.query.filter((Task.user == self.username) | (Task.tasker == self.username)).all()
+        
+        total = 0
+        for task in tasks:
+            total += task.get_unread_count(self.username)
+        return total
+
+
 
 class Task(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -48,10 +64,15 @@ class Task(db.Model):
     progress = db.Column(db.Integer, default=0) # Stores 0, 25, 50, 75, or 100
     urgent = db.Column(db.Boolean, default=False)
 
-
     def get_applicant_count(self):
         # This counts how many applications have this task's ID
         return Application.query.filter_by(task_id=self.id).count()
+    
+    def get_unread_count(self, current_username):
+        # 统计该任务下：1.未读的 2.发送者不是当前用户 的消息数量
+        return Message.query.filter_by(task_id=self.id, is_read=False).filter(Message.sender != current_username).count()
+
+
 
 class Application(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -71,6 +92,8 @@ class Message(db.Model):
     sender = db.Column(db.String(50), nullable=False)
     content = db.Column(db.Text, nullable=False)
     timestamp = db.Column(db.DateTime, default=db.func.now())
+    is_read = db.Column(db.Boolean, default=False)
+
 
 class Earning(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -258,9 +281,8 @@ def post_task():
 
 def patch_database():
     with db.engine.connect() as conn:
-        # 检查 User 表缺少的字段并补上
+        # 1. 检查 User 表
         user_cols = [row[1] for row in conn.execute(text("PRAGMA table_info(user)")).fetchall()]
-        
         if "credit" not in user_cols:
             conn.execute(text("ALTER TABLE user ADD COLUMN credit FLOAT DEFAULT 0.0"))
         if "total_rating" not in user_cols:
@@ -270,10 +292,15 @@ def patch_database():
         if "tasks_completed" not in user_cols:
             conn.execute(text("ALTER TABLE user ADD COLUMN tasks_completed INTEGER DEFAULT 0"))
         
-        # 检查 Task 表是否缺少 tasker 字段
+        # 2. 检查 Task 表
         task_cols = [row[1] for row in conn.execute(text("PRAGMA table_info(task)")).fetchall()]
         if "urgent" not in task_cols:
             conn.execute(text("ALTER TABLE task ADD COLUMN urgent BOOLEAN DEFAULT 0"))
+        
+        # --- 3. 新增：检查 Message 表 (修复 bug 的关键) ---
+        message_cols = [row[1] for row in conn.execute(text("PRAGMA table_info(message)")).fetchall()]
+        if "is_read" not in message_cols:
+            conn.execute(text("ALTER TABLE message ADD COLUMN is_read BOOLEAN DEFAULT 0"))
         
         conn.commit()
         print("✅ Database columns patched successfully!")
@@ -407,11 +434,20 @@ def chat(task_id):
     task = Task.query.get_or_404(task_id)
     user = User.query.get(session['user_id'])
     
-    # 获取该任务的历史聊天记录（假设你已经定义了 Message 模型）
-    history = Message.query.filter_by(task_id=task_id).order_by(Message.timestamp.asc()).all()
+    # 1. 找到未读消息
+    unread_messages = Message.query.filter_by(task_id=task_id, is_read=False).filter(Message.sender != user.username).all()
     
+    if unread_messages:
+        for msg in unread_messages:
+            msg.is_read = True
+        db.session.commit()
+        
+        # 2. 【核心新增】发送一个 Socket 信号给当前用户，告诉前端“这个任务的消息已经读过了”
+        # 这里建议发给当前用户的个人 room
+        socketio.emit('clear_unread', {'task_id': task_id}, room=str(session['user_id'])) 
+    
+    history = Message.query.filter_by(task_id=task_id).order_by(Message.timestamp.asc()).all()
     return render_template('chat.html', task=task, user=user, history=history)
-
 
 @app.route('/rate_user/<int:task_id>/<target_user>')
 def rate_user(task_id, target_user):
@@ -446,6 +482,15 @@ def handle_message(data):
     )
     db.session.add(new_msg)
     db.session.commit()
+
+
+@socketio.on('connect')
+def handle_connect():
+    if 'user_id' in session:
+        # 用户一连接，就让他加入以自己 ID 命名的房间
+        join_room(str(session['user_id']))
+        print(f"User {session['user_id']} connected to their private room.")
+
 
 
 
