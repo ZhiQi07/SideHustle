@@ -4,7 +4,7 @@ body {
     margin: 0;
     justify-content: center;
     align-items: center;
-    background: linear-gradient(150deg, #c8a3ff, #7182ee);
+    background: linear-gradient(170deg, #c8a3ff, #F8F7FF);
     font-family: 'Arial', sans-serif;
 }
 
@@ -37,7 +37,7 @@ body {
     background-color: rgba(244, 233, 255, 0.7);
     backdrop-filter: blur(10px);
     border: 2px solid #ffffff00;
-    padding: 40px; 
+    padding: 50px 20px 40px 80px; 
     padding-left: 80px;
     width: 500px;
     height: 350px;
@@ -51,14 +51,15 @@ body {
 }
 
 .right-login h2 {
-    font-size: 32px;
+    font-size: 40px;
+    font-weight: bold;
     color: rgb(142, 96, 166);
     margin-bottom: 20px;
     letter-spacing: 2px;
 }
 
 .input-container {
-    width: 280px;
+    width: 335px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -72,7 +73,7 @@ body {
     border: 2px solid #a986df;
     font-size: 16px;
     box-sizing: border-box;
-    margin-bottom: 12px;
+    margin-bottom: 15px;
     outline: none;
 }
 
@@ -84,7 +85,7 @@ body {
 .purple-btn {
     background-color: #a986df;
     color: #ffffff;
-    padding: 10px 13px;
+    padding: 10px 20px;
     border-radius: 20px;
     border: none;
     cursor: pointer;
@@ -92,7 +93,7 @@ body {
     text-transform: uppercase;
     box-sizing: border-box;
     display: block;
-    width: 90px;
+    width: auto;
     transition: 0.3s;
     display: block;
     margin: 0 auto;
@@ -105,26 +106,54 @@ body {
 
 .forgot-container {
     text-align: right;
-    width: 100%;
-    margin-top: -10px;
+    width: 335px;
+    margin-top: -20px;
     margin-bottom: 15px;
+    margin-right: 0;
+    padding-right: 20px;
+    box-sizing: border-box;
 }
 
 .forgot-link {
     font-size: 12px;
-    color: #886ab5;
+    color: #a784dc;
     text-decoration: none;
     text-transform: uppercase;
     font-weight: bold;
+    display: inline-block;
+    padding: 10px 0px 10px 10px;
 }
 
-.inline-link {
-    color: #718fb1;
+.forgot-link:hover {
     text-decoration: underline;
+    text-decoration-thickness: 1.2px;
+    text-underline-offset: 1px;
+    color: #886ab5;
 }
+
 
 .auth-box-footer {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    text-transform: uppercase;
     font-size: 14px;
-    color: #000000;
-    margin-top: 20px;
+    color: #666;
+    margin-top: 55px;
+}
+
+.signup-btn-link {
+    background-color: #a986df;
+    color: #ffffff !important;
+    padding: 9px 22px;
+    border-radius: 20px;
+    text-decoration: none;
+    font-size: 14px;
+    transition: 0.3s;
+    display: inline-block;
+}
+
+.signup-btn-link:hover {
+    background-color: #8a66c0;
+    transform: translateY(-1px);
 }

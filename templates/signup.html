@@ -17,7 +17,7 @@
             <h2>Create An Account</h2>
             <div class="input-container">
                 <form action="{{ url_for('signup') }}" method="POST">
-                    <input type="email" name="email" placeholder="MMU EMAIL ADDRESS" class="modern-input" pattern=".*@student\.mmu\.edu\.my" style="text-transform: lowercase;" title="Please use your official MMU student email (@student.mmu.edu.my)" required>
+                    <input type="email" name="email" placeholder="MMU EMAIL ADDRESS" class="modern-input" pattern="^[a-zA-Z0-9._%+-]+@student\.mmu\.edu\.my$" style="text-transform: lowercase;" title="Please use your official MMU student email (@student.mmu.edu.my)" required>
                     <input type="text" name="username" placeholder="CREATE USERNAME" class="modern-input" required>
                     <input type="password" name="password" placeholder="CREATE PASSWORD" class="modern-input" required>
                     <ul class="password-check">
