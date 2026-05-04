@@ -4,20 +4,9 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <div class="main-layout">
-        <div class="sidebar">
-            <div class="sidebar-top">
-                <h2>SideHustle</h2>
-                <div class="sidebar-menu">
-                    <a href="{{ url_for('marketplace') }}">🏠 Marketplace</a>
-                    <a href="/dashboard">📊 Dashboard</a>
-                    <a href="{{ url_for('my_task') }}" style="background: #f0f0f0; color: #5a32a8;">📋 My Task</a>
-                    <a href="#">👤 Profile</a>
-                </div>
-            </div>
-        </div>
+        {% extends "base.html" %}
 
-        <div class="content">
+        {% block content %}
             <a href="{{ url_for('my_task') }}" class="back-link">← Back to My Tasks</a>
             
             <h1 style="margin-top: 20px;">Review Applicants</h1>
@@ -63,7 +52,6 @@
                     {% endfor %}
                 </div>
             {% endif %}
-        </div>
-    </div>
+        {% endblock %}
 </body>
 </html>

@@ -500,3 +500,132 @@ body {
     border-radius: 50%;
     flex-shrink: 0;
 }
+
+/* --- HIRED STATE LAYOUTS --- */
+.card-footer-hired {
+    margin-top: 20px;
+    border-top: 1px solid #eee;
+    padding-top: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+    width: 100%;
+}
+
+.applicant-stats {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.full-width {
+    width: 100%;
+}
+
+.action-buttons-row {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+}
+
+.action-btn-centered {
+    flex: 1;
+    text-align: center;
+    padding: 10px;
+}
+
+.status-badge {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+/* --- NOTIFICATION POPUP --- */
+/* --- ENHANCED NOTIFICATION POPUP --- */
+.notification-popup {
+    display: none;
+    position: absolute;
+    top: 60px; /* Spacing from top bar */
+    right: 0;
+    width: 360px;
+    background: #ffffff;
+    border-radius: 16px;
+    /* Soft, modern shadow */
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    z-index: 5000;
+    border: 1px solid #f0f0f0;
+    overflow: hidden;
+    /* Entrance animation */
+    animation: fadeInDown 0.2s ease-out;
+}
+
+@keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.popup-header {
+    background: #ffffff;
+    padding: 16px 20px;
+    font-weight: 800;
+    font-size: 16px;
+    border-bottom: 1px solid #f5f5f5;
+    color: #1a1a1a;
+    letter-spacing: -0.5px;
+}
+
+.popup-body {
+    max-height: 420px;
+    overflow-y: auto;
+}
+
+/* Individual Notification Item */
+.notification-item {
+    display: flex;
+    flex-direction: column;
+    padding: 16px 20px;
+    text-decoration: none;
+    border-bottom: 1px solid #fafafa;
+    transition: background 0.2s ease;
+    background: #ffffff;
+}
+
+.notification-item:hover {
+    background: #f9f7ff; /* Very light purple tint */
+}
+
+/* Font styles for the message parts */
+.notification-item .note-title {
+    color: #5a32a8; /* MMU Purple */
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.notification-item .note-msg {
+    color: #4a4a4a;
+    font-size: 13px;
+    line-height: 1.5;
+    font-weight: 400;
+}
+
+.notification-item .note-time {
+    color: #a0a0a0;
+    font-size: 11px;
+    margin-top: 8px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+/* Empty State */
+.empty-notif {
+    padding: 40px 20px;
+    text-align: center;
+    color: #999;
+    font-size: 13px;
+}

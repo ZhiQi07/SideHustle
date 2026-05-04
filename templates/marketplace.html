@@ -5,33 +5,9 @@
     
 </head>
 <body>
-    <div class="main-layout">
-        
-        <div class="sidebar">
-            <div class="sidebar-top">
-                <h2>SideHustle</h2>
-                <div class="sidebar-menu">
-                    <a href="{{ url_for('marketplace') }}">🏠 Marketplace</a>
-                    <a href="/dashboard">📊 Dashboard</a>
-                    <a href="{{ url_for('my_task') }}">📋 My Task</a>
-                    <a href="#">👤 Profile</a>
-                </div>
-            </div>
-            <div class="sidebar-bottom">
-                <a href="#" class="menu-item">❓ Help</a>
-            </div>
-        </div>
+    {% extends "base.html" %}
 
-        <div class="top-nav">
-            <div class="nav-icons">
-                {% if user %}
-                    <span style="margin-right: 10px;">Hello, <strong>{{ user.username }}</strong></span>
-                {% endif %}
-                <span>🔔</span>
-                <div class="profile-circle"></div>
-            </div>
-        </div>
-        <div class="content">
+    {% block content %}
             <h1 style="text-align: left; margin-bottom: 20px;">MARKETPLACE</h1>
 
             <div class="search-container">
@@ -93,9 +69,9 @@
                     {% endfor %}
                 </div>
             </div>
-        </div>
-    </div>
+            
+            <a href="{{ url_for('post_task') }}" class="fab">+ Create Task</a>
+        {% endblock %}
 
-    <a href="{{ url_for('post_task') }}" class="fab">+ Create Task</a>
 </body>
 </html>

@@ -4,30 +4,9 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <div class="main-layout">
-        <div class="sidebar">
-            <div class="sidebar-top">
-                <h2>SideHustle</h2>
-                <div class="sidebar-menu">
-                    <a href="{{ url_for('marketplace') }}">🏠 Marketplace</a>
-                    <a href="/dashboard">📊 Dashboard</a>
-                    <a href="{{ url_for('my_task') }}">📋 My Task</a>
-                    <a href="#">👤 Profile</a>
-                </div>
-            </div>
-            <div class="sidebar-bottom">
-                <a href="#" class="menu-item">❓ Help</a>
-            </div>
-        </div>
+        {% extends "base.html" %}
 
-        <div class="top-nav">
-            <div class="nav-icons">
-                <span>🔔</span>
-                <div class="profile-circle"></div>
-            </div>
-        </div>
-
-        <div class="content">
+        {% block content %}
             <div class="task-tabs">
                 <a href="{{ url_for('my_task', view='created') }}" 
                 class="tab-btn {% if view == 'created' %}active{% endif %}">Created Tasks</a>
@@ -51,7 +30,7 @@
                             </p>
                             
                             <div class="card-footer" style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;">  
-                                {% if not task.tasker %}
+                                {% if task.get_hired_count() == 0 %}
                                     <div style="display: flex; align-items: center; gap: 5px;">
                                         <span>👥</span>
                                         <strong>{{ task.get_applicant_count() }}</strong> applicants
@@ -59,27 +38,27 @@
                                     <a href="{{ url_for('view_applicants', task_id=task.id) }}" class="btn-outline">Review Applicants →</a>
                                 
                                 {% else %}
-                                    <div style="width: 100%;">
+                                    <div class="full-width">
                                         <div class="hired-info-box">
                                             <div class="user-meta">
                                                 <div class="mini-profile"></div> 
-                                                <span>Hired: <strong>{{ task.tasker }}</strong></span>
+                                                <span>Hired: <strong>{{ task.get_hired_count() }} / {{ task.capacity }}</strong></span>
                                             </div>
-                                            <a href="#" class="btn-outline" style="padding: 5px 12px; font-size: 11px;">Profile</a>
+                                            <a href="{{ url_for('view_applicants', task_id=task.id) }}" class="btn-outline">View Team</a>
                                         </div>
 
-                                        <div class="progress-header">
-                                            <span>Project Progress</span>
-                                            <span class="progress-percent">{{ task.progress }}%</span>
-                                        </div>
-                                        
-                                        <div class="progress-bar">
-                                            <div class="progress-fill" style="width: {{ task.progress | default(0) }}%;"></div>
-                                        </div>
-
-                                        <a href="#" class="btn-primary btn-message">
-                                            💬 Message Helper
-                                        </a>
+                                        {% if task.get_hired_count() < task.capacity %}
+                                            <p class="status-text" style="color: #ef6c00;">Waiting for {{ task.capacity - task.get_hired_count() }} more helper(s)...</p>
+                                        {% else %}
+                                            <div class="progress-header">
+                                                <span>Project Progress</span>
+                                                <span class="progress-percent">{{ task.progress }}%</span>
+                                            </div>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill" style="width: {{ task.progress | default(0) }}%;"></div>
+                                            </div>
+                                            <a href="#" class="btn-primary btn-message">💬 Message Team</a>
+                                        {% endif %}
                                     </div>
                                 {% endif %}
 
@@ -99,29 +78,35 @@
                             </div>
 
                             <h3>{{ task.title }}</h3>
-                            <p style="color: #666; font-size: 14px; margin-top: 5px;">Client: <strong>{{ task.user }}</strong></p>
+                            <p class="status-text">Client: <strong>{{ task.user }}</strong></p>
 
                             {% if app.status == 'Hired' %}
-                                <div class="card-footer" style="flex-direction: column; align-items: flex-start; gap: 15px; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;">
-                                    
-                                    <div style="width: 100%;">
-                                        <div class="progress-header">
-                                            <span>Your Progress</span>
-                                            <span class="progress-percent">{{ task.progress }}%</span>
-                                        </div>
-                                        <div class="progress-bar">
-                                            <div class="progress-fill" style="width: {{ task.progress }}%;"></div>
-                                        </div>
-                                    </div>
-
-                                    <div style="display: flex; gap: 10px; width: 100%;">
-                                        <a href="#" class="btn-outline" style="flex: 1; text-align: center; padding: 10px;">
-                                            Update Progress
-                                        </a>
-
-                                        <a href="#" class="btn-primary btn-message" style="margin-top: 0; flex: 1; font-size: 12px; padding: 10px;">💬 Message Client</a>
+                                <div class="card-footer-hired">
+                                    <div class="full-width">
+                                        {% if task.get_hired_count() < task.capacity %}
+                                            <!-- Multi-person Capacity Logic -->
+                                            <div class="hired-info-box" style="background: #fff3e0;">
+                                                <p style="font-size: 13px; color: #ef6c00;">
+                                                    <strong>Waiting for Full Team:</strong> {{ task.get_hired_count() }} of {{ task.capacity }} hired.
+                                                </p>
+                                            </div>
+                                        {% else %}
+                                            <!-- Team is full, show progress and buttons -->
+                                            <div class="progress-header">
+                                                <span>Your Progress</span>
+                                                <span class="progress-percent">{{ task.progress }}%</span>
+                                            </div>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill" style="width: {{ task.progress }}%;"></div>
+                                            </div>
+                                            <div class="action-buttons-row">
+                                                <a href="#" class="btn-outline action-btn-centered">Update Progress</a>
+                                                <a href="#" class="btn-primary btn-message action-btn-centered" style="margin-top: 0;">💬 Message Client</a>
+                                            </div>
+                                        {% endif %}
                                     </div>
                                 </div>
+
                             {% elif app.status == 'Rejected' %}
                                 <p style="color: #d32f2f; font-size: 13px; margin-top: 15px;">Sorry, the client has chosen another tasker for this job.</p>
                             {% else %}
@@ -130,9 +115,8 @@
                         </div>
                     {% endfor %}
                 {% endif %}
-
             </div>
-        </div>
-    </div>
+        {% endblock %}    
+
 </body>
 </html>

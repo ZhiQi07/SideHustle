@@ -37,8 +37,10 @@ class Task(db.Model):
     progress = db.Column(db.Integer, default=0) # Stores 0, 25, 50, 75, or 100
 
     def get_applicant_count(self):
-        # This counts how many applications have this task's ID
         return Application.query.filter_by(task_id=self.id).count()
+    
+    def get_hired_count(self):
+        return Application.query.filter_by(task_id=self.id, status='Hired').count()
 
 class Application(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -48,10 +50,16 @@ class Application(db.Model):
     reason = db.Column(db.Text)
     status = db.Column(db.String(20), default='Pending')
 
+class Notification(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    task_id = db.Column(db.Integer, db.ForeignKey('task.id')) # New column to link to the task
+    message = db.Column(db.String(255), nullable=False)
+    status = db.Column(db.String(20), default='unread')
+
+# NOW call create_all so it sees the Notification class
 with app.app_context():
     db.create_all()
-
-# ROUTES
 
 @app.route('/', methods=['GET', 'POST'])
 def login():
@@ -176,23 +184,28 @@ def apply(task_id):
 
 @app.route('/my_task')
 def my_task():
+    # 1. Safety check: redirect to login if no session
     if 'user_id' not in session:
         return redirect(url_for('login'))
 
     current_user = User.query.get(session['user_id'])
+    
+    # 2. Extra safety: if user ID is in session but not in DB (happens after DB reset)
+    if not current_user:
+        session.clear()
+        return redirect(url_for('login'))
+
     view = request.args.get('view', 'created')
 
     created_tasks = Task.query.filter_by(user=current_user.username).all()
-    
-    # FIX: Send the Application objects so we can see the status (Pending/Hired/Rejected)
     my_applications = Application.query.filter_by(applicant_username=current_user.username).all()
 
     return render_template('my_task.html', 
                            created=created_tasks, 
-                           applied=my_applications, # This is now a list of Applications
+                           applied=my_applications, 
                            view=view, 
                            user=current_user,
-                           Task=Task)
+                           Task=Task) # Keeps your 'set task' logic working in HTML
 
 @app.route('/view-applicants/<int:task_id>')
 def view_applicants(task_id):
@@ -210,20 +223,29 @@ def hire_applicant(app_id):
     if 'user_id' not in session:
         return redirect(url_for('login'))
 
-    # 1. Find the application and the task
     application = Application.query.get_or_404(app_id)
     task = Task.query.get(application.task_id)
 
-    # 2. Update the Task: Hire the user and change status
-    task.status = 'Assigned'
-    task.tasker = application.applicant_username
-    
-    # 3. Update the Application status
-    application.status = 'Hired'
-    
-    db.session.commit()
-    
-    flash(f"You have hired {application.applicant_username}!")
+    # 1. Check if we still have space based on capacity
+    if task.get_hired_count() < task.capacity:
+        application.status = 'Hired'
+        # Create the notification with the task_id included
+        new_note = Notification(
+            user_id=User.query.filter_by(username=application.applicant_username).first().id,
+            task_id=task.id, # Link it to the task
+            message=f"You have been HIRED for the task: {task.title}!"
+        )
+        db.session.add(new_note)
+        
+        # 2. Check if this was the LAST person needed
+        if task.get_hired_count() + 1 == task.capacity:
+            task.status = 'In Progress' # Task officially starts
+        
+        db.session.commit()
+        flash(f"You have hired {application.applicant_username}!")
+    else:
+        flash("Task is already at full capacity!")
+
     return redirect(url_for('my_task', view='created'))
 
 @app.route('/reject_applicant/<int:app_id>')
@@ -262,6 +284,22 @@ def update_progress(task_id):
         flash(f"Progress updated to {new_progress}%!")
         
     return redirect(url_for('my_task', view='applied'))
+
+@app.context_processor
+def inject_notifications():
+    if 'user_id' in session:
+        # 1. Try to find the user in the database
+        current_user = User.query.get(session['user_id'])
+        
+        # 2. Check if the user ACTUALLY exists (is not None)
+        if current_user:
+            user_notifications = Notification.query.filter_by(user_id=current_user.id).order_by(Notification.id.desc()).limit(5).all()
+            return dict(notifications=user_notifications)
+        else:
+            # 3. If the user doesn't exist (DB deleted), clear the ghost session
+            session.pop('user_id', None)
+            
+    return dict(notifications=[])
 
 if __name__ == '__main__':
     app.run(debug=True)
