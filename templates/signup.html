@@ -19,25 +19,54 @@
                 <form action="{{ url_for('signup') }}" method="POST">
                     <input type="email" name="email" placeholder="MMU EMAIL ADDRESS" class="modern-input" pattern="^[a-zA-Z0-9._%+-]+@student\.mmu\.edu\.my$" style="text-transform: lowercase;" title="Please use your official MMU student email (@student.mmu.edu.my)" required>
                     <input type="text" name="username" placeholder="CREATE USERNAME" class="modern-input" required>
-                    <input type="password" name="password" placeholder="CREATE PASSWORD" class="modern-input" required>
+
+                    <div class="password-wrapper">
+                        <input type="password" name="password" id="password" placeholder="CREATE PASSWORD" class="modern-input" required>
+                        <i class="fi fi-rr-eye toggle-password" data-target="password"></i>
+                    </div>
+
                     <ul class="password-check">
                         <li>At least 8 characters, 1 upper and 1 lowercase</li>
                         <li>Include a number or symbol</li>
                     </ul>
-                    <input type="password" name="confirm_password" placeholder="CONFIRM PASSWORD" class="modern-input" required>
+                    
+                    <div class="password-wrapper">
+                        <input type="password" name="confirm_password" id="confirm_password" placeholder="CONFIRM PASSWORD" class="modern-input" required>
+                        <i class="fi fi-rr-eye toggle-password" data-target="confirm_password"></i>
+                    </div>
+                
                     <select name="security_question" class="modern-input select-input" required>
                         <option value="" disabled selected>SELECT A SECURITY QUESTION</option>
                         <option value="In what city or town did your parents meet?">In what city or town did your parents meet?</option>
                         <option value="What was the first concert you ever attended?">What was the first concert you ever attended?</option>
                         <option value="What was the name of your first elementary school?">What was the name of your first elementary school?</option>
                         <option value="What city were you born in?">What city were you born in?</option>
+                        <option value="Who is your first ever crush?">Who is your first ever crush?</option>
+                        <option value="Who is your favourite celebrity?">Who is your favourite celebrity?</option>
                     </select>
                     <input type="text" name="security_answer" placeholder="ENTER YOUR ANSWER" class="modern-input" required>
                     
-                    <button type="submit" class="purple-btn">SIGN UP</button>
+                    <button type="submit" class="blue-btn">SIGN UP</button>
                 </form>
             </div>
-            <p>Already have an account? <a href="{{ url_for('login') }}">Login</a></p>
+            <div class="auth-box-footer">
+                Already have an account? <a href="{{ url_for('login') }}" class="login-btn-link">LOGIN</a>
+            </div>
         </div>
+
+        <script>
+            document.querySelectorAll('.toggle-password').forEach(icon => {
+                icon.addEventListener('click', function() {
+                    const targetId = this.getAttribute('data-target');
+                    const input = document.getElementById(targetId);
+                    
+                    const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+                    input.setAttribute('type', type);
+                    
+                    this.classList.toggle('fi-rr-eye');
+                    this.classList.toggle('fi-rr-eye-crossed');
+                });
+            });
+        </script>
     </body>
 </html>

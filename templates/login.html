@@ -26,7 +26,10 @@
         <form action="{{ url_for('login') }}" method="POST">
             <div class="input-container">
                 <input type="email" name="email" placeholder="EMAIL ADDRESS" class="modern-input" style="text-transform: lowercase;"  pattern=".*@student\.mmu\.edu\.my" title="Please use your official MMU student email (@student.mmu.edu.my)" required>
-                <input type="password" name="password" placeholder="Password" class="modern-input" required>
+                <div class="password-wrapper">
+                    <input type="password" name="password" id="password" placeholder="Password" class="modern-input" required>
+                    <i class="fi fi-rr-eye" id="togglePassword"></i>
+                </div>
             </div>
 
             <div class="forgot-container">
@@ -40,5 +43,16 @@
             Don't have an account? <a href="{{ url_for('signup') }}" class="signup-btn-link">SIGN UP</a>
         </p>
     </div>
+    <script>
+        const togglePassword = document.querySelector('#togglePassword');
+        const password = document.querySelector('#password');
+
+        togglePassword.addEventListener('click', function () {
+            const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+            password.setAttribute('type', type);
+            this.classList.toggle('fi-rr-eye');
+            this.classList.toggle('fi-rr-eye-crossed');
+        });
+    </script>
 </body>
 </html>

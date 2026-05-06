@@ -66,6 +66,22 @@ body {
     position: relative;
 }
 
+.password-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.password-wrapper i {
+    position: absolute;
+    right: 20px;
+    top: 43%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #a986df;
+    font-size: 18px;
+    z-index: 10;
+}
+
 .modern-input {
     width: 100%;
     padding: 12px 20px;
