@@ -102,11 +102,51 @@ class Earning(db.Model):
     amount = db.Column(db.Float, nullable=False)
     timestamp = db.Column(db.DateTime, default=db.func.now())
 
+
+
+class Rating(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    task_id = db.Column(db.Integer, db.ForeignKey('task.id'), nullable=False)
+    reviewer_username = db.Column(db.String(50), nullable=False) # 谁写的评价
+    target_username = db.Column(db.String(50), nullable=False)   # 评价谁
+    score = db.Column(db.Integer, nullable=False)               # 分数 (1-5)
+    review_content = db.Column(db.Text)                         # 评价文字
+    timestamp = db.Column(db.DateTime, default=db.func.now())
+
+# 记得在 app.app_context() 里面运行 db.create_all() 以创建这张表
+
 # =========================
 # INIT DB
 # =========================
 with app.app_context():
     db.create_all()
+
+
+@app.context_processor
+def inject_global_unread():
+    if 'user_id' not in session:
+        return {"global_unread_count": 0}
+    try:
+        user = db.session.get(User, session['user_id'])
+        if not user:
+            return {"global_unread_count": 0}
+        count = db.session.execute(
+            text("""
+                SELECT COUNT(*) FROM message 
+                WHERE is_read = 0 
+                AND sender != :uname
+                AND task_id IN (
+                    SELECT id FROM task 
+                    WHERE user = :uname OR tasker = :uname
+                )
+            """),
+            {"uname": user.username}
+        ).scalar()
+        return {"global_unread_count": count or 0}
+    except:
+        return {"global_unread_count": 0}
+
+
 
 # =========================
 # ROUTES
@@ -420,12 +460,6 @@ def reject_applicant(app_id):
 
 
 
-
-
-
-
-
-
 @app.route('/chat/<int:task_id>')
 def chat(task_id):
     if 'user_id' not in session:
@@ -453,10 +487,89 @@ def chat(task_id):
 def rate_user(task_id, target_user):
     if 'user_id' not in session:
         return redirect(url_for('login'))
+
+    current_user = db.session.get(User, session['user_id'])
+
+    # ← 已经 rate 过，直接跳走
+    already_rated = Rating.query.filter_by(
+        task_id=task_id,
+        reviewer_username=current_user.username
+    ).first()
+    if already_rated:
+        flash("You have already rated this task.")
+        return redirect(url_for('my_task'))
+
+    task = Task.query.get_or_404(task_id)
+    role = 'tasker' 
+
+    # 3. 这里的参数一定要补全：把 task 和 role 都传进去
+    return render_template('rate_user.html', 
+                           task_id=task_id, 
+                           target_user=target_user, 
+                           task=task,    # 修复 UndefinedError 的关键
+                           role=role)    # 修复角色判断的关键
+
+
+@app.route('/submit_rating/<int:task_id>/<target_user>', methods=['POST'])
+def submit_rating(task_id, target_user):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    current_user = db.session.get(User, session['user_id'])
+
+    # ← 加这个检查：已经 rate 过就直接跳走
+    already_rated = Rating.query.filter_by(
+        task_id=task_id,
+        reviewer_username=current_user.username
+    ).first()
+    if already_rated:
+        flash("You have already rated this task.")
+        return redirect(url_for('my_task'))
+
+    rating_val = int(request.form.get('rating', 5))
+    review_text = request.form.get('review', '')
+
+    # 1. 保存到 Rating 表
+    new_rating = Rating(
+        task_id=task_id,
+        reviewer_username=current_user.username,
+        target_username=target_user,
+        score=rating_val,
+        review_content=review_text
+    )
+    db.session.add(new_rating)
+
+    # 2. 更新被评价人的 User 表数据（用于计算平均分）
+    user_to_rate = User.query.filter_by(username=target_user).first()
+    if user_to_rate:
+        # 如果是第一次评价，把默认的 5.0 和 1 次计数重置掉（可选逻辑）
+        user_to_rate.total_rating += rating_val
+        user_to_rate.review_count += 1
+        db.session.commit()
+
+    flash("Rating submitted successfully!")
+    return redirect(url_for('dashboard'))
+
+
+
+@app.route('/view_ratings')
+def view_ratings():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
     
-    # 暂时先跳转回 my_task 页面，或者你可以先 return 一个简单的字符串测试
-    # 以后你可以在这里 render_template 一个评价页面
-    return f"<h1>Rating System Coming Soon!</h1><p>Task ID: {task_id}</p><p>Rating for: {target_user}</p><a href='/my_task'>Go Back</a>"
+    user = db.session.get(User, session['user_id'])
+    
+    # --- 核心修改：从数据库查询真正的评价 ---
+    real_reviews = Rating.query.filter_by(target_username=user.username).order_by(Rating.timestamp.desc()).all()
+    
+    avg_rating = round(user.total_rating / user.review_count, 1) if user.review_count > 0 else 5.0
+
+    return render_template('view_ratings.html', 
+                           user=user, 
+                           reviews=real_reviews, # 传给前端真正的数据库记录
+                           avg_rating=avg_rating)
+
+
 
 
 
@@ -471,10 +584,8 @@ def on_join(data):
 @socketio.on('send_message')
 def handle_message(data):
     room = data['room']
-    # 将消息广播给房间里的所有人，包括发送者
     emit('receive_message', data, room=room)
     
-    # 可选：将聊天记录保存到数据库
     new_msg = Message(
         task_id=int(room), 
         sender=data['username'], 
@@ -482,6 +593,20 @@ def handle_message(data):
     )
     db.session.add(new_msg)
     db.session.commit()
+
+    # 找出这个 task 的另一方，推送通知给他
+    task = db.session.get(Task, int(room))
+    if task:
+        recipient = None
+        if task.user == data['username']:
+            # 发送者是 creator，收件人是 tasker
+            recipient = User.query.filter_by(username=task.tasker).first()
+        elif task.tasker == data['username']:
+            # 发送者是 tasker，收件人是 creator
+            recipient = User.query.filter_by(username=task.user).first()
+        
+        if recipient:
+            socketio.emit('new_unread', {'task_id': int(room)}, room=str(recipient.id))
 
 
 @socketio.on('connect')

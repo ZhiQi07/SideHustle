@@ -14,7 +14,12 @@
                 <div class="sidebar-menu">
                     <a href="{{ url_for('marketplace') }}">🏠 Marketplace</a>
                     <a href="{{ url_for('dashboard') }}">📊 Dashboard</a>
-                    <a href="{{ url_for('my_task') }}">📋 My Task</a>
+                    <a href="/my_task" style="position: relative;">
+                    📋 My Task
+                    {% if global_unread_count > 0 %}
+                        <span class="dot-small"></span>
+                    {% endif %}
+                </a>
                     <a href="#">👤 Profile</a>
                 </div>
             </div>
@@ -106,5 +111,27 @@
 </div> <!-- 闭合 task-grid -->
 
     <a href="{{ url_for('post_task') }}" class="fab">+ Create Task</a>
+
+<script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
+<script>
+    const socket = io();
+
+    // 收到新消息通知 → 存进 localStorage
+    socket.on('new_unread', function(data) {
+        localStorage.setItem('has_unread', '1');
+        // 立刻显示红点（如果元素存在）
+        const dot = document.getElementById('global-unread-dot');
+        if (dot) dot.style.display = 'inline-block';
+    });
+
+    // 页面加载时检查 localStorage
+    window.addEventListener('DOMContentLoaded', function() {
+        if (localStorage.getItem('has_unread') === '1') {
+            const dot = document.getElementById('global-unread-dot');
+            if (dot) dot.style.display = 'inline-block';
+        }
+    });
+</script>
+
 </body>
 </html>

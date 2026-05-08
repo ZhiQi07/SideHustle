@@ -14,7 +14,12 @@
             <div class="sidebar-menu">
                 <a href="{{ url_for('marketplace') }}">🏠 Marketplace</a>
                 <a href="{{ url_for('dashboard') }}" class="active">📊 Dashboard</a>
-                <a href="{{ url_for('my_task') }}">📋 My Task</a>
+                <a href="/my_task" style="position: relative;">
+                📋 My Task
+                {% if global_unread_count > 0 %}
+                    <span class="dot-small"></span>
+                {% endif %}
+            </a>
                 <a href="#">👤 Profile</a>
             </div>
             <div class="help-link">❓ Help</div>
@@ -31,18 +36,22 @@
 
             <main class="main-content">
                 <div class="cards-row">
-                   <a href="{{ url_for('earnings') }}" style="text-decoration: none; color: inherit;">
-    <div class="summary-card">
-        <div class="card-title">Credit 💵</div>
-        <div class="card-value">RM {{ total_credit if total_credit is not none else '0.0' }}</div>
-        <!-- 提示用户可以点击 -->
-        <div style="font-size: 11px; color: #5a32a8; margin-top: 5px;">View History →</div>
-    </div>
-</a>
-                    <div class="summary-card">
-                        <div class="card-title">User Rating</div>
-                        <div class="card-value">⭐ {{ average_rating }} / 5.0</div>
-                    </div>
+                    <a href="{{ url_for('earnings') }}" style="text-decoration: none; color: inherit;">
+                        <div class="summary-card">
+                            <div class="card-title">Credit 💵</div>
+                            <div class="card-value">RM {{ total_credit if total_credit is not none else '0.0' }}</div>
+                            <div style="font-size: 11px; color: #5a32a8; margin-top: 5px;">View History →</div>
+                        </div>
+                    </a>
+
+                    <a href="{{ url_for('view_ratings') }}" style="text-decoration: none; color: inherit;">
+                        <div class="summary-card" style="cursor: pointer;">
+                            <div class="card-title">User Rating</div>
+                            <div class="card-value">⭐ {{ average_rating }} / 5.0</div>
+                            <div style="font-size: 11px; color: #5a32a8; margin-top: 5px;">View Reviews →</div>
+                        </div>
+                    </a>
+
                     <div class="summary-card">
                         <div class="card-title">Tasks Done</div>
                         <div class="card-value">{{ tasks_done if tasks_done is not none else '0' }}</div>
@@ -53,7 +62,6 @@
                 <div class="tracking-list-wrapper">
                     {% if tracking_list %}
                         {% for item in tracking_list %}
-                        <!-- 如果任务已完成，添加一个特殊的样式 (opacity 0.7) -->
                         <div class="tracking-row" 
                              style="{% if item.status == 'Completed' %}opacity: 0.75;{% endif %}"
                              onclick="openTaskPopup('{{ item.title }}', '{{ item.progress }}%', '{{ item.status }}', '{{ item.deadline }}')">
@@ -61,7 +69,6 @@
                             <div class="tracking-progress-side">
                                 <div class="tracking-progress-inline">
                                     <div class="tracking-progress-bar">
-                                        <!-- 如果完成，进度条颜色变绿 (#2e7d32) -->
                                         <div class="tracking-progress-fill" 
                                              style="width: {{ item.progress }}%; {% if item.status == 'Completed' %}background-color: #2e7d32;{% endif %}"></div>
                                     </div>
@@ -87,13 +94,12 @@
         </div>
     </div>
 
-    <!-- Popup 弹窗部分 -->
     <div class="tracking-popup-overlay" id="popupOverlay">
         <div class="tracking-popup">
             <h3 style="margin-bottom: 20px;">Task Information</h3>
             <p><strong>Task:</strong> <span id="p-task"></span></p>
             <p><strong>Progress:</strong> <span id="p-progress"></span></p>
-            <p><strong>Status:</strong> <span id="p-status"></span></p> <!-- 增加了状态显示 -->
+            <p><strong>Status:</strong> <span id="p-status"></span></p>
             <p><strong>Deadline:</strong> <span id="p-deadline"></span></p>
             <div style="text-align: right; margin-top: 25px;">
                 <button class="popup-back-btn" onclick="closePopup()">Back</button>
@@ -112,6 +118,22 @@
         function closePopup() {
             document.getElementById('popupOverlay').classList.remove('show');
         }
+    </script>
+
+    <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
+    <script>
+        const socket = io();
+        socket.on('new_unread', function(data) {
+            localStorage.setItem('has_unread', '1');
+            const dot = document.getElementById('global-unread-dot');
+            if (dot) dot.style.display = 'inline-block';
+        });
+        window.addEventListener('DOMContentLoaded', function() {
+            if (localStorage.getItem('has_unread') === '1') {
+                const dot = document.getElementById('global-unread-dot');
+                if (dot) dot.style.display = 'inline-block';
+            }
+        });
     </script>
 </body>
 </html>

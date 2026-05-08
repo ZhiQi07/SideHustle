@@ -238,3 +238,14 @@ body {
     cursor: pointer;
     font-size: 14px;
 }
+
+.dot-small {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: #ff4d4f;
+    border-radius: 50%;
+    margin-left: 5px;
+    vertical-align: middle;
+    border: 1px solid white;
+}

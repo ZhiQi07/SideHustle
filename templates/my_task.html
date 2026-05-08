@@ -302,10 +302,11 @@
     const socket = io();
 
     socket.on('clear_unread', function(data) {
-        const badge = document.getElementById('badge-' + data.task_id);
-        if (badge) {
-            badge.style.display = 'none';
-        }
+    localStorage.removeItem('has_unread'); // ← 加这一行
+    const badge = document.getElementById('badge-' + data.task_id);
+    if (badge) {
+        badge.style.display = 'none';
+    }
         // 同步隐藏全局红点[cite: 2]
         const globalDot = document.getElementById('global-unread-dot');
         const createdDot = document.getElementById('created-unread-dot');
