@@ -4,6 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import func, text
 import os
 from datetime import datetime
+import re
 
 app = Flask(__name__)
 app.secret_key = "mmu_secret_key"
@@ -23,8 +24,14 @@ db = SQLAlchemy(app)
 # =========================
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(50), unique=True, nullable=False)
-    password = db.Column(db.String(100), nullable=False)
+    # --- Friend's Security Features ---
+    email = db.Column(db.String(150), unique=True, nullable=False)
+    username = db.Column(db.String(150), unique=True, nullable=False)
+    password = db.Column(db.String(150), nullable=False)
+    security_question = db.Column(db.String(200), nullable=False)
+    security_answer = db.Column(db.String(200), nullable=False)
+    
+    # --- Shared & Your Features ---
     skills = db.Column(db.Text, default="No skills listed")
     is_admin = db.Column(db.Boolean, default=False)
     credit = db.Column(db.Float, default=0.0)
@@ -32,8 +39,7 @@ class User(db.Model):
     review_count = db.Column(db.Integer, default=1)
     tasks_completed = db.Column(db.Integer, default=0)
 
-    # --- 把下面这个函数粘贴在这里 ---
-    # 确保 def 前面有 4 个空格，不要套在别的函数里
+    # --- Your Notification Function ---
     def count_total_unread(self, role='all'):
         if role == 'created':
             tasks = Task.query.filter_by(user=self.username).all()
@@ -46,9 +52,7 @@ class User(db.Model):
         for task in tasks:
             total += task.get_unread_count(self.username)
         return total
-
-
-
+    
 class Task(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
@@ -118,6 +122,18 @@ def login():
         password = request.form.get('password')
         user = User.query.filter_by(username=username, password=password).first()
         if user:
+            email = request.form.get('email').lower() # We use email now instead of username
+            password = request.form.get('password')
+
+            # Friend's Security Check: Only MMU students allowed
+            if not email.endswith('@student.mmu.edu.my'):
+                flash("Only MMU student emails are allowed to log in!")
+                return redirect(url_for('login'))
+
+            # Look for user in the database using email
+            user = User.query.filter_by(email=email, password=password).first()
+
+            if user:
             session['user_id'] = user.id
             return redirect(url_for('marketplace'))
         flash("Invalid credentials!")
@@ -126,16 +142,105 @@ def login():
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
+        email = request.form.get('email').lower()
         username = request.form.get('username')
         password = request.form.get('password')
-        if User.query.filter_by(username=username).first():
-            flash("Username exists!")
+        confirm_password = request.form.get('confirm_password')
+        sec_question = request.form.get('security_question')
+        sec_answer = request.form.get('security_answer').strip().lower()
+
+        user_exists = User.query.filter_by(email=email).first()
+        if user_exists:
+            flash("This MMU email is already registered. Please log in!")
             return redirect(url_for('signup'))
-        new_user = User(username=username, password=password)
+
+        if not email.endswith('@student.mmu.edu.my'):
+            flash("Only MMU student emails are allowed!")
+            return redirect(url_for('signup'))
+        
+        if password != confirm_password:
+            flash("Passwords do not match!")
+            return redirect(url_for('signup'))
+        
+        new_user = User(
+            email=email,
+            username=username,
+            password=password,
+            security_question=sec_question,
+            security_answer=sec_answer
+        )
         db.session.add(new_user)
         db.session.commit()
         return redirect(url_for('login'))
     return render_template('signup.html')
+
+@app.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    if request.method == 'POST':
+        email = request.form.get('email').lower()
+
+        if not email.endswith('@student.mmu.edu.my'):
+            flash("Only MMU student emails are allowed!")
+            return redirect(url_for('forgot_password'))
+        
+        user = User.query.filter_by(email=email).first()
+        if user:
+            session['reset_email'] = email
+            return render_template('forgot_password.html', show_modal=True, question=user.security_question)
+        else:
+            flash("Email not found!")
+    return render_template('forgot_password.html', show_modal=False)
+
+@app.route('/verify-secret', methods=['POST'])
+def verify_secret():
+    email = session.get('reset_email')
+
+    if not email:
+        return redirect(url_for('forgot_password'))
+    
+    user = User.query.filter_by(email=email).first()
+    answer = request.form.get('security_answer').strip().lower()
+
+    if answer == user.security_answer:
+        return redirect(url_for('reset_password_page'))
+    else:
+        flash("Incorrect answer. Please try again.")
+        # Re-render with the popup open if they get it wrong
+        return render_template('forgot_password.html', show_modal=True, question=user.security_question)
+    
+@app.route('/reset-password-page')
+def reset_password_page():
+    if 'reset_email' not in session:
+        return redirect(url_for('forgot_password'))
+    return render_template('reset_password.html')
+
+@app.route('/update-password', methods=['POST'])
+def update_password():
+    email = session.get('reset_email')
+    new_password = request.form.get('new_password')
+    confirm_password = request.form.get('confirm_new_password')
+
+    if not email:
+        return redirect(url_for('forgot_password'))
+    
+    password_pattern = r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d|.*[@$!%*?&]).{8,}$"
+    if not re.match(password_pattern, new_password):
+        flash("Password does not meet requirements!")
+        return redirect(url_for('reset_password_page'))
+
+    if new_password != confirm_password:
+        flash("Passwords do not match!")
+        return redirect(url_for('reset_password_page'))
+
+    user = User.query.filter_by(email=email).first()
+    if user:
+        user.password = new_password
+        db.session.commit()
+        session.pop('reset_email', None)
+        flash("Password updated! Please login with your new password.")
+        return redirect(url_for('login'))
+    
+    return redirect(url_for('forgot_password'))
 
 @app.route('/marketplace')
 def marketplace():
@@ -425,15 +530,6 @@ def reject_applicant(app_id):
     
     # 5. Redirect back to the list so you can see the update
     return redirect(url_for('view_applicants', task_id=application.task_id))
-
-
-
-
-
-
-
-
-
 
 @app.route('/chat/<int:task_id>')
 def chat(task_id):
