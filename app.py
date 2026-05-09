@@ -64,9 +64,14 @@ class Task(db.Model):
     tasker = db.Column(db.String(50)) # 执行者
     deadline = db.Column(db.String(50))
     capacity = db.Column(db.Integer, default=1)
-    tasker = db.Column(db.String(50)) # Stores the username of the person hired
     progress = db.Column(db.Integer, default=0) # Stores 0, 25, 50, 75, or 100
     urgent = db.Column(db.Boolean, default=False)
+
+    def get_unread_count(self, current_username):
+        return Message.query.filter_by(
+            task_id=self.id, 
+            is_read=False
+        ).filter(Message.sender != current_username).count()
 
     def get_applicant_count(self):
         return Application.query.filter_by(task_id=self.id).count()
@@ -90,12 +95,6 @@ class Notification(db.Model):
     status = db.Column(db.String(20), default='unread')
 
 # NOW call create_all so it sees the Notification class
-with app.app_context():
-    db.create_all()
-
-def get_applicant_count(self):
-        return Application.query.filter_by(task_id=self.id).count()
-
 
 class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -113,30 +112,37 @@ class Earning(db.Model):
     amount = db.Column(db.Float, nullable=False)
     timestamp = db.Column(db.DateTime, default=db.func.now())
 
+with app.app_context():
+    db.create_all()
+
+# --- Add this first so the main URL works ---
+@app.route('/')
+def index():
+    return redirect(url_for('login'))
+
+@app.route('/')
+def home():
+    return redirect(url_for('login'))
 
 @app.route('/login', methods=['GET', 'POST'])
-
 def login():
     if request.method == 'POST':
-        username = request.form.get('username')
+        email = request.form.get('email', '').lower()
         password = request.form.get('password')
-        user = User.query.filter_by(username=username, password=password).first()
+
+        if not email.endswith('@student.mmu.edu.my'):
+            flash("Only MMU student emails are allowed to log in!")
+            return redirect(url_for('login'))
+
+        user = User.query.filter_by(email=email, password=password).first()
+
         if user:
-            email = request.form.get('email').lower() # We use email now instead of username
-            password = request.form.get('password')
-
-            # Friend's Security Check: Only MMU students allowed
-            if not email.endswith('@student.mmu.edu.my'):
-                flash("Only MMU student emails are allowed to log in!")
-                return redirect(url_for('login'))
-
-            # Look for user in the database using email
-            user = User.query.filter_by(email=email, password=password).first()
-
-            if user:
+            # IMPORTANT: Indentation must be 12 spaces here (inside the IF)
             session['user_id'] = user.id
             return redirect(url_for('marketplace'))
-        flash("Invalid credentials!")
+        
+        flash("Invalid email or password!")
+        
     return render_template('login.html')
 
 @app.route('/signup', methods=['GET', 'POST'])
@@ -398,12 +404,15 @@ def patch_database():
             conn.execute(text("ALTER TABLE task ADD COLUMN urgent BOOLEAN DEFAULT 0"))
         
         # --- 3. 新增：检查 Message 表 (修复 bug 的关键) ---
-        message_cols = [row[1] for row in conn.execute(text("PRAGMA table_info(message)")).fetchall()]
-        if "is_read" not in message_cols:
-            conn.execute(text("ALTER TABLE message ADD COLUMN is_read BOOLEAN DEFAULT 0"))
-        
-        conn.commit()
-        print("✅ Database columns patched successfully!")
+        table_check = conn.execute(text("SELECT name FROM sqlite_master WHERE type='table' AND name='message'")).fetchone()
+
+        if table_check:
+            message_cols = [row[1] for row in conn.execute(text("PRAGMA table_info(message)")).fetchall()]
+            if "is_read" not in message_cols:
+                conn.execute(text("ALTER TABLE message ADD COLUMN is_read BOOLEAN DEFAULT 0"))
+                print("✅ Message table patched!")
+        else:
+            print("ℹ️ Message table doesn't exist yet, skipping patch.")
 
 
 
@@ -430,6 +439,20 @@ def apply(task_id):
     current_user = User.query.get(session['user_id'])
 
     if request.method == 'POST':
+        # 1. Prevent Self-Application
+        if task.user == current_user.username:
+            flash("You cannot apply for a task you created!")
+            return redirect(url_for('marketplace'))
+
+        # 2. Prevent Duplicate Applications
+        existing_app = Application.query.filter_by(
+            task_id=task.id, 
+            applicant_username=current_user.username
+        ).first()
+        
+        if existing_app:
+            flash("You have already applied for this task!")
+            return redirect(url_for('marketplace'))
         # Create a new Application record in the database
         new_app = Application(
             task_id=task.id,
@@ -447,13 +470,11 @@ def apply(task_id):
 
 @app.route('/my_task')
 def my_task():
-    # 1. Safety check: redirect to login if no session
     if 'user_id' not in session:
         return redirect(url_for('login'))
 
     current_user = User.query.get(session['user_id'])
-    
-    # 2. Extra safety: if user ID is in session but not in DB (happens after DB reset)
+
     if not current_user:
         session.clear()
         return redirect(url_for('login'))
@@ -461,14 +482,27 @@ def my_task():
     view = request.args.get('view', 'created')
 
     created_tasks = Task.query.filter_by(user=current_user.username).all()
-    my_applications = Application.query.filter_by(applicant_username=current_user.username).all()
 
-    return render_template('my_task.html', 
-                           created=created_tasks, 
-                           applied=my_applications, 
-                           view=view, 
-                           user=current_user,
-                           Task=Task) # Keeps your 'set task' logic working in HTML
+    my_applications = Application.query.filter_by(
+        applicant_username=current_user.username
+    ).all()
+
+    applied_tasks = []
+
+    for app in my_applications:
+        task = Task.query.get(app.task_id)
+        applied_tasks.append({
+            'app': app,
+            'task': task
+        })
+
+    return render_template(
+        'my_task.html',
+        created=created_tasks,
+        applied_tasks=applied_tasks,
+        view=view,
+        user=current_user
+    )
 
 @app.route('/view-applicants/<int:task_id>')
 def view_applicants(task_id):

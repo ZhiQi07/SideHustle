@@ -1,6 +1,6 @@
-<!DOCTYPE html>
-<html>
-<head>
+{% extends "base.html" %}
+
+{% block content %}
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
         /* 弹窗面板样式 */
@@ -131,11 +131,6 @@
             position: relative;
         }
     </style>
-</head>
-<body>
-        {% extends "base.html" %}
-
-        {% block content %}
             <div class="task-tabs">
                 <!-- 在 Tab 文字后面加红点逻辑[cite: 1, 2] -->
                 <a href="{{ url_for('my_task', view='created') }}" 
@@ -164,7 +159,6 @@
                                 <span class="tag" style="background: #f0f0f0; color: #666;">{{ task.status | upper }}</span>
                             </div>
                             <h3>{{ task.title }}</h3>
-<<<<<<< HEAD
                             <p style="color: #666; font-size: 14px; margin-top: 5px;">
                                 {{ task.description }}
                             </p>
@@ -175,14 +169,8 @@
                                         <span>👥</span>
                                         <strong>{{ task.get_applicant_count() }}</strong> applicants
                                     </div>
-=======
-                            <p>{{ task.description }}</p>
-                            <div class="card-footer" style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px;">
-                                {% if not task.tasker %}
->>>>>>> c00c1f37481681e03d481ab3c19db3c94ec80118
                                     <a href="{{ url_for('view_applicants', task_id=task.id) }}" class="btn-outline">Review Applicants →</a>
                                 {% else %}
-<<<<<<< HEAD
                                     <div class="full-width">
                                         <div class="hired-info-box">
                                             <div class="user-meta">
@@ -202,32 +190,22 @@
                                             <div class="progress-bar">
                                                 <div class="progress-fill" style="width: {{ task.progress | default(0) }}%;"></div>
                                             </div>
-                                            <a href="#" class="btn-primary btn-message">💬 Message Team</a>
-                                        {% endif %}
-=======
-                                    <div style="width: 100%;">
-                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                            <span style="font-size: 12px; color: #4caf50;">Hired: <strong>{{ task.tasker }}</strong></span>
-                                            <span style="font-size: 12px; color: #666;">{{ task.progress }}%</span>
-                                        </div>
-                                        <div class="progress-bar" style="margin-bottom: 15px;">
-                                            <div class="progress-fill" style="width: {{ task.progress }}%;"></div>
-                                        </div>
 
-                                        <div class="btn-flex-container">
-                                            {% if task.progress == 100 %}
-                                                <a href="{{ url_for('rate_user', task_id=task.id, target_user=task.tasker) }}" class="btn-rate">⭐ Rate Tasker</a>
-                                            {% endif %}
-                                            
-                                            <a href="{{ url_for('chat', task_id=task.id) }}" class="btn-msg-half">
-                                                💬 Message Helper
-                                                {% set unread = task.get_unread_count(user.username) %}
-                                                {% if unread > 0 %}
-                                                    <span id="badge-{{ task.id }}" class="unread-badge">{{ unread }}</span>
+                                            <div class="btn-flex-container" style="margin-top: 15px;">
+                                                {% if task.progress == 100 %}
+                                                    <a href="{{ url_for('rate_user', task_id=task.id, target_user=task.tasker) }}" class="btn-rate">⭐ Rate Tasker</a>
                                                 {% endif %}
-                                            </a>
-                                        </div>
->>>>>>> c00c1f37481681e03d481ab3c19db3c94ec80118
+                                                
+                                                <a href="{{ url_for('chat', task_id=task.id) }}" class="btn-msg-half">
+                                                    💬 Message Team
+                                                    {% set unread = task.get_unread_count(user.username) %}
+                                                    {% if unread > 0 %}
+                                                        <span id="badge-{{ task.id }}" class="unread-badge">{{ unread }}</span>
+                                                    {% endif %}
+                                                </a>
+                                            </div>
+                                        {% endif %}
+                                    </div>
                                     </div>
                                 {% endif %}
                             </div>
@@ -235,59 +213,9 @@
                     {% endfor %}
 
                 {% elif view == 'applied' %}
-                    {% for app in applied %}
-                        {% set task = Task.query.get(app.task_id) %}
-<<<<<<< HEAD
-                        <div class="card">
-                            <div class="card-header">
-                                <span class="tag">{{ task.category }}</span>
-                                <span class="tag" style="background: {% if app.status == 'Hired' %}#e8f5e9; color: #2e7d32;{% elif app.status == 'Rejected' %}#ffebee; color: #c62828;{% else %}#fff3e0; color: #ef6c00;{% endif %}">
-                                    {{ app.status | upper }}
-                                </span>
-                            </div>
-
-                            <h3>{{ task.title }}</h3>
-                            <p class="status-text">Client: <strong>{{ task.user }}</strong></p>
-
-                            {% if app.status == 'Hired' %}
-                                <div class="card-footer-hired">
-                                    <div class="full-width">
-                                        {% if task.get_hired_count() < task.capacity %}
-                                            <!-- Multi-person Capacity Logic -->
-                                            <div class="hired-info-box" style="background: #fff3e0;">
-                                                <p style="font-size: 13px; color: #ef6c00;">
-                                                    <strong>Waiting for Full Team:</strong> {{ task.get_hired_count() }} of {{ task.capacity }} hired.
-                                                </p>
-                                            </div>
-                                        {% else %}
-                                            <!-- Team is full, show progress and buttons -->
-                                            <div class="progress-header">
-                                                <span>Your Progress</span>
-                                                <span class="progress-percent">{{ task.progress }}%</span>
-                                            </div>
-                                            <div class="progress-bar">
-                                                <div class="progress-fill" style="width: {{ task.progress }}%;"></div>
-                                            </div>
-                                            <div class="action-buttons-row">
-                                                <a href="#" class="btn-outline action-btn-centered">Update Progress</a>
-                                                <a href="#" class="btn-primary btn-message action-btn-centered" style="margin-top: 0;">💬 Message Client</a>
-                                            </div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-
-                            {% elif app.status == 'Rejected' %}
-                                <p style="color: #d32f2f; font-size: 13px; margin-top: 15px;">Sorry, the client has chosen another tasker for this job.</p>
-                            {% else %}
-                                <p style="color: #666; font-size: 13px; margin-top: 15px;">Your application is being reviewed. Check back soon!</p>
-                            {% endif %}
-                        </div>
-                    {% endfor %}
-                {% endif %}
-            </div>
-        {% endblock %}    
-
-=======
+                    {% for item in applied_tasks %}
+                        {% set app = item.app %}
+                        {% set task = item.task %}
                         {% if task %}
                             <div class="card">
                                 <div class="card-header">
@@ -354,9 +282,6 @@
                         {% endif %} 
                     {% endfor %}
                 {% endif %}
-            </div> 
-        </div> 
-    </div> 
 
     <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
     <script>
@@ -415,6 +340,5 @@
         }
     }
     </script>
->>>>>>> c00c1f37481681e03d481ab3c19db3c94ec80118
-</body>
-</html>
+
+    {% endblock %}
