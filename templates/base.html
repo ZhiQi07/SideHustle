@@ -48,11 +48,19 @@
             </div>
         </div>
 
-        <!-- 3. THIS IS THE MAGIC PART -->
-        <div class="content">
-            {% block content %}{% endblock %}
-        </div>
-    </div>
+            <div class="content">
+                {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    {% for message in messages %}
+                    <div class="flash-alert">
+                        {{ message }}
+                    </div>
+                    {% endfor %}
+                {% endif %}
+                {% endwith %}
+
+                {% block content %}{% endblock %}
+            </div>
 
     <!-- 4. JAVASCRIPT (WORKS ON EVERY PAGE) -->
     <script>

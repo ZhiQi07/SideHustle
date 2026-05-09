@@ -120,7 +120,6 @@ with app.app_context():
 def index():
     return redirect(url_for('login'))
 
-@app.route('/')
 def home():
     return redirect(url_for('login'))
 
@@ -384,6 +383,47 @@ def post_task():
         
     return render_template('post_task.html')
 
+@app.route('/edit_task/<int:task_id>', methods=['GET', 'POST'])
+def edit_task(task_id):
+    task = Task.query.get_or_404(task_id)
+    user = User.query.get(session.get('user_id'))
+
+    # Security: Only the creator can edit
+    if not user or task.user != user.username:
+        flash("You are not authorized to edit this task!")
+        return redirect(url_for('my_task'))
+
+    if request.method == 'POST':
+        task.title = request.form.get('title')
+        task.price = float(request.form.get('price'))
+        task.category = request.form.get('category')
+        task.description = request.form.get('description')
+        task.deadline = request.form.get('deadline')
+        
+        db.session.commit()
+        flash("Task updated successfully!")
+        return redirect(url_for('my_task'))
+
+    return render_template('edit_task.html', task=task)
+
+@app.route('/delete_task/<int:task_id>')
+def delete_task(task_id):
+    task = Task.query.get_or_404(task_id)
+    user = User.query.get(session.get('user_id'))
+
+    if not user or task.user != user.username:
+        flash("Unauthorized action!")
+        return redirect(url_for('my_task'))
+
+    # Logical Check: Don't delete if someone is already working on it
+    if task.get_hired_count() > 0:
+        flash("Cannot delete a task that has active hired help!")
+        return redirect(url_for('my_task'))
+
+    db.session.delete(task)
+    db.session.commit()
+    flash("Task deleted successfully.")
+    return redirect(url_for('my_task'))
 
 def patch_database():
     with db.engine.connect() as conn:
