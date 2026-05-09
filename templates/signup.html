@@ -2,19 +2,32 @@
 <html>
     <head>
         <link rel="stylesheet" href="{{ url_for('static', filename='signup.css') }}">
+        <link rel='stylesheet' href='https://cdn-uicons.flaticon.com/uicons-regular-rounded/css/uicons-regular-rounded.css'>
     </head>
     <body>
-        <div class="signup">
-            <h1>Sign Up</h1>
-            <h2>
-                Create an Account<br>
-                Start a journey with us
-            </h2>
-            <form action="{{ url_for('signup') }}" method="POST">
-                <input type="text" name="username" placeholder="Choose a Username" required><br><br>
-                <input type="password" name="password" placeholder="Choose a Password" required><br><br>
-                <button type="submit">Register</button>
-            </form>
+        <div class=signup>
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    {% for message in messages %}
+                        <p style="color: #ff4d4d; font-size: 13px; font-weight: bold; margin-bottom: 10px;">{{ message }}</p>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <h2>Create An Account</h2>
+            <div class="input-container">
+                <form action="{{ url_for('signup') }}" method="POST">
+                    <input type="email" name="email" placeholder="EMAIL ADDRESS" class="modern-input" required>
+                    <input type="text" name="username" placeholder="CREATE USERNAME" class="modern-input" required>
+                    <input type="password" name="password" placeholder="CREATE PASSWORD" class="modern-input" required>
+                    <ul class="password-check">
+                        <li>At least 8 characters, 1 upper and 1 lowercase</li>
+                        <li>Include a number or symbol</li>
+                    </ul>
+                    <input type="password" name="confirm_password" placeholder="CONFIRM PASSWORD" class="modern-input" required>
+                    <button type="submit" class="purple-btn">SIGN UP</button>
+                </form>
+            </div>
             <p>Already have an account? <a href="{{ url_for('login') }}">Login</a></p>
         </div>
     </body>

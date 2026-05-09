@@ -19,6 +19,14 @@
             {% else %}
                 <div style="display: flex; flex-direction: column; gap: 20px;">
                     {% for app in apps %}
+                    <div class="card" style="min-height: auto;">
+                        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+                            <div class="profile-circle" style="background: #5a32a8; width: 40px; height: 40px;"></div>
+                            <div>
+                                <h3 style="margin: 0;">{{ app.applicant_username }}</h3>
+                                <span style="font-size: 12px; color: #888;">Status: {{ app.status }}</span>
+                            </div>
+                        </div>
                         <div class="card" style="min-height: auto;">
                             <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
                                 <div class="profile-circle" style="background: #5a32a8; width: 40px; height: 40px;"></div>
