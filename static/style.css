@@ -535,6 +535,30 @@ body {
 
 /* 3. 统一按钮组布局 - 确保 100% 进度时两个按钮并排[cite: 1] */
 .btn-flex-container {
+/* --- HIRED STATE LAYOUTS --- */
+.card-footer-hired {
+    margin-top: 20px;
+    border-top: 1px solid #eee;
+    padding-top: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+    width: 100%;
+}
+}
+
+.applicant-stats {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.full-width {
+    width: 100%;
+}
+
+.action-buttons-row {
     display: flex;
     gap: 10px;
     width: 100%;
@@ -571,4 +595,218 @@ body {
     text-decoration: none;
     font-weight: bold;
     position: relative; /* 必须有这个，红点才能对齐按钮 */
+}
+
+.action-btn-centered {
+    flex: 1;
+    text-align: center;
+    padding: 10px;
+}
+
+.status-badge {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+/* --- NOTIFICATION POPUP --- */
+/* --- ENHANCED NOTIFICATION POPUP --- */
+/* 解决 base.html 弹窗重叠和透明问题的专用样式 */
+#notification-popup {
+    display: none; /* 默认隐藏 */
+    position: absolute !important;
+    top: 50px !important;    /* 相对于铃铛图标向下偏移 */
+    right: 0 !important;
+    width: 320px !important;
+    background-color: #ffffff !important; /* 必须是纯白色，解决透明问题 */
+    border-radius: 12px !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2) !important; /* 阴影效果 */
+    z-index: 9999 !important; /* 确保它在所有内容之上 */
+    border: 1px solid #eee !important;
+    overflow: hidden !important;
+    color: #333 !important; /* 确保文字颜色是深色 */
+}
+
+/* 修正内部列表样式 */
+.notification-item {
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 12px 15px !important;
+    border-bottom: 1px solid #f5f5f5 !important;
+    text-decoration: none !important;
+    background-color: #ffffff !important;
+}
+
+.notification-item:hover {
+    background-color: #f9f7ff !important;
+}
+
+@keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.popup-header {
+    background: #ffffff;
+    padding: 16px 20px;
+    font-weight: 800;
+    font-size: 16px;
+    border-bottom: 1px solid #f5f5f5;
+    color: #1a1a1a;
+    letter-spacing: -0.5px;
+}
+
+.popup-body {
+    max-height: 420px;
+    overflow-y: auto;
+}
+
+
+
+/* Font styles for the message parts */
+.notification-item .note-title {
+    color: #5a32a8; /* MMU Purple */
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.notification-item .note-msg {
+    color: #4a4a4a;
+    font-size: 13px;
+    line-height: 1.5;
+    font-weight: 400;
+}
+
+.notification-item .note-time {
+    color: #a0a0a0;
+    font-size: 11px;
+    margin-top: 8px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+/* Empty State */
+.empty-notif {
+    padding: 40px 20px;
+    text-align: center;
+    color: #999;
+    font-size: 13px;
+}
+
+/* 强制修正通知弹窗：解决紫色、透明、重叠问题 */
+#notification-popup {
+    display: none; 
+    position: absolute !important;
+    top: 60px !important;    /* 距离顶部导航栏底部的距离 */
+    right: 0 !important;      /* 靠右对齐 */
+    width: 320px !important;
+    background-color: #ffffff !important; /* 强制背景为白色 */
+    border-radius: 12px !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2) !important; /* 增加阴影使其浮动 */
+    z-index: 9999 !important; /* 确保层级最高 */
+    border: 1px solid #ddd !important;
+    padding: 0 !important;    /* 清除可能存在的内边距 */
+}
+
+/* 内部文字颜色强制修正 */
+#notification-popup .popup-header {
+    background: #f8f9fa !important;
+    color: #333 !important;
+    padding: 12px 15px !important;
+    font-weight: bold !important;
+    border-bottom: 1px solid #eee !important;
+}
+
+#notification-popup .notification-item {
+    background: #ffffff !important; /* 每一项也是白色 */
+    color: #333 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 12px 15px !important;
+    border-bottom: 1px solid #f5f5f5 !important;
+    text-decoration: none !important;
+}
+
+#notification-popup .notification-item:hover {
+    background-color: #f0ecf9 !important; /* 悬停时淡淡的紫色 */
+}
+
+#notification-popup .note-title {
+    color: #5a32a8 !important; /* 标题用紫色 */
+    font-weight: bold !important;
+}
+
+#notification-popup .note-msg {
+    color: #666 !important;
+    font-size: 13px !important;
+}
+
+
+
+
+
+
+/* 新增：评价目标的头像栏样式 */
+.target-profile-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: #ffffff;
+    border: 1px solid #f0f0f0;
+    padding: 15px 20px;
+    border-radius: 20px;
+    margin-bottom: 25px;
+}
+
+.target-avatar {
+    width: 55px;
+    height: 55px;
+    background: #5a32a8;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 22px;
+    font-weight: bold;
+    box-shadow: 0 4px 10px rgba(90, 50, 168, 0.2);
+}
+
+.target-info h4 {
+    margin: 0;
+    font-size: 17px;
+    color: #1a1a1a;
+}
+
+.target-info p {
+    margin: 2px 0 0;
+    font-size: 12px;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+
+
+
+.notification-container {
+    position: relative;
+}
+
+.notification-popup {
+    display: none;
+    position: absolute;
+    top: 60px;
+    right: 0;
+    width: 300px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    z-index: 9999 !important; /* 确保在最顶层 */
 }

@@ -15,11 +15,11 @@
                     <a href="{{ url_for('marketplace') }}">🏠 Marketplace</a>
                     <a href="{{ url_for('dashboard') }}">📊 Dashboard</a>
                     <a href="/my_task" style="position: relative;">
-                    📋 My Task
-                    {% if global_unread_count > 0 %}
-                        <span class="dot-small"></span>
-                    {% endif %}
-                </a>
+                        📋 My Task
+                        {% if global_unread_count > 0 %}
+                            <span class="dot-small"></span>
+                        {% endif %}
+                    </a>
                     <a href="#">👤 Profile</a>
                 </div>
             </div>
@@ -66,72 +66,57 @@
                     <a href="{{ url_for('marketplace', cat='Food & Delivery') }}" class="chip {% if request.args.get('cat') == 'Food & Delivery' %}active{% endif %}">Food & Delivery</a>
                     <a href="{{ url_for('marketplace', cat='Academic & Education') }}" class="chip {% if request.args.get('cat') == 'Academic & Education' %}active{% endif %}">Academic & Education</a>
                     <a href="{{ url_for('marketplace', cat='Creative & Digital') }}" class="chip {% if request.args.get('cat') == 'Creative & Digital' %}active{% endif %}">Creative & Digital</a>
-                    <a href="{{ url_for('marketplace', cat='Technical & IT') }}" 
-                    class="chip {% if request.args.get('cat') == 'Technical & IT' %}active{% endif %}">
-   Technical & IT
-</a>
+                    <a href="{{ url_for('marketplace', cat='Technical & IT') }}" class="chip {% if request.args.get('cat') == 'Technical & IT' %}active{% endif %}">Technical & IT</a>
                 </div>
             </div>
 
-           <div class="task-grid">
-    {% if tasks %}
-        {% for task in tasks %}
-            <div class="card">
-                <div style="display: flex; justify-content: space-between;">
-                    <h3>{{ task.title }}</h3>
-                    <span style="color: #2e7d32; font-weight: bold;">RM {{ task.price }}</span>
-                </div>
-                
-                <div style="margin: 10px 0;">
-                    <span class="tag">{{ task.category }}</span>
-                    {% if task.urgent %}<span class="tag urgent-tag">URGENT</span>{% endif %}
-                </div>
+            <div class="task-grid">
+                {% if tasks %}
+                    {% for task in tasks %}
+                        <div class="card">
+                            <div style="display: flex; justify-content: space-between;">
+                                <h3>{{ task.title }}</h3>
+                                <span style="color: #2e7d32; font-weight: bold;">RM {{ task.price }}</span>
+                            </div>
+                            
+                            <div style="margin: 10px 0;">
+                                <span class="tag">{{ task.category }}</span>
+                                {% if task.urgent %}<span class="tag urgent-tag">URGENT</span>{% endif %}
+                            </div>
 
-                <p>{{ task.description }}</p>
+                            <p>{{ task.description }}</p>
 
-                <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+                            <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
 
-                <div style="display: flex; align-items: center; gap: 10px; font-size: 14px;">
-                    <!-- 这里可以使用发布者的头像或默认圆圈 -->
-                    <div style="width: 30px; height: 30px; background: #8e9aaf; border-radius: 50%;"></div>
-                    <span><strong>{{ task.user }}</strong></span> 
-                    <!-- 确保后端传了 rating 字段，否则会显示为空 -->
-                    <span>⭐ {{ task.rating if task.rating else '5.0' }}</span>
-                </div>
-                
-                <a href="{{ url_for('task_detail', task_id=task.id) }}" class="btn-primary">SEE MORE INFO</a>
+                            <div style="display: flex; align-items: center; gap: 10px; font-size: 14px;">
+                                <div style="width: 30px; height: 30px; background: #8e9aaf; border-radius: 50%;"></div>
+                                <span><strong>{{ task.user }}</strong></span>
+                                <span>⭐ {{ task.rating if task.rating else '5.0' }}</span>
+                            </div>
+                            
+                            <a href="{{ url_for('task_detail', task_id=task.id) }}" class="btn-primary">SEE MORE INFO</a>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 50px;">
+                        <p style="color: #666; font-size: 18px;">No tasks available right now. 📦</p>
+                    </div>
+                {% endif %}
             </div>
-        {% endfor %}
-    {% else %}
-        <!-- 当没有任务时的空状态显示 -->
-        <div style="grid-column: 1 / -1; text-align: center; padding: 50px;">
-            <p style="color: #666; font-size: 18px;">No tasks available right now. 📦</p>
+
+            <a href="{{ url_for('post_task') }}" class="fab">+ Create Task</a>
         </div>
-    {% endif %}
-</div> <!-- 闭合 task-grid -->
+    </div>
 
-    <a href="{{ url_for('post_task') }}" class="fab">+ Create Task</a>
+    <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
+    <script>
+        const socket = io();
 
-<script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
-<script>
-    const socket = io();
-
-    // 收到新消息通知 → 存进 localStorage
-    socket.on('new_unread', function(data) {
-        localStorage.setItem('has_unread', '1');
-        // 立刻显示红点（如果元素存在）
-        const dot = document.getElementById('global-unread-dot');
-        if (dot) dot.style.display = 'inline-block';
-    });
-
-    // 页面加载时检查 localStorage
-    window.addEventListener('DOMContentLoaded', function() {
-        if (localStorage.getItem('has_unread') === '1') {
-            const dot = document.getElementById('global-unread-dot');
+        socket.on('new_unread', function(data) {
+            const dot = document.querySelector('#my-task-link .dot-small');
             if (dot) dot.style.display = 'inline-block';
-        }
-    });
-</script>
+        });
+    </script>
 
 </body>
 </html>

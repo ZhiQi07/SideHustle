@@ -4,6 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import func, text
 import os
 from datetime import datetime
+from sqlalchemy import or_
 
 app = Flask(__name__)
 app.secret_key = "mmu_secret_key"
@@ -32,8 +33,6 @@ class User(db.Model):
     review_count = db.Column(db.Integer, default=1)
     tasks_completed = db.Column(db.Integer, default=0)
 
-    # --- 把下面这个函数粘贴在这里 ---
-    # 确保 def 前面有 4 个空格，不要套在别的函数里
     def count_total_unread(self, role='all'):
         if role == 'created':
             tasks = Task.query.filter_by(user=self.username).all()
@@ -48,30 +47,34 @@ class User(db.Model):
         return total
 
 
-
 class Task(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
     price = db.Column(db.Float, nullable=False)
     description = db.Column(db.Text, nullable=False)
     category = db.Column(db.String(50), nullable=False)
-    status = db.Column(db.String(20), default='Available') # Available, In Progress, Completed
-    user = db.Column(db.String(50)) # 发布者
-    tasker = db.Column(db.String(50)) # 执行者
+    status = db.Column(db.String(20), default='Available')
+    user = db.Column(db.String(50))
+    tasker = db.Column(db.String(50))
     deadline = db.Column(db.String(50))
     capacity = db.Column(db.Integer, default=1)
-    tasker = db.Column(db.String(50)) # Stores the username of the person hired
-    progress = db.Column(db.Integer, default=0) # Stores 0, 25, 50, 75, or 100
+    progress = db.Column(db.Integer, default=0)
     urgent = db.Column(db.Boolean, default=False)
 
     def get_applicant_count(self):
-        # This counts how many applications have this task's ID
-        return Application.query.filter_by(task_id=self.id).count()
+            return Application.query.filter_by(task_id=self.id).count()
     
     def get_unread_count(self, current_username):
-        # 统计该任务下：1.未读的 2.发送者不是当前用户 的消息数量
-        return Message.query.filter_by(task_id=self.id, is_read=False).filter(Message.sender != current_username).count()
-
+            messages = Message.query.filter_by(task_id=self.id).filter(Message.sender != current_username).all()
+            count = 0
+            for msg in messages:
+                already_read = MessageRead.query.filter_by(message_id=msg.id, username=current_username).first()
+                if not already_read:
+                    count += 1
+            return count
+        
+    def get_hired_count(self):
+        return Application.query.filter_by(task_id=self.id, status='Hired').count()
 
 
 class Application(db.Model):
@@ -103,17 +106,28 @@ class Earning(db.Model):
     timestamp = db.Column(db.DateTime, default=db.func.now())
 
 
-
 class Rating(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     task_id = db.Column(db.Integer, db.ForeignKey('task.id'), nullable=False)
-    reviewer_username = db.Column(db.String(50), nullable=False) # 谁写的评价
-    target_username = db.Column(db.String(50), nullable=False)   # 评价谁
-    score = db.Column(db.Integer, nullable=False)               # 分数 (1-5)
-    review_content = db.Column(db.Text)                         # 评价文字
+    reviewer_username = db.Column(db.String(50), nullable=False)
+    target_username = db.Column(db.String(50), nullable=False)
+    score = db.Column(db.Integer, nullable=False)
+    review_content = db.Column(db.Text)
     timestamp = db.Column(db.DateTime, default=db.func.now())
 
-# 记得在 app.app_context() 里面运行 db.create_all() 以创建这张表
+
+class Notification(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    task_id = db.Column(db.Integer, db.ForeignKey('task.id'))
+    message = db.Column(db.String(255), nullable=False)
+    status = db.Column(db.String(20), default='unread')
+
+class MessageRead(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    message_id = db.Column(db.Integer, db.ForeignKey('message.id'), nullable=False)
+    username = db.Column(db.String(50), nullable=False)
+
 
 # =========================
 # INIT DB
@@ -147,14 +161,21 @@ def inject_global_unread():
         return {"global_unread_count": 0}
 
 
+@app.context_processor
+def inject_notifications():
+    if 'user_id' in session:
+        current_user = User.query.get(session['user_id'])
+        if current_user:
+            user_notifications = Notification.query.filter_by(user_id=current_user.id).order_by(Notification.id.desc()).limit(5).all()
+            return dict(notifications=user_notifications)
+        else:
+            session.pop('user_id', None)
+    return dict(notifications=[])
+
 
 # =========================
 # ROUTES
 # =========================
-
-@app.route('/')
-def index():
-    return redirect(url_for('login'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -167,6 +188,12 @@ def login():
             return redirect(url_for('marketplace'))
         flash("Invalid credentials!")
     return render_template('login.html')
+
+
+@app.route('/')
+def index():
+    return redirect(url_for('login'))
+
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
@@ -182,12 +209,12 @@ def signup():
         return redirect(url_for('login'))
     return render_template('signup.html')
 
+
 @app.route('/marketplace')
 def marketplace():
     query = request.args.get('q')
     category = request.args.get('cat')
 
-    # 核心修改：默认只查询状态为 'Available' 的任务，防止显示已领取的任务
     tasks_filter = Task.query.filter_by(status='Available')
 
     if query:
@@ -198,13 +225,11 @@ def marketplace():
 
     all_tasks = tasks_filter.all()
 
-    # 获取当前登录用户信息，用于页面顶部的欢迎语
     current_user = None
     if 'user_id' in session:
         current_user = db.session.get(User, session['user_id'])
         
     return render_template('marketplace.html', tasks=all_tasks, user=current_user)
-
 
 
 @app.route('/dashboard')
@@ -213,11 +238,27 @@ def dashboard():
         return redirect(url_for('login'))
     
     user = db.session.get(User, session['user_id'])
-    avg_rating = round(user.total_rating / user.review_count, 1) if user.review_count > 0 else 5.0
     
-    # --- 修改这里：删掉 .filter(Task.status != 'Completed') ---
-    # 这样无论是进行中还是已完成的任务，都会显示在 Tracking 列表里
-    tracking_list = Task.query.filter_by(tasker=user.username).all()
+    # 1. 查找我作为【发布者】的任务
+    # 2. 查找我作为【被雇佣者】的任务（从 Application 表里找，支持多人）
+    
+    # 获取我被雇佣的所有任务 ID
+    hired_apps = Application.query.filter_by(
+        applicant_username=user.username, 
+        status='Hired'
+    ).all()
+    hired_task_ids = [app.task_id for app in hired_apps]
+
+    # 综合查询：我是发布者 OR 我的名字在被雇佣名单里
+    tracking_list = Task.query.filter(
+        or_(
+            Task.user == user.username,        # 我发的
+            Task.id.in_(hired_task_ids)        # 我被雇佣的（支持多人）
+        )
+    ).all()
+
+    # 计算平均分
+    avg_rating = round(user.total_rating / user.review_count, 1) if user.review_count > 0 else 5.0
     
     return render_template(
         'dashboard.html',
@@ -225,7 +266,7 @@ def dashboard():
         total_credit=user.credit,
         average_rating=avg_rating,
         tasks_done=user.tasks_completed,
-        tracking_list=tracking_list # 现在的列表包含所有你接过手的任务
+        tracking_list=tracking_list  # 这里的 tracking_list 现在包含多人任务了
     )
 
 
@@ -236,39 +277,46 @@ def update_progress(task_id):
     
     new_progress = int(request.form.get('progress', 0))
     task = db.session.get(Task, task_id)
-    user = db.session.get(User, session['user_id'])
     
-    # 核心结算逻辑
+    # 当进度达到 100% 且任务还没结算过时
     if new_progress == 100 and task.status != 'Completed':
         task.status = 'Completed'
         
-        if user.tasks_completed is None:
-            user.tasks_completed = 0
-        user.tasks_completed += 1
+        # --- 核心修复逻辑：给所有被雇佣的人结算 ---
+        # 1. 找到所有该任务下状态为 'Hired' 的申请
+        hired_applications = Application.query.filter_by(task_id=task.id, status='Hired').all()
         
-        if hasattr(task, 'price') and task.price:
-            if user.credit is None:
-                user.credit = 0.0
-            user.credit += task.price
+        for app_record in hired_applications:
+            # 2. 根据用户名找到对应的 User 对象
+            worker = User.query.filter_by(username=app_record.applicant_username).first()
             
-            # --- 修复后的部分：使用 activity 而不是 description ---
-            new_earning = Earning(
-                user_id=user.id,
-                activity=f"Completed Task: {task.title}", # 对应模型中的 activity 字段
-                amount=task.price,
-                timestamp=datetime.now()
-            )
-            db.session.add(new_earning)
-            # --------------------------------------------------
-            
-        print(f"SUCCESS: {user.username} 结算成功！任务：{task.title}")
+            if worker:
+                # 3. 更新每个人的 Credit 和 Tasks Completed
+                if worker.tasks_completed is None:
+                    worker.tasks_completed = 0
+                worker.tasks_completed += 1
+                
+                if hasattr(task, 'price') and task.price:
+                    if worker.credit is None:
+                        worker.credit = 0.0
+                    worker.credit += task.price
+                    
+                    # 4. 为每个人生成一条收入记录
+                    new_earning = Earning(
+                        user_id=worker.id,
+                        activity=f"Completed Task: {task.title}",
+                        amount=task.price,
+                        timestamp=datetime.now()
+                    )
+                    db.session.add(new_earning)
+                
+                print(f"SUCCESS: 为成员 {worker.username} 结算成功！")
+        # ---------------------------------------
 
     task.progress = new_progress
     db.session.commit()
     
     return redirect(url_for('my_task', view='applied'))
-
-
 
 
 @app.route('/earnings')
@@ -277,7 +325,6 @@ def earnings():
         return redirect(url_for('login'))
     
     user = db.session.get(User, session['user_id'])
-    # 查找该用户所有的收入记录
     earnings_list = Earning.query.filter_by(user_id=user.id).order_by(Earning.timestamp.desc()).all()
     
     return render_template(
@@ -287,16 +334,13 @@ def earnings():
     )
 
 
-
 @app.route('/post', methods=['GET', 'POST'])
 def post_task():
-    # 1. Safety Check: Make sure the user is actually logged in
     if 'user_id' not in session:
         flash("Please login to post a task!")
         return redirect(url_for('login'))
 
     if request.method == 'POST':
-        # 2. Get the actual user object from the database using the session ID
         current_user = User.query.get(session['user_id'])
 
         new_task = Task(
@@ -307,13 +351,11 @@ def post_task():
             deadline=request.form.get('deadline'),
             capacity=request.form.get('capacity'),
             urgent=True if request.form.get('urgent') else False,
-            # 3. FIX: Assign the logged-in username to the 'user' field
             user=current_user.username 
         )
         db.session.add(new_task)
         db.session.commit()
         
-        # After posting, go see it in My Task!
         return redirect(url_for('my_task')) 
         
     return render_template('post_task.html')
@@ -321,7 +363,6 @@ def post_task():
 
 def patch_database():
     with db.engine.connect() as conn:
-        # 1. 检查 User 表
         user_cols = [row[1] for row in conn.execute(text("PRAGMA table_info(user)")).fetchall()]
         if "credit" not in user_cols:
             conn.execute(text("ALTER TABLE user ADD COLUMN credit FLOAT DEFAULT 0.0"))
@@ -332,12 +373,10 @@ def patch_database():
         if "tasks_completed" not in user_cols:
             conn.execute(text("ALTER TABLE user ADD COLUMN tasks_completed INTEGER DEFAULT 0"))
         
-        # 2. 检查 Task 表
         task_cols = [row[1] for row in conn.execute(text("PRAGMA table_info(task)")).fetchall()]
         if "urgent" not in task_cols:
             conn.execute(text("ALTER TABLE task ADD COLUMN urgent BOOLEAN DEFAULT 0"))
         
-        # --- 3. 新增：检查 Message 表 (修复 bug 的关键) ---
         message_cols = [row[1] for row in conn.execute(text("PRAGMA table_info(message)")).fetchall()]
         if "is_read" not in message_cols:
             conn.execute(text("ALTER TABLE message ADD COLUMN is_read BOOLEAN DEFAULT 0"))
@@ -346,17 +385,14 @@ def patch_database():
         print("✅ Database columns patched successfully!")
 
 
-
 @app.route('/task/<int:task_id>')
-def task_detail(task_id): # <--- 确保这里叫 task_detail
+def task_detail(task_id):
     task = Task.query.get_or_404(task_id)
     return render_template('task_detail.html', task=task)
 
 
-# 只是为了占位，不准报 BuildError！
 @app.route('/task_tracking/<int:task_id>')
 def task_tracking(task_id):
-    # 暂时只返回一句话，不影响你其他的逻辑
     return f"This is tracking page for Task {task_id}. Developing..."
 
 
@@ -370,7 +406,6 @@ def apply(task_id):
     current_user = User.query.get(session['user_id'])
 
     if request.method == 'POST':
-        # Create a new Application record in the database
         new_app = Application(
             task_id=task.id,
             applicant_username=current_user.username,
@@ -385,25 +420,30 @@ def apply(task_id):
 
     return render_template('apply.html', task=task)
 
+
 @app.route('/my_task')
 def my_task():
     if 'user_id' not in session:
         return redirect(url_for('login'))
 
     current_user = User.query.get(session['user_id'])
+    
+    if not current_user:
+        session.clear()
+        return redirect(url_for('login'))
+
     view = request.args.get('view', 'created')
 
     created_tasks = Task.query.filter_by(user=current_user.username).all()
-    
-    # FIX: Send the Application objects so we can see the status (Pending/Hired/Rejected)
     my_applications = Application.query.filter_by(applicant_username=current_user.username).all()
 
     return render_template('my_task.html', 
                            created=created_tasks, 
-                           applied=my_applications, # This is now a list of Applications
+                           applied=my_applications, 
                            view=view, 
                            user=current_user,
                            Task=Task)
+
 
 @app.route('/view-applicants/<int:task_id>')
 def view_applicants(task_id):
@@ -411,103 +451,163 @@ def view_applicants(task_id):
         return redirect(url_for('login'))
         
     task = Task.query.get_or_404(task_id)
-    # This searches the Application table for any record matching this task's ID
     apps = Application.query.filter_by(task_id=task_id).all()
     
     return render_template('view_applicants.html', task=task, apps=apps)
+
 
 @app.route('/hire-applicant/<int:app_id>')
 def hire_applicant(app_id):
     if 'user_id' not in session:
         return redirect(url_for('login'))
 
-    # 1. Find the application and the task
     application = Application.query.get_or_404(app_id)
     task = Task.query.get(application.task_id)
 
-    # 2. Update the Task: Hire the user and change status
-    task.status = 'Assigned'
-    task.tasker = application.applicant_username
-    
-    # 3. Update the Application status
-    application.status = 'Hired'
-    
-    db.session.commit()
-    
-    flash(f"You have hired {application.applicant_username}!")
+    if task.get_hired_count() < task.capacity:
+        application.status = 'Hired'
+        
+        # --- 新增/修改逻辑 ---
+        # 1. 给任务绑定 Tasker (针对一对一或记录主要负责人)
+        if task.capacity == 1:
+            task.tasker = application.applicant_username
+            task.status = 'In Progress' # 直接进入进行中
+        else:
+        # 多人任务：+1 是因为当前这个还没 commit，所以要手动加1
+            if task.get_hired_count() + 1 >= task.capacity:
+                task.status = 'In Progress'
+                if not task.tasker:
+                    task.tasker = application.applicant_username
+
+        # 2. 发送通知
+        applicant_user = User.query.filter_by(username=application.applicant_username).first()
+        if applicant_user:
+            new_note = Notification(
+                user_id=applicant_user.id,
+                task_id=task.id,
+                message=f"You have been HIRED for the task: {task.title}!"
+            )
+            db.session.add(new_note)
+        
+        db.session.commit()
+        flash(f"You have hired {application.applicant_username}!")
+    else:
+        flash("Task is already at full capacity!")
+
     return redirect(url_for('my_task', view='created'))
+
 
 @app.route('/reject_applicant/<int:app_id>')
 def reject_applicant(app_id):
-    # 1. Security: Ensure the user is logged in
     if 'user_id' not in session:
         return redirect(url_for('login'))
 
-    # 2. Find the application using its ID
     application = Application.query.get_or_404(app_id)
-    
-    # 3. Update the status to 'Rejected'
     application.status = 'Rejected'
-    
-    # 4. Save the change to the database
     db.session.commit()
 
     flash("Applicant has been rejected.")
-    
-    # 5. Redirect back to the list so you can see the update
     return redirect(url_for('view_applicants', task_id=application.task_id))
-
-
 
 
 @app.route('/chat/<int:task_id>')
 def chat(task_id):
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    
     task = Task.query.get_or_404(task_id)
     user = User.query.get(session['user_id'])
-    
-    # 1. 找到未读消息
+
     unread_messages = Message.query.filter_by(task_id=task_id, is_read=False).filter(Message.sender != user.username).all()
-    
     if unread_messages:
         for msg in unread_messages:
             msg.is_read = True
+            already_read = MessageRead.query.filter_by(message_id=msg.id, username=user.username).first()
+            if not already_read:
+                db.session.add(MessageRead(message_id=msg.id, username=user.username))
         db.session.commit()
-        
-        # 2. 【核心新增】发送一个 Socket 信号给当前用户，告诉前端“这个任务的消息已经读过了”
-        # 这里建议发给当前用户的个人 room
-        socketio.emit('clear_unread', {'task_id': task_id}, room=str(session['user_id'])) 
-    
+
+    socketio.emit('clear_unread', {'task_id': task_id}, room=str(session['user_id']))
     history = Message.query.filter_by(task_id=task_id).order_by(Message.timestamp.asc()).all()
     return render_template('chat.html', task=task, user=user, history=history)
 
+
+@app.route('/group_chat/<int:task_id>')
+def group_chat(task_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    task = Task.query.get_or_404(task_id)
+    user = User.query.get(session['user_id'])
+
+    unread_messages = Message.query.filter_by(task_id=task_id, is_read=False).filter(Message.sender != user.username).all()
+    if unread_messages:
+        for msg in unread_messages:
+            # is_read 保留，同时记录每个人独立的已读
+            already_read = MessageRead.query.filter_by(message_id=msg.id, username=user.username).first()
+            if not already_read:
+                db.session.add(MessageRead(message_id=msg.id, username=user.username))
+        db.session.commit()
+
+    socketio.emit('clear_unread', {'task_id': task_id}, room=str(session['user_id']))
+    history = Message.query.filter_by(task_id=task_id).order_by(Message.timestamp.asc()).all()
+    return render_template('chat.html', task=task, user=user, history=history)
 @app.route('/rate_user/<int:task_id>/<target_user>')
 def rate_user(task_id, target_user):
     if 'user_id' not in session:
         return redirect(url_for('login'))
 
     current_user = db.session.get(User, session['user_id'])
+    task = Task.query.get_or_404(task_id)
 
-    # ← 已经 rate 过，直接跳走
+    # --- 1. 角色安全拦截 ---
+    # 如果当前用户不是发布者 (Client)，但他试图评价的人也不是发布者
+    # 这能防止执行者通过修改 URL 去评价其他执行者
+    if current_user.username != task.user and target_user != task.user:
+        flash("You are only authorized to rate the Client.")
+        return redirect(url_for('my_task', view='applied'))
+
+    # --- 2. 重复评价检查 ---
     already_rated = Rating.query.filter_by(
         task_id=task_id,
-        reviewer_username=current_user.username
+        reviewer_username=current_user.username,
+        target_username=target_user
     ).first()
     if already_rated:
-        flash("You have already rated this task.")
+        flash(f"You have already rated {target_user}.")
         return redirect(url_for('my_task'))
 
-    task = Task.query.get_or_404(task_id)
-    role = 'tasker' 
+    # --- 3. 核心逻辑分流 ---
+    next_target = None
+    if current_user.username == task.user:
+        # 【发布者视角】：可以评价所有被雇佣的 Tasker
+        role = 'tasker'
+        
+        # 找出所有被雇佣的人 (Hired)
+        hired_apps = Application.query.filter_by(task_id=task_id, status='Hired').all()
+        hired_usernames = [a.applicant_username for a in hired_apps]
 
-    # 3. 这里的参数一定要补全：把 task 和 role 都传进去
-    return render_template('rate_user.html', 
-                           task_id=task_id, 
-                           target_user=target_user, 
-                           task=task,    # 修复 UndefinedError 的关键
-                           role=role)    # 修复角色判断的关键
+        # 找出当前 Client 已经评价过的人
+        rated_usernames = [r.target_username for r in Rating.query.filter_by(
+            task_id=task_id,
+            reviewer_username=current_user.username
+        ).all()]
+
+        # 寻找下一个需要评价的 Tasker（排除掉当前正在评价的 target_user）
+        for username in hired_usernames:
+            if username != target_user and username not in rated_usernames:
+                next_target = username
+                break
+    else:
+        # 【执行者视角】：只能评价发布者 (Client)
+        role = 'client'
+        # 强制将下一个目标设为 None，确保前端不显示 "Next" 按钮
+        next_target = None
+
+    return render_template('rate_user.html',
+                           task_id=task_id,
+                           target_user=target_user,
+                           task=task,
+                           role=role,
+                           next_target=next_target)
 
 
 @app.route('/submit_rating/<int:task_id>/<target_user>', methods=['POST'])
@@ -517,7 +617,6 @@ def submit_rating(task_id, target_user):
 
     current_user = db.session.get(User, session['user_id'])
 
-    # ← 加这个检查：已经 rate 过就直接跳走
     already_rated = Rating.query.filter_by(
         task_id=task_id,
         reviewer_username=current_user.username
@@ -529,7 +628,6 @@ def submit_rating(task_id, target_user):
     rating_val = int(request.form.get('rating', 5))
     review_text = request.form.get('review', '')
 
-    # 1. 保存到 Rating 表
     new_rating = Rating(
         task_id=task_id,
         reviewer_username=current_user.username,
@@ -539,10 +637,8 @@ def submit_rating(task_id, target_user):
     )
     db.session.add(new_rating)
 
-    # 2. 更新被评价人的 User 表数据（用于计算平均分）
     user_to_rate = User.query.filter_by(username=target_user).first()
     if user_to_rate:
-        # 如果是第一次评价，把默认的 5.0 和 1 次计数重置掉（可选逻辑）
         user_to_rate.total_rating += rating_val
         user_to_rate.review_count += 1
         db.session.commit()
@@ -551,76 +647,81 @@ def submit_rating(task_id, target_user):
     return redirect(url_for('dashboard'))
 
 
-
 @app.route('/view_ratings')
 def view_ratings():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
     user = db.session.get(User, session['user_id'])
-    
-    # --- 核心修改：从数据库查询真正的评价 ---
     real_reviews = Rating.query.filter_by(target_username=user.username).order_by(Rating.timestamp.desc()).all()
-    
     avg_rating = round(user.total_rating / user.review_count, 1) if user.review_count > 0 else 5.0
 
     return render_template('view_ratings.html', 
                            user=user, 
-                           reviews=real_reviews, # 传给前端真正的数据库记录
+                           reviews=real_reviews,
                            avg_rating=avg_rating)
 
 
-
-
-
+# =========================
+# SOCKET IO
+# =========================
 
 @socketio.on('join')
 def on_join(data):
     username = data['username']
     room = data['room']
     join_room(room)
-    print(f"用户 {username} 加入了房间 {room}")[cite: 11]
+    print(f"用户 {username} 加入了房间 {room}")
 
 @socketio.on('send_message')
 def handle_message(data):
     room = data['room']
+    sender_name = data['username']
+    
+    # 1. 广播消息内容（让大家在聊天窗口看到文字）
     emit('receive_message', data, room=room)
     
+    # 2. 存入数据库
     new_msg = Message(
         task_id=int(room), 
-        sender=data['username'], 
+        sender=sender_name, 
         content=data['message']
     )
     db.session.add(new_msg)
     db.session.commit()
 
-    # 找出这个 task 的另一方，推送通知给他
+    # 3. --- 群聊红点广播逻辑 (WhatsApp/WeChat Style) ---
     task = db.session.get(Task, int(room))
     if task:
-        recipient = None
-        if task.user == data['username']:
-            # 发送者是 creator，收件人是 tasker
-            recipient = User.query.filter_by(username=task.tasker).first()
-        elif task.tasker == data['username']:
-            # 发送者是 tasker，收件人是 creator
-            recipient = User.query.filter_by(username=task.user).first()
+        # 找出这个 task 所有 hired 的人 + creator
+        all_members = set()
+        all_members.add(task.user)  # creator
+        hired_apps = Application.query.filter_by(task_id=int(room), status='Hired').all()
+        for app in hired_apps:
+            all_members.add(app.applicant_username)
         
-        if recipient:
-            socketio.emit('new_unread', {'task_id': int(room)}, room=str(recipient.id))
+        # 通知除了发送者以外的所有人
+        for username in all_members:
+            if username != data['username']:
+                member = User.query.filter_by(username=username).first()
+                if member:
+                    # 判断这个人的 role 来决定红点亮哪个 tab
+                    role = 'created' if username == task.user else 'applied'
+                    socketio.emit('new_unread', {
+                        'task_id': int(room),
+                        'role': role
+                    }, room=str(member.id))
+            print(f"群发红点：已通知成员 {username}")
 
 
 @socketio.on('connect')
 def handle_connect():
     if 'user_id' in session:
-        # 用户一连接，就让他加入以自己 ID 命名的房间
         join_room(str(session['user_id']))
         print(f"User {session['user_id']} connected to their private room.")
 
 
-
-
 if __name__ == '__main__':
     with app.app_context():
-        # 在启动前先修补数据库结构
         patch_database() 
     socketio.run(app, debug=True, port=8000)

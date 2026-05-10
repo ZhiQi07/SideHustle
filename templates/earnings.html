@@ -54,6 +54,12 @@
             <div class="sidebar-menu">
                 <a href="{{ url_for('marketplace') }}">🏠 Marketplace</a>
                 <a href="{{ url_for('dashboard') }}">📊 Dashboard</a>
+                <a href="/my_task" style="position: relative;">
+                        📋 My Task
+                        {% if global_unread_count > 0 %}
+                            <span class="dot-small"></span>
+                        {% endif %}
+                    </a>
                 <a href="#">👤 Profile</a>
             </div>
             <div class="help-link">❓ Help</div>
