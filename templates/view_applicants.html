@@ -1,85 +1,97 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <style>
-        /* 这里的微调是为了确保这个页面不崩，不影响全局 style.css */
-        .content {
-            display: block !important; /* 强制块级布局，防止挤压 */
-        }
-        .applicant-card-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            width: 100%;
-        }
-    </style>
-</head>
-<body>
-    <div class="main-layout">
-        <div class="sidebar">
-            <div class="sidebar-top">
-                <h2>SideHustle</h2>
-                <div class="sidebar-menu">
-                    <a href="{{ url_for('marketplace') }}">🏠 Marketplace</a>
-                    <a href="{{ url_for('dashboard') }}">📊 Dashboard</a>
-                    <a href="{{ url_for('my_task') }}">📋 My Task</a>
-                    <a href="#">👤 Profile</a>
-                </div>
-            </div>
-            <div class="sidebar-bottom">
-                <a href="#" class="menu-item">❓ Help</a>
-            </div>
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .view-applicants-container {
+        padding-top: 20px;
+        max-width: 900px;
+    }
+
+    .applicant-card {
+        background: white;
+        border-radius: 25px;
+        padding: 30px;
+        border: 1px solid #eee;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+        margin-bottom: 25px;
+        position: relative;
+    }
+
+    /* 统一按钮样式，确保漂亮 */
+    .btn-hire {
+        background-color: #5a32a8;
+        color: white;
+        padding: 10px 25px;
+        border-radius: 15px;
+        text-decoration: none;
+        font-weight: bold;
+        font-size: 14px;
+        transition: 0.2s;
+    }
+
+    .btn-hire:hover { background-color: #452682; }
+
+    .btn-reject {
+        color: #999;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 500;
+    }
+</style>
+
+<div class="view-applicants-container">
+    <a href="{{ url_for('my_task') }}" class="back-link">← Back to My Tasks</a>
+    
+    <h1 style="margin-top: 20px;">Review Applicants</h1>
+    <p style="color: #666; margin-bottom: 30px;">Task: <strong>{{ task.title }}</strong></p>
+
+    {% if not apps %}
+        <div class="applicant-card" style="text-align: center; padding: 50px;">
+            <p>No one has applied for this task yet :P </p>
         </div>
-
-        <div class="top-nav">
-            <div class="nav-icons">
-                <span>🔔</span>
-                <div class="profile-circle"></div>
-            </div>
-        </div>
-
-        <div class="content">
-            <div style="margin-bottom: 20px;">
-                <a href="{{ url_for('my_task') }}" class="back-link" style="text-decoration: none; color: #666; font-weight: bold;">
-                    ← Back to My Tasks
-                </a>
-            </div>
-            
-            <h1 style="font-size: 32px; margin-bottom: 10px;">Review Applicants</h1>
-            <p style="color: #666; margin-bottom: 30px;">Task: <strong style="color: #333;">{{ task.title }}</strong></p>
-
-            <div class="task-grid">
-                {% for app in applicants %}
-                    <div class="card" style="min-height: auto; padding: 20px; margin-bottom: 15px;">
-                        <div class="applicant-card-row">
-                            <div class="user-meta" style="display: flex; align-items: center; gap: 15px;">
-                                <div class="mini-profile" style="width: 45px; height: 45px; background: #5a32a8; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; border-radius: 50%;">
-                                    {{ app.applicant_username[0]|upper }}
-                                </div>
-                                <div>
-                                    <h4 style="margin: 0; font-size: 16px;">{{ app.applicant_username }}</h4>
-                                    <span class="tag-in-progress" style="font-size: 11px;">Status: {{ app.status }}</span>
-                                </div>
-                            </div>
-
-                            <div class="action-buttons">
-                                {% if app.status == 'Pending' %}
-                                    <form action="{{ url_for('hire_applicant', app_id=app.id) }}" method="POST">
-                                        <button type="submit" class="btn-hire">Hire</button>
-                                    </form>
-                                {% elif app.status == 'Hired' %}
-                                    <span style="color: #2e7d32; font-weight: bold;">✅ Hired</span>
-                                {% endif %}
-                            </div>
+    {% else %}
+        <div style="display: flex; flex-direction: column;">
+            {% for app in apps %}
+                <div class="applicant-card">
+                    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+                        <div class="profile-circle" style="background: #5a32a8; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+                            {{ app.applicant_username[0]|upper }}
+                        </div>
+                        <div>
+                            <h3 style="margin: 0;">{{ app.applicant_username }}</h3>
+                            <span style="font-size: 12px; color: {% if app.status == 'Hired' %}#2e7d32{% elif app.status == 'Rejected' %}#d32f2f{% else %}#888{% endif %};">
+                                Status: <strong>{{ app.status }}</strong>
+                            </span>
                         </div>
                     </div>
-                {% else %}
-                    <p style="color: #999; text-align: center; padding: 40px;">No applicants yet.</p>
-                {% endfor %}
-            </div>
+
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 15px; margin-bottom: 10px;">
+                        <strong style="color: #5a32a8; font-size: 13px;">Introduction:</strong>
+                        <p style="font-size: 14px; margin-top: 5px;">{{ app.intro }}</p>
+                    </div>
+
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 15px; margin-bottom: 20px;">
+                        <strong style="color: #5a32a8; font-size: 13px;">Why I'm a good fit:</strong>
+                        <p style="font-size: 14px; margin-top: 5px;">{{ app.reason }}</p>
+                    </div>
+
+                    <div style="display: flex; justify-content: flex-end; gap: 20px; align-items: center; min-height: 45px;">
+                        {% if app.status == 'Pending' %}
+                            <a href="{{ url_for('reject_applicant', app_id=app.id) }}" class="btn-reject">Reject</a>
+                            <a href="{{ url_for('hire_applicant', app_id=app.id) }}" class="btn-hire">Hire User</a>
+                        {% elif app.status == 'Hired' %}
+                            <span style="color: #2e7d32; font-weight: bold; background: #e8f5e9; padding: 8px 20px; border-radius: 12px; display: flex; align-items: center; gap: 5px;">
+                                ✅ Already Hired
+                            </span>
+                        {% elif app.status == 'Rejected' %}
+                            <span style="color: #d32f2f; font-weight: bold; background: #ffebee; padding: 8px 20px; border-radius: 12px;">
+                                ❌ Rejected
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
         </div>
-    </div>
-</body>
-</html>
+    {% endif %}
+</div>
+{% endblock %}

@@ -239,25 +239,21 @@ def dashboard():
     
     user = db.session.get(User, session['user_id'])
     
-    # 1. 查找我作为【发布者】的任务
-    # 2. 查找我作为【被雇佣者】的任务（从 Application 表里找，支持多人）
-    
-    # 获取我被雇佣的所有任务 ID
+    # 1. 获取我被雇佣（Applied & Hired）的所有任务 ID
     hired_apps = Application.query.filter_by(
         applicant_username=user.username, 
         status='Hired'
     ).all()
     hired_task_ids = [app.task_id for app in hired_apps]
 
-    # 综合查询：我是发布者 OR 我的名字在被雇佣名单里
+    # --- 核心修复：只查我被雇佣的任务，不包含我发布的任务 ---
+    # 这样 Task Tracking 就只会显示你正在为别人做的任务了
     tracking_list = Task.query.filter(
-        or_(
-            Task.user == user.username,        # 我发的
-            Task.id.in_(hired_task_ids)        # 我被雇佣的（支持多人）
-        )
+        Task.id.in_(hired_task_ids)
     ).all()
+    # -----------------------------------------------
 
-    # 计算平均分
+    # 2. 计算平均分 (保留你原有的逻辑)
     avg_rating = round(user.total_rating / user.review_count, 1) if user.review_count > 0 else 5.0
     
     return render_template(
@@ -266,7 +262,7 @@ def dashboard():
         total_credit=user.credit,
         average_rating=avg_rating,
         tasks_done=user.tasks_completed,
-        tracking_list=tracking_list  # 这里的 tracking_list 现在包含多人任务了
+        tracking_list=tracking_list  # 现在这个 list 只包含你申请的任务
     )
 
 
@@ -425,38 +421,58 @@ def apply(task_id):
 def my_task():
     if 'user_id' not in session:
         return redirect(url_for('login'))
-
     current_user = User.query.get(session['user_id'])
-    
     if not current_user:
         session.clear()
         return redirect(url_for('login'))
 
     view = request.args.get('view', 'created')
-
     created_tasks = Task.query.filter_by(user=current_user.username).all()
     my_applications = Application.query.filter_by(applicant_username=current_user.username).all()
 
-    return render_template('my_task.html', 
-                           created=created_tasks, 
-                           applied=my_applications, 
-                           view=view, 
+    # 为每个 created task 找第一个未被 rate 的 tasker
+    first_unrated = {}
+    for task in created_tasks:
+        if task.progress == 100:
+            hired_apps = Application.query.filter_by(task_id=task.id, status='Hired').all()
+            rated_list = [r.target_username for r in Rating.query.filter_by(
+                task_id=task.id, reviewer_username=current_user.username).all()]
+            for app in hired_apps:
+                if app.applicant_username not in rated_list:
+                    first_unrated[task.id] = app.applicant_username
+                    break
+
+    return render_template('my_task.html',
+                           created=created_tasks,
+                           applied=my_applications,
+                           view=view,
                            user=current_user,
-                           Task=Task)
+                           Task=Task,
+                           first_unrated=first_unrated)
 
 
-@app.route('/view-applicants/<int:task_id>')
+# --- 请找到 app.py 里的这部分并替换 ---
+
+# --- 1. 修复查看申请人的路由 ---
+@app.route('/view_applicants/<int:task_id>')
 def view_applicants(task_id):
     if 'user_id' not in session:
         return redirect(url_for('login'))
         
     task = Task.query.get_or_404(task_id)
+    # 关键：获取该 task 下的所有申请记录
     apps = Application.query.filter_by(task_id=task_id).all()
     
-    return render_template('view_applicants.html', task=task, apps=apps)
+    # 调试：在黑窗口看看查到了几个人
+    print(f"DEBUG: Task {task_id} has {len(apps)} applicants.")
+    
+    user = User.query.get(session['user_id'])
+    # 注意：这里的变量名是 apps，对应 HTML 里的 {% for app in apps %}
+    return render_template('view_applicants.html', task=task, apps=apps, user=user)
 
 
-@app.route('/hire-applicant/<int:app_id>')
+# --- 2. 修复雇佣人的路由 (确保 GET 请求也能跑通) ---
+@app.route('/hire_applicant/<int:app_id>')
 def hire_applicant(app_id):
     if 'user_id' not in session:
         return redirect(url_for('login'))
@@ -464,22 +480,28 @@ def hire_applicant(app_id):
     application = Application.query.get_or_404(app_id)
     task = Task.query.get(application.task_id)
 
+    # --- BUG 修复 1: 检查该申请人是否已经处于 'Hired' 状态 ---
+    if application.status == 'Hired':
+        flash(f"{application.applicant_username} is already hired!")
+        return redirect(url_for('view_applicants', task_id=task.id))
+
+    # --- BUG 修复 2: 再次确认任务人数是否已满 ---
     if task.get_hired_count() < task.capacity:
         application.status = 'Hired'
         
-        # --- 新增/修改逻辑 ---
-        # 1. 给任务绑定 Tasker (针对一对一或记录主要负责人)
+        # 处理任务状态逻辑
         if task.capacity == 1:
             task.tasker = application.applicant_username
-            task.status = 'In Progress' # 直接进入进行中
+            task.status = 'In Progress'
         else:
-        # 多人任务：+1 是因为当前这个还没 commit，所以要手动加1
-            if task.get_hired_count() + 1 >= task.capacity:
+            # 如果是多人任务，检查雇佣当前这个人后是否满员
+            if task.get_hired_count() >= task.capacity:
                 task.status = 'In Progress'
+                # 如果没有主要负责人，就把第一个雇佣的人设为 tasker
                 if not task.tasker:
                     task.tasker = application.applicant_username
 
-        # 2. 发送通知
+        # 发送通知
         applicant_user = User.query.filter_by(username=application.applicant_username).first()
         if applicant_user:
             new_note = Notification(
@@ -490,11 +512,16 @@ def hire_applicant(app_id):
             db.session.add(new_note)
         
         db.session.commit()
-        flash(f"You have hired {application.applicant_username}!")
+        flash(f"Successfully hired {application.applicant_username}!")
     else:
         flash("Task is already at full capacity!")
 
-    return redirect(url_for('my_task', view='created'))
+    # 修复后跳转回查看申请人页面，这样你可以继续看剩下的人
+    return redirect(url_for('view_applicants', task_id=task.id))
+
+
+
+
 
 
 @app.route('/reject_applicant/<int:app_id>')
@@ -550,6 +577,9 @@ def group_chat(task_id):
     socketio.emit('clear_unread', {'task_id': task_id}, room=str(session['user_id']))
     history = Message.query.filter_by(task_id=task_id).order_by(Message.timestamp.asc()).all()
     return render_template('chat.html', task=task, user=user, history=history)
+
+
+
 @app.route('/rate_user/<int:task_id>/<target_user>')
 def rate_user(task_id, target_user):
     if 'user_id' not in session:
@@ -557,57 +587,35 @@ def rate_user(task_id, target_user):
 
     current_user = db.session.get(User, session['user_id'])
     task = Task.query.get_or_404(task_id)
+    
+    t_name = target_user.strip()
+    c_name = current_user.username.strip()
 
-    # --- 1. 角色安全拦截 ---
-    # 如果当前用户不是发布者 (Client)，但他试图评价的人也不是发布者
-    # 这能防止执行者通过修改 URL 去评价其他执行者
-    if current_user.username != task.user and target_user != task.user:
-        flash("You are only authorized to rate the Client.")
-        return redirect(url_for('my_task', view='applied'))
-
-    # --- 2. 重复评价检查 ---
-    already_rated = Rating.query.filter_by(
-        task_id=task_id,
-        reviewer_username=current_user.username,
-        target_username=target_user
-    ).first()
-    if already_rated:
-        flash(f"You have already rated {target_user}.")
+    # 1. 只要评的不是自己，就放行
+    if c_name == t_name:
+        flash("You cannot rate yourself!")
         return redirect(url_for('my_task'))
 
-    # --- 3. 核心逻辑分流 ---
+    # 2. 检查是不是已经评过【这个人】了
+    already = Rating.query.filter_by(task_id=task_id, reviewer_username=c_name, target_username=t_name).first()
+    if already:
+        flash(f"You already rated {t_name}!")
+        return redirect(url_for('my_task'))
+
+    # 3. 角色判断只为了前端显示 (Client 评 Tasker)
+    role = 'tasker' if c_name == task.user else 'client'
+
+    # --- 这里就是你最珍贵的 Next Target 逻辑，保留它 ---
     next_target = None
-    if current_user.username == task.user:
-        # 【发布者视角】：可以评价所有被雇佣的 Tasker
-        role = 'tasker'
-        
-        # 找出所有被雇佣的人 (Hired)
+    if role == 'tasker':
         hired_apps = Application.query.filter_by(task_id=task_id, status='Hired').all()
-        hired_usernames = [a.applicant_username for a in hired_apps]
-
-        # 找出当前 Client 已经评价过的人
-        rated_usernames = [r.target_username for r in Rating.query.filter_by(
-            task_id=task_id,
-            reviewer_username=current_user.username
-        ).all()]
-
-        # 寻找下一个需要评价的 Tasker（排除掉当前正在评价的 target_user）
-        for username in hired_usernames:
-            if username != target_user and username not in rated_usernames:
-                next_target = username
+        rated_list = [r.target_username for r in Rating.query.filter_by(task_id=task_id, reviewer_username=c_name).all()]
+        for app in hired_apps:
+            if app.applicant_username != t_name and app.applicant_username not in rated_list:
+                next_target = app.applicant_username
                 break
-    else:
-        # 【执行者视角】：只能评价发布者 (Client)
-        role = 'client'
-        # 强制将下一个目标设为 None，确保前端不显示 "Next" 按钮
-        next_target = None
 
-    return render_template('rate_user.html',
-                           task_id=task_id,
-                           target_user=target_user,
-                           task=task,
-                           role=role,
-                           next_target=next_target)
+    return render_template('rate_user.html', task=task, task_id=task_id, target_user=t_name, role=role, next_target=next_target)
 
 
 @app.route('/submit_rating/<int:task_id>/<target_user>', methods=['POST'])

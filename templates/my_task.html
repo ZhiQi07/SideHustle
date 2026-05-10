@@ -1,11 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <title>My Tasks - SideHustle</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
-        /* 进度条弹窗样式 */
         .progress-popover {
             display: none;
             position: absolute;
@@ -20,7 +17,6 @@
             z-index: 1000;
             border: 1px solid #eee;
         }
-
         .progress-popover::after {
             content: "";
             position: absolute;
@@ -31,94 +27,15 @@
             border-style: solid;
             border-color: #f5f5f5 transparent transparent transparent;
         }
-
-        .popover-title {
-            font-size: 12px;
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 10px;
-            display: block;
-        }
-
-        .range-slider {
-            width: 100%;
-            margin: 10px 0;
-            cursor: pointer;
-        }
-
-        .confirm-btn {
-            background: none;
-            border: none;
-            font-size: 20px;
-            color: #333;
-            cursor: pointer;
-            padding: 0;
-            transition: transform 0.2s;
-        }
-
-        .confirm-btn:hover {
-            transform: scale(1.2);
-            color: #2e7d32;
-        }
-
-        /* 状态标签样式 */
-        .dot-small {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            background: #ff4d4f;
-            border-radius: 50%;
-            margin-left: 5px;
-            vertical-align: middle;
-            border: 1px solid white;
-        }
-
-        .unread-badge {
-            position: absolute;
-            top: -8px;
-            right: -5px;
-            background: #ff4d4f;
-            color: white;
-            border-radius: 50%;
-            padding: 2px 6px;
-            font-size: 10px;
-            font-weight: bold;
-            border: 2px solid white;
-            z-index: 10;
-        }
-
-        .btn-flex-container {
-            display: flex;
-            gap: 10px;
-            width: 100%;
-            margin-top: 10px;
-        }
-
-        .btn-rate {
-            flex: 1;
-            text-align: center;
-            background-color: #ff9800;
-            color: white;
-            border: none;
-            font-size: 12px;
-            padding: 10px;
-            border-radius: 8px;
-            text-decoration: none;
-            font-weight: bold;
-        }
-
-        .btn-msg-half {
-            flex: 1;
-            text-align: center;
-            background-color: #8e94a5;
-            color: white;
-            font-size: 12px;
-            padding: 10px;
-            border-radius: 8px;
-            text-decoration: none;
-            font-weight: bold;
-            position: relative;
-        }
+        .popover-title { font-size: 12px; font-weight: bold; color: #333; margin-bottom: 10px; display: block; }
+        .range-slider { width: 100%; margin: 10px 0; cursor: pointer; }
+        .confirm-btn { background: none; border: none; font-size: 20px; color: #333; cursor: pointer; padding: 0; transition: transform 0.2s; }
+        .confirm-btn:hover { transform: scale(1.2); color: #2e7d32; }
+        .dot-small { display: inline-block; width: 8px; height: 8px; background: #ff4d4f; border-radius: 50%; margin-left: 5px; vertical-align: middle; border: 1px solid white; }
+        .unread-badge { position: absolute; top: -8px; right: -5px; background: #ff4d4f; color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; font-weight: bold; border: 2px solid white; z-index: 10; }
+        .btn-flex-container { display: flex; gap: 10px; width: 100%; margin-top: 10px; }
+        .btn-rate { flex: 1; text-align: center; background-color: #ff9800; color: white; border: none; font-size: 12px; padding: 10px; border-radius: 8px; text-decoration: none; font-weight: bold; }
+        .btn-msg-half { flex: 1; text-align: center; background-color: #8e94a5; color: white; font-size: 12px; padding: 10px; border-radius: 8px; text-decoration: none; font-weight: bold; position: relative; }
     </style>
 </head>
 <body>
@@ -131,8 +48,7 @@
                     <a href="{{ url_for('dashboard') }}">📊 Dashboard</a>
                     <a href="{{ url_for('my_task') }}" style="position: relative;">
                         📋 My Task
-                        {# 初始红点状态由后端计算，后续由 JS 控制 #}
-                        <span id="global-unread-dot" class="dot-small" style="display: {% if user.count_total_unread('all') > 0 %}inline-block{% else %}none{% endif %};"></span>
+                        <span id="global-unread-dot" class="dot-small" style="display:none;"></span>
                     </a>
                     <a href="#">👤 Profile</a>
                 </div>
@@ -144,27 +60,27 @@
 
         <div class="top-nav">
             <div class="nav-icons">
-                <span style="cursor:pointer;">🔔</span>
+                <span>🔔</span>
                 <div class="profile-circle"></div>
             </div>
         </div>
 
         <div class="content">
             <div class="task-tabs">
-                <a href="{{ url_for('my_task', view='created') }}" 
+                <a href="{{ url_for('my_task', view='created') }}"
                    class="tab-btn {% if view == 'created' %}active{% endif %}" style="position: relative;">
                     Created Tasks
-                    <span id="created-unread-dot" class="dot-small" style="display: {% if user.count_total_unread('created') > 0 %}inline-block{% else %}none{% endif %};"></span>
+                    <span id="created-unread-dot" class="dot-small" style="display:none;"></span>
                 </a>
-                <a href="{{ url_for('my_task', view='applied') }}" 
+                <a href="{{ url_for('my_task', view='applied') }}"
                    class="tab-btn {% if view == 'applied' %}active{% endif %}" style="position: relative;">
                     Applied Tasks
-                    <span id="applied-unread-dot" class="dot-small" style="display: {% if user.count_total_unread('applied') > 0 %}inline-block{% else %}none{% endif %};"></span>
+                    <span id="applied-unread-dot" class="dot-small" style="display:none;"></span>
                 </a>
             </div>
 
             <div class="task-grid">
-                {# 情况1: 我发布的任务 (Created) #}
+
                 {% if view == 'created' %}
                     {% for task in created %}
                         <div class="card">
@@ -196,7 +112,11 @@
                                             </div>
                                             <div class="btn-flex-container">
                                                 {% if task.progress == 100 %}
-                                                    <a href="{{ url_for('rate_user', task_id=task.id, target_user=task.user) }}" class="btn-rate">⭐ Rate Tasker</a>
+                                                    {% if first_unrated.get(task.id) %}
+                                                        <a href="{{ url_for('rate_user', task_id=task.id, target_user=first_unrated[task.id]) }}" class="btn-rate">⭐ Rate Tasker</a>
+                                                    {% else %}
+                                                        <span style="font-size: 11px; color: #aaa; flex:1; text-align:center;">✅ All rated</span>
+                                                    {% endif %}
                                                 {% endif %}
                                                 <a href="{{ url_for('chat' if task.capacity == 1 else 'group_chat', task_id=task.id) }}" class="btn-msg-half">
                                                     💬 Message Team
@@ -213,7 +133,6 @@
                         </div>
                     {% endfor %}
 
-                {# 情况2: 我申请的任务 (Applied) #}
                 {% elif view == 'applied' %}
                     {% for app in applied %}
                         {% set task = Task.query.get(app.task_id) %}
@@ -232,8 +151,8 @@
                                     <div class="card-footer" style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; position: relative;">
                                         <div style="width: 100%;">
                                             <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                                               <span style="font-size: 12px; color: #4caf50;">Team: {{ task.get_hired_count() }}/{{ task.capacity }}</span>
-                                               <span style="font-size: 12px; font-weight: bold;">{{ task.progress }}%</span>
+                                                <span style="font-size: 12px; color: #4caf50;">Team: {{ task.get_hired_count() }}/{{ task.capacity }}</span>
+                                                <span style="font-size: 12px; font-weight: bold;">{{ task.progress }}%</span>
                                             </div>
 
                                             {% if task.get_hired_count() < task.capacity %}
@@ -252,7 +171,7 @@
                                                             <form action="{{ url_for('update_progress', task_id=task.id) }}" method="POST" onsubmit="return confirmSubmission('{{ task.id }}', {{ task.progress }})">
                                                                 <input type="range" name="progress" class="range-slider" id="slider-{{ task.id }}" min="0" max="100" step="10" value="{{ task.progress }}" oninput="lockSlider('{{ task.id }}', {{ task.progress }}, this.value)">
                                                                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                                                                    <span class="check-link" style="font-size: 10px; text-decoration: underline; cursor: pointer;" onclick="alert('Once progress been move forward, it cannot be return.')">Note</span>
+                                                                    <span style="font-size: 10px; text-decoration: underline; cursor: pointer;" onclick="alert('Once progress been move forward, it cannot be returned.')">Note</span>
                                                                     <button type="submit" class="confirm-btn">✓</button>
                                                                 </div>
                                                             </form>
@@ -277,95 +196,91 @@
                                     <p style="color: #666; font-size: 13px; margin-top: 15px;">Application is under review...</p>
                                 {% endif %}
                             </div>
-                        {% endif %} 
+                        {% endif %}
                     {% endfor %}
                 {% endif %}
-            </div> 
-        </div> 
-    </div> 
+            </div>
+        </div>
+    </div>
 
     <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
     <script>
-        const socket = io();
+    const socket = io();
 
-        // 精准实时红点监听
-        socket.on('new_unread', function(data) {
-            console.log("收到新消息通知:", data);
+    socket.on('new_unread', function(data) {
+        const globalDot = document.getElementById('global-unread-dot');
+        if (globalDot) globalDot.style.display = 'inline-block';
 
-            // 1. 侧边栏红点
-            const globalDot = document.getElementById('global-unread-dot');
-            if (globalDot) globalDot.style.display = 'inline-block';
-
-            // 2. Tab 选项卡红点
-            if (data.role === 'created') {
-                const createdDot = document.getElementById('created-unread-dot');
-                if (createdDot) createdDot.style.display = 'inline-block';
-            } else if (data.role === 'applied') {
-                const appliedDot = document.getElementById('applied-unread-dot');
-                if (appliedDot) appliedDot.style.display = 'inline-block';
-            }
-
-            // 3. 具体任务按钮的气泡
-            const msgBtn = document.querySelector(`a[href*="chat/${data.task_id}"], a[href*="group_chat/${data.task_id}"]`);
-            if (msgBtn) {
-                let badge = msgBtn.querySelector('.unread-badge');
-                if (!badge) {
-                    badge = document.createElement('span');
-                    badge.className = 'unread-badge';
-                    badge.innerText = '1';
-                    msgBtn.appendChild(badge);
-                } else {
-                    badge.innerText = parseInt(badge.innerText) + 1;
-                }
-            }
-        });
-
-        // 逻辑：进入页面时，清除当前分类的 Tab 红点
-        const currentView = "{{ view }}";
-        if (currentView === 'created') {
+        if (data.role === 'created') {
             const createdDot = document.getElementById('created-unread-dot');
-            if (createdDot) createdDot.style.display = 'none';
-        } else if (currentView === 'applied') {
+            if (createdDot) createdDot.style.display = 'inline-block';
+        } else if (data.role === 'applied') {
             const appliedDot = document.getElementById('applied-unread-dot');
-            if (appliedDot) appliedDot.style.display = 'none';
+            if (appliedDot) appliedDot.style.display = 'inline-block';
         }
 
-        // 弹窗控制函数
-        function togglePop(id) {
-            const pop = document.getElementById('pop-' + id);
-            if (pop.style.display === 'block') {
-                pop.style.display = 'none';
+        const msgBtn = document.querySelector(`a[href*="chat/${data.task_id}"], a[href*="group_chat/${data.task_id}"]`);
+        if (msgBtn) {
+            let badge = msgBtn.querySelector('.unread-badge');
+            if (!badge) {
+                badge = document.createElement('span');
+                badge.className = 'unread-badge';
+                badge.innerText = '1';
+                msgBtn.appendChild(badge);
             } else {
-                document.querySelectorAll('.progress-popover').forEach(p => p.style.display = 'none');
-                pop.style.display = 'block';
+                badge.innerText = parseInt(badge.innerText) + 1;
             }
         }
+    });
 
-        function lockSlider(id, originalVal, newVal) {
-            const slider = document.getElementById('slider-' + id);
-            const displaySpan = document.getElementById('val-' + id);
-            if (parseInt(newVal) < parseInt(originalVal)) {
-                slider.value = originalVal;
-                displaySpan.innerText = originalVal + '%';
-            } else {
-                displaySpan.innerText = newVal + '%';
-            }
-        }
+    const currentView = "{{ view }}";
+    if (currentView === 'created') {
+        const createdDot = document.getElementById('created-unread-dot');
+        if (createdDot) createdDot.style.display = 'none';
+    } else if (currentView === 'applied') {
+        const appliedDot = document.getElementById('applied-unread-dot');
+        if (appliedDot) appliedDot.style.display = 'none';
+    }
 
-        function confirmSubmission(id, originalVal) {
-            const slider = document.getElementById('slider-' + id);
-            if (parseInt(slider.value) < originalVal) {
-                alert("Error: Progress cannot go backwards!");
-                return false;
-            }
-            return true;
-        }
+    const globalDot = document.getElementById('global-unread-dot');
+    if (globalDot) globalDot.style.display = 'none';
 
-        window.onclick = function(event) {
-            if (!event.target.matches('.btn-outline') && !event.target.closest('.progress-popover')) {
-                document.querySelectorAll('.progress-popover').forEach(p => p.style.display = 'none');
-            }
+    function togglePop(id) {
+        const pop = document.getElementById('pop-' + id);
+        if (pop.style.display === 'block') {
+            pop.style.display = 'none';
+        } else {
+            document.querySelectorAll('.progress-popover').forEach(p => p.style.display = 'none');
+            pop.style.display = 'block';
         }
+    }
+
+    function lockSlider(id, originalVal, newVal) {
+        const slider = document.getElementById('slider-' + id);
+        const displaySpan = document.getElementById('val-' + id);
+        if (parseInt(newVal) < parseInt(originalVal)) {
+            slider.value = originalVal;
+            displaySpan.innerText = originalVal + '%';
+        } else {
+            displaySpan.innerText = newVal + '%';
+        }
+    }
+
+    function confirmSubmission(id, originalVal) {
+        const slider = document.getElementById('slider-' + id);
+        if (parseInt(slider.value) < originalVal) {
+            alert("Error: Progress cannot go backwards!");
+            return false;
+        }
+        return true;
+    }
+
+    window.onclick = function(event) {
+        if (!event.target.matches('.btn-outline') && !event.target.closest('.progress-popover')) {
+            document.querySelectorAll('.progress-popover').forEach(p => p.style.display = 'none');
+        }
+    }
     </script>
+
 </body>
 </html>
