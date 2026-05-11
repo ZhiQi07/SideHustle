@@ -5,6 +5,8 @@ from sqlalchemy import func, text
 import os
 from datetime import datetime
 from sqlalchemy import or_
+from datetime import timezone, timedelta
+my8 = timezone(timedelta(hours=8))
 
 app = Flask(__name__)
 app.secret_key = "mmu_secret_key"
@@ -448,6 +450,7 @@ def my_task():
                            view=view,
                            user=current_user,
                            Task=Task,
+                           Rating=Rating,
                            first_unrated=first_unrated)
 
 
@@ -637,11 +640,12 @@ def submit_rating(task_id, target_user):
     review_text = request.form.get('review', '')
 
     new_rating = Rating(
-        task_id=task_id,
-        reviewer_username=current_user.username,
-        target_username=target_user,
-        score=rating_val,
-        review_content=review_text
+    task_id=task_id,
+    reviewer_username=current_user.username,
+    target_username=target_user,
+    score=rating_val,
+    review_content=review_text,
+    timestamp=datetime.now(my8)
     )
     db.session.add(new_rating)
 

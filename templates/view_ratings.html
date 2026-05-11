@@ -104,7 +104,7 @@
                             <div class="review-top">
                                 <div>
                                     <span class="reviewer-name">@{{ r.reviewer_username }}</span>
-                                    <span class="review-date"> • {{ r.timestamp.strftime('%Y-%m-%d') }}</span>
+                                    <span class="review-date"> • {{ r.timestamp.strftime('%Y-%m-%d %H:%M') }}</span>
                                 </div>
                                 <div class="stars">
                                     {% for i in range(r.score) %}★{% endfor %}

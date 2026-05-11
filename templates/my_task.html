@@ -177,7 +177,12 @@
                                                             </form>
                                                         </div>
                                                     {% else %}
-                                                        <a href="{{ url_for('rate_user', task_id=task.id, target_user=task.user) }}" class="btn-rate">⭐ Rate Client</a>
+                                                        {% set already_rated = Rating.query.filter_by(task_id=task.id, reviewer_username=user.username, target_username=task.user).first() %}
+                                                        {% if already_rated %}
+                                                            <span style="font-size: 11px; color: #aaa; flex:1; text-align:center;">✅ Rated</span>
+                                                        {% else %}
+                                                            <a href="{{ url_for('rate_user', task_id=task.id, target_user=task.user) }}" class="btn-rate">⭐ Rate Client</a>
+                                                        {% endif %}
                                                     {% endif %}
                                                     <a href="{{ url_for('chat' if task.capacity == 1 else 'group_chat', task_id=task.id) }}" class="btn-msg-half">
                                                         💬 Message
@@ -214,9 +219,11 @@
         if (data.role === 'created') {
             const createdDot = document.getElementById('created-unread-dot');
             if (createdDot) createdDot.style.display = 'inline-block';
+            localStorage.setItem('unread_created', '1');
         } else if (data.role === 'applied') {
             const appliedDot = document.getElementById('applied-unread-dot');
             if (appliedDot) appliedDot.style.display = 'inline-block';
+            localStorage.setItem('unread_applied', '1');
         }
 
         const msgBtn = document.querySelector(`a[href*="chat/${data.task_id}"], a[href*="group_chat/${data.task_id}"]`);
@@ -233,15 +240,27 @@
         }
     });
 
+    // 页面加载时从 localStorage 恢复红点
     const currentView = "{{ view }}";
-    if (currentView === 'created') {
+
+    if (localStorage.getItem('unread_created') === '1' && currentView !== 'created') {
         const createdDot = document.getElementById('created-unread-dot');
-        if (createdDot) createdDot.style.display = 'none';
-    } else if (currentView === 'applied') {
-        const appliedDot = document.getElementById('applied-unread-dot');
-        if (appliedDot) appliedDot.style.display = 'none';
+        if (createdDot) createdDot.style.display = 'inline-block';
     }
 
+    if (localStorage.getItem('unread_applied') === '1' && currentView !== 'applied') {
+        const appliedDot = document.getElementById('applied-unread-dot');
+        if (appliedDot) appliedDot.style.display = 'inline-block';
+    }
+
+    // 进了某个 tab 就清掉那个 tab 的 localStorage
+    if (currentView === 'created') {
+        localStorage.removeItem('unread_created');
+    } else if (currentView === 'applied') {
+        localStorage.removeItem('unread_applied');
+    }
+
+    // global 红点进 my_task 就消失
     const globalDot = document.getElementById('global-unread-dot');
     if (globalDot) globalDot.style.display = 'none';
 
