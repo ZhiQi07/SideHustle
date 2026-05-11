@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Tracking</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+</head>
+<body>
+    <div class="main-layout">
+        <aside class="sidebar">
+            <div>
+                <h1 class="logo">SideHustle</h1>
+
+                <div class="menu-title">Main Menu</div>
+
+                <nav class="nav-links">
+                    <a href="{{ url_for('marketplace') }}">🛒 Marketplace</a>
+                    <a href="{{ url_for('dashboard') }}">🌐 Dashboard</a>
+                    <a href="{{ url_for('task_tracking') }}" class="active">📋 My Task</a>
+                    <a href="#">👤 Profile</a>
+                </nav>
+            </div>
+
+            <div class="help-box">❓ Help</div>
+        </aside>
+
+        <main class="main-content">
+            <div class="topbar">
+                <div></div>
+                <div class="top-icons">
+                    <span>🔔</span>
+                    <span>💬</span>
+                    <div class="profile-circle"></div>
+                </div>
+            </div>
+
+            <section class="tasks-tracking-section tracking-page-section">
+                <div class="section-head">
+                    <h2 class="tracking-section-title">Task Tracking</h2>
+                    <a href="{{ url_for('dashboard') }}" class="small-link-btn">Back to Dashboard</a>
+                </div>
+
+                <div class="tracking-list-wrapper">
+                    {% if tracking_list %}
+                        {% for item in tracking_list %}
+                        <div class="tracking-row">
+                            <div class="tracking-progress-side">
+                                <div class="tracking-progress-box">
+                                    <div class="tracking-progress-bar">
+                                        <div class="tracking-progress-fill" style="width: {{ item.progress }}%;"></div>
+                                    </div>
+                                    <div class="tracking-progress-text">{{ item.progress }}%</div>
+                                </div>
+
+                                <div class="tracking-due-date">{{ item.due_date }}</div>
+                            </div>
+
+                            <div class="tracking-info-box">
+                                {{ item.task_title }}
+                            </div>
+
+                            <button
+                                class="tracking-menu-btn"
+                                onclick="openTrackingPopup('{{ item.task_title|e }}', '{{ item.description|e }}', '{{ item.due_date|e }}', '{{ item.progress }}')"
+                            >
+                                ...
+                            </button>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="tracking-empty">No tracking records yet.</div>
+                    {% endif %}
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div class="tracking-popup-overlay" id="trackingPopupOverlay" onclick="closeTrackingPopup()"></div>
+
+    <div class="tracking-popup" id="trackingPopup">
+        <div class="tracking-popup-header">
+            <h3>Task Details</h3>
+            <button class="tracking-popup-close" onclick="closeTrackingPopup()">×</button>
+        </div>
+
+        <ul class="tracking-popup-list">
+            <li><strong>Task Name:</strong> <span id="popupTaskTitle"></span></li>
+            <li><strong>Due Date:</strong> <span id="popupTaskDueDate"></span></li>
+            <li><strong>Description:</strong> <span id="popupTaskDescription"></span></li>
+            <li><strong>Percentage:</strong> <span id="popupTaskPercentage"></span>%</li>
+        </ul>
+    </div>
+
+    <script>
+        function openTrackingPopup(title, description, dueDate, progress) {
+            document.getElementById("popupTaskTitle").textContent = title;
+            document.getElementById("popupTaskDescription").textContent = description;
+            document.getElementById("popupTaskDueDate").textContent = dueDate;
+            document.getElementById("popupTaskPercentage").textContent = progress;
+
+            document.getElementById("trackingPopup").classList.add("show");
+            document.getElementById("trackingPopupOverlay").classList.add("show");
+        }
+
+        function closeTrackingPopup() {
+            document.getElementById("trackingPopup").classList.remove("show");
+            document.getElementById("trackingPopupOverlay").classList.remove("show");
+        }
+    </script>
+</body>
+</html>
