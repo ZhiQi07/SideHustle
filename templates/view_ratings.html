@@ -7,12 +7,12 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
     <style>
-        /* 针对 Ratings 页面内容的微调，保持和 Earnings 一致 */
         .history-card {
             background: white;
             border-radius: 25px;
             padding: 30px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            max-width: 100%;
         }
         .review-item {
             display: flex;
@@ -28,24 +28,12 @@
             justify-content: space-between;
             margin-bottom: 10px;
         }
-        .stars {
-            color: #f5a623;
-            font-size: 18px;
-        }
-        .comment-text {
-            color: #333;
-            font-size: 14px;
-            line-height: 1.5;
-            margin-bottom: 8px;
-        }
-        .reviewer-name {
-            font-weight: 600;
-            color: #5a32a8;
-        }
-        .review-date {
-            font-size: 12px;
-            color: #999;
-        }
+        .stars { color: #f5a623; font-size: 18px; }
+        .comment-text { color: #333; font-size: 14px; line-height: 1.5; margin-bottom: 8px; }
+        .reviewer-name { font-weight: 600; color: #5a32a8; }
+        .review-date { font-size: 12px; color: #999; }
+        .main-content { max-width: 100% !important; width: calc(100% - 240px) !important; }
+        .content { max-width: 100% !important; }
     </style>
 </head>
 <body>
@@ -65,7 +53,7 @@
             </div>
         </div>
 
-        <div class="main-content">
+        <div class="content-wrapper">
             <header class="top-nav">
                 <div class="nav-icons">
                     <span>🔔</span>
@@ -73,18 +61,18 @@
                 </div>
             </header>
 
-            <main class="content">
-                <div class="page-header" style="margin-bottom: 30px;">
+            <main style="padding: 40px 30px;">
+                <div style="margin-bottom: 30px;">
                     <h1 style="font-size: 24px; color: #1a1a1a;">User Ratings</h1>
                     <p style="color: #666;">View feedback and ratings from your past collaborations.</p>
                 </div>
 
                 <div style="display: flex; gap: 20px; margin-bottom: 30px;">
-                    <div style="background: white; border-radius: 20px; padding: 20px 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); min-width: 200px;">
+                    <div style="background: white; border-radius: 20px; padding: 20px 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); flex: 1;">
                         <p style="color: #888; font-size: 14px; margin-bottom: 10px;">Average Rating</p>
                         <h3 style="font-size: 28px; color: #5a32a8;">⭐ {{ avg_rating }}</h3>
                     </div>
-                    <div style="background: white; border-radius: 20px; padding: 20px 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); min-width: 200px;">
+                    <div style="background: white; border-radius: 20px; padding: 20px 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); flex: 1;">
                         <p style="color: #888; font-size: 14px; margin-bottom: 10px;">Total Reviews</p>
                         <h3 style="font-size: 28px; color: #1a1a1a;">{{ reviews|length }}</h3>
                     </div>
