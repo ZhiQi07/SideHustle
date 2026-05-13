@@ -12,13 +12,15 @@
         </div>
     </div>
     <div class="right-login">
-        {% with messages = get_flashed_messages() %}
-          {% if messages %}
-            {% for message in messages %}
-              <p style="color: #ff4d4d; font-size: 13px; font-weight: bold; margin-bottom: 10px;">{{ message }}</p>
-            {% endfor %}
-          {% endif %}
-        {% endwith %}
+        <div class="login-flash-container">
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                <div class="login-error-msg">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+            {% endwith %}
+        </div>
         
         <h2>
             LOGIN

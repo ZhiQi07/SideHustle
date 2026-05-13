@@ -1,0 +1,438 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* 弹窗面板样式 */
+        .progress-popover {
+            display: none;
+            position: absolute;
+            bottom: 75px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #f5f5f5;
+            border-radius: 15px;
+            padding: 15px;
+            width: 190px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            z-index: 1000;
+            border: 1px solid #eee;
+        }
+
+        .progress-popover::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -10px;
+            border-width: 10px;
+            border-style: solid;
+            border-color: #f5f5f5 transparent transparent transparent;
+        }
+
+        .popover-title {
+            font-size: 12px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .range-slider {
+            width: 100%;
+            margin: 10px 0;
+            cursor: pointer;
+        }
+
+        .confirm-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: #333;
+            cursor: pointer;
+            padding: 0;
+            transition: transform 0.2s;
+        }
+
+        .confirm-btn:hover {
+            transform: scale(1.2);
+            color: #2e7d32;
+        }
+        
+        .card-footer {
+            position: relative;
+        }
+
+        .check-link {
+            font-size: 10px;
+            color: #666;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        /* 未读消息红点样式 */
+        .unread-badge {
+            position: absolute;
+            top: -8px;
+            right: -5px;
+            background: #ff4d4f;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 10px;
+            font-weight: bold;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            z-index: 10;
+        }
+
+        /* 侧边栏和 Tab 的小圆点样式[cite: 1, 2] */
+        .dot-small {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #ff4d4f;
+            border-radius: 50%;
+            margin-left: 5px;
+            vertical-align: middle;
+            border: 1px solid white;
+        }
+
+        /* 统一按钮样式 */
+        .btn-flex-container {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .btn-rate {
+            flex: 1;
+            text-align: center;
+            background-color: #ff9800;
+            color: white;
+            border: none;
+            font-size: 12px;
+            padding: 10px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .btn-msg-half {
+            flex: 1;
+            text-align: center;
+            background-color: #8e94a5;
+            color: white;
+            font-size: 12px;
+            padding: 10px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            position: relative;
+        }
+        
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 25px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            animation: modalPop 0.3s ease-out;
+        }
+
+        @keyframes modalPop {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+    </style>
+            <div class="task-tabs">
+                <!-- 在 Tab 文字后面加红点逻辑[cite: 1, 2] -->
+                <a href="{{ url_for('my_task', view='created') }}" 
+                   class="tab-btn {% if view == 'created' %}active{% endif %}" style="position: relative;">
+                    Created Tasks
+                    {% if user.count_total_unread('created') > 0 %}
+                        <span id="created-unread-dot" class="dot-small"></span>
+                    {% endif %}
+                </a>
+                
+                <a href="{{ url_for('my_task', view='applied') }}" 
+                   class="tab-btn {% if view == 'applied' %}active{% endif %}" style="position: relative;">
+                    Applied Tasks
+                    {% if user.count_total_unread('applied') > 0 %}
+                        <span id="applied-unread-dot" class="dot-small"></span>
+                    {% endif %}
+                </a>
+            </div>
+
+            <div class="task-grid">
+                {% if view == 'created' %}
+                    {% for task in created %}
+                        <div class="card" style="position: relative;"> 
+                            <div class="card-options">
+                                <button class="options-trigger" onclick="toggleMenu(event, '{{ task.id }}')">⋮</button>
+                                <div id="menu-{{ task.id }}" class="options-dropdown">
+                                    <a href="{{ url_for('edit_task', task_id=task.id) }}">✏️ Edit Task</a>
+                                    <a href="javascript:void(0)" 
+                                    class="delete-option" 
+                                    onclick="openDeleteModal('{{ url_for('delete_task', task_id=task.id) }}')">
+                                    🗑️ Delete Task
+                                    </a>
+                                </div>
+                            </div>
+
+                            <div class="card-header">
+                                <span class="tag">{{ task.category }}</span>
+                                {% if task.urgent %}<span class="tag urgent-tag">URGENT</span>{% endif %}
+                            </div>
+
+                            <div class="card-body" style="margin: 15px 0;">
+                                <h3 style="margin: 0;">{{ task.title }}</h3>
+                                <p style="color: #2e7d32; font-weight: bold; margin-top: 5px;">RM {{ task.price }}</p>
+                            </div>
+
+                            <div class="card-footer" style="margin-top: auto; border-top: 1px solid #eee; padding-top: 15px;">  
+                                {% if task.get_hired_count() == 0 %}
+                                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                                        <div style="display: flex; align-items: center; gap: 5px;">
+                                            <span>👥</span>
+                                            <strong>{{ task.get_applicant_count() }}</strong> applicants
+                                        </div>
+                                        <a href="{{ url_for('view_applicants', task_id=task.id) }}" class="btn-outline">Review Applicants →</a>
+                                    </div>
+                                {% else %}
+                                    <div class="full-width">
+                                        <div class="hired-info-box">
+                                            <div class="user-meta">
+                                                <div class="mini-profile"></div> 
+                                                <span>Hired: <strong>{{ task.get_hired_count() }} / {{ task.capacity }}</strong></span>
+                                            </div>
+                                            <a href="{{ url_for('view_applicants', task_id=task.id) }}" class="btn-outline">View Team</a>
+                                        </div>
+
+                                        {% if task.get_hired_count() < task.capacity %}
+                                            <p class="status-text" style="color: #ef6c00;">Waiting for {{ task.capacity - task.get_hired_count() }} more helper(s)...</p>
+                                        {% else %}
+                                            <div class="progress-header">
+                                                <span>Project Progress</span>
+                                                <span class="progress-percent">{{ task.progress }}%</span>
+                                            </div>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill" style="width: {{ task.progress | default(0) }}%;"></div>
+                                            </div>
+
+                                            <div class="btn-flex-container" style="margin-top: 15px;">
+                                                {% if task.progress == 100 %}
+                                                    <a href="{{ url_for('rate_user', task_id=task.id, target_user=task.tasker) }}" class="btn-rate">⭐ Rate Tasker</a>
+                                                {% endif %}
+                                                
+                                                <a href="{{ url_for('chat', task_id=task.id) }}" class="btn-msg-half">
+                                                    💬 Message Team
+                                                    {% set unread = task.get_unread_count(user.username) %}
+                                                    {% if unread > 0 %}
+                                                        <span id="badge-{{ task.id }}" class="unread-badge">{{ unread }}</span>
+                                                    {% endif %}
+                                                </a>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+
+                {% elif view == 'applied' %}
+                    {% for item in applied_tasks %}
+                        {% set app = item.app %}
+                        {% set task = item.task %}
+                        {% if task %}
+                            <div class="card">
+                                <div class="card-header">
+                                    <span class="tag">{{ task.category }}</span>
+                                    <span class="tag" style="background: {% if app.status == 'Hired' %}#e8f5e9; color: #2e7d32;{% elif app.status == 'Rejected' %}#ffebee; color: #c62828;{% else %}#fff3e0; color: #ef6c00;{% endif %}">
+                                        {{ app.status | upper }}
+                                    </span>
+                                </div>
+
+                                <h3>{{ task.title }}</h3>
+                                <p style="color: #666; font-size: 14px; margin-top: 5px;">Client: <strong>{{ task.user }}</strong></p>
+
+                                {% if app.status == 'Hired' %}
+                                    <div class="card-footer" style="flex-direction: column; align-items: flex-start; gap: 15px; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; position: relative;">
+                                        
+                                        <div style="width: 100%;">
+                                            <div class="progress-header">
+                                                <span>Your Progress</span>
+                                                <span class="progress-percent" id="display-percent-{{ task.id }}">{{ task.progress }}%</span>
+                                            </div>
+                                            <div class="progress-bar">
+                                                <div class="progress-fill" id="fill-{{ task.id }}" style="width: {{ task.progress }}%;"></div>
+                                            </div>
+                                        </div>
+
+                                        <div class="btn-flex-container">
+                                            {% if task.progress < 100 %}
+                                                <button type="button" class="btn-outline" style="flex: 1; text-align: center; padding: 10px; cursor: pointer;" 
+                                                        onclick="togglePop('{{ task.id }}')">Update Progress</button>
+
+                                                <div id="pop-{{ task.id }}" class="progress-popover">
+                                                    <span class="popover-title">Set Progress: <span id="val-{{ task.id }}">{{ task.progress }}%</span></span>
+                                                    
+                                                    <form action="{{ url_for('update_progress', task_id=task.id) }}" method="POST" onsubmit="return confirmSubmission('{{ task.id }}', {{ task.progress }})">
+                                                        <input type="range" name="progress" class="range-slider" id="slider-{{ task.id }}"
+                                                               min="0" max="100" step="10" value="{{ task.progress }}" 
+                                                               oninput="lockSlider('{{ task.id }}', {{ task.progress }}, this.value)">
+                                                        
+                                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+                                                            <span class="check-link" onclick="alert('Note: Progress can only move forward once it has been updated.')">Check it out</span>
+                                                            <button type="submit" class="confirm-btn">✓</button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            {% else %}
+                                                <a href="{{ url_for('rate_user', task_id=task.id, target_user=task.user) }}" class="btn-rate">⭐ Rate Client</a>
+                                            {% endif %}
+                                            
+                                            <a href="{{ url_for('chat', task_id=task.id) }}" class="btn-msg-half">
+                                                💬 Message Client
+                                                {% set unread = task.get_unread_count(user.username) %}
+                                                {% if unread > 0 %}
+                                                    <span id="badge-{{ task.id }}" class="unread-badge">{{ unread }}</span>
+                                                {% endif %}
+                                            </a>
+                                        </div>
+                                    </div>
+                                {% elif app.status == 'Rejected' %}
+                                    <p style="color: #d32f2f; font-size: 13px; margin-top: 15px;">Sorry, the client has chosen another tasker for this job.</p>
+                                {% else %}
+                                    <p style="color: #666; font-size: 13px; margin-top: 15px;">Your application is being reviewed. Check back soon!</p>
+                                {% endif %}
+                            </div>
+                        {% endif %} 
+                    {% endfor %}
+                {% endif %}
+
+                <div id="deleteModal" class="modal-overlay">
+                    <div class="modal-content">
+                        <div class="modal-icon">⚠️</div>
+                        <h3>Delete Task?</h3>
+                        <p>Are you sure you want to delete this task? This action cannot be undone.</p>
+                        <div class="modal-actions">
+                            <button onclick="closeDeleteModal()" class="btn-cancel-modal">No, Keep It</button>
+                            <a id="confirmDeleteBtn" href="#" class="btn-confirm-delete">Yes, Delete</a>
+                        </div>
+                    </div>
+                </div>
+
+    <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
+    <script>
+    const socket = io();
+
+    socket.on('clear_unread', function(data) {
+        const badge = document.getElementById('badge-' + data.task_id);
+        if (badge) {
+            badge.style.display = 'none';
+        }
+        // 同步隐藏全局红点[cite: 2]
+        const globalDot = document.getElementById('global-unread-dot');
+        const createdDot = document.getElementById('created-unread-dot');
+        const appliedDot = document.getElementById('applied-unread-dot');
+        if (globalDot) globalDot.style.display = 'none';
+        if (createdDot) createdDot.style.display = 'none';
+        if (appliedDot) appliedDot.style.display = 'none';
+    });
+
+    function togglePop(id) {
+        const pop = document.getElementById('pop-' + id);
+        if (pop.style.display === 'block') {
+            pop.style.display = 'none';
+        } else {
+            document.querySelectorAll('.progress-popover').forEach(p => p.style.display = 'none');
+            pop.style.display = 'block';
+        }
+    }
+
+    function lockSlider(id, originalVal, newVal) {
+        const slider = document.getElementById('slider-' + id);
+        const displaySpan = document.getElementById('val-' + id);
+        
+        if (parseInt(newVal) < parseInt(originalVal)) {
+            slider.value = originalVal;
+            displaySpan.innerText = originalVal + '%';
+        } else {
+            displaySpan.innerText = newVal + '%';
+        }
+    }
+// --- Modal Logic ---
+    function openDeleteModal(deleteUrl) {
+        const modal = document.getElementById('deleteModal');
+        const confirmBtn = document.getElementById('confirmDeleteBtn');
+        
+        // Set the "Yes, Delete" button's link to the correct task URL
+        confirmBtn.href = deleteUrl;
+        
+        // Show the modal
+        modal.style.display = 'flex';
+    }
+
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').style.display = 'none';
+    }
+
+    function confirmSubmission(id, originalVal) {
+        const slider = document.getElementById('slider-' + id);
+        const newVal = parseInt(slider.value);
+        
+        if (newVal < originalVal) {
+            alert("Bug Prevention: You cannot submit a lower progress value than the current one!");
+            return false;
+        }
+        return true;
+    }
+    function toggleMenu(event, id) {
+    // Prevent the click from bubbling up (if you eventually make the whole card clickable)
+        event.stopPropagation(); 
+        
+        const menu = document.getElementById('menu-' + id);
+        
+        // Close any other open menus first
+        document.querySelectorAll('.options-dropdown').forEach(m => {
+            if (m.id !== 'menu-' + id) {
+                m.style.display = 'none';
+            }
+        });
+
+        // Toggle the current menu
+        if (menu.style.display === 'block') {
+            menu.style.display = 'none';
+        } else {
+            menu.style.display = 'block';
+        }
+    }
+
+    // Close menus if the user clicks anywhere else on the screen
+    window.addEventListener('click', function() {
+        document.querySelectorAll('.options-dropdown').forEach(m => {
+            m.style.display = 'none';
+        });
+    });
+
+    window.onclick = function(event) {
+        if (!event.target.matches('.btn-outline') && !event.target.closest('.progress-popover')) {
+            document.querySelectorAll('.progress-popover').forEach(p => p.style.display = 'none');
+        }
+    }
+    </script>
+
+    {% endblock %}

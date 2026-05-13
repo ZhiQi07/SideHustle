@@ -1,76 +1,82 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
+    <title>Marketplace</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <div class="main-layout">
-        
-        <div class="sidebar">
-            <div class="sidebar-top">
-                <h2>SideHustle</h2>
-                <div class="sidebar-menu">
-                    <a href="{{ url_for('marketplace') }}">🏠 Marketplace</a>
-                    <a href="#">📊 Dashboard</a>
-                    <a href="#">📋 My Task</a>
-                    <a href="#">👤 Profile</a>
-                </div>
-            </div>
-            <div class="sidebar-bottom">
-                <a href="#" class="menu-item">❓ Help</a>
-            </div>
-        </div>
+    {% extends "base.html" %}
 
-        <div class="top-nav">
-            <div class="nav-icons">
-                {% if user %}
-                    <span style="margin-right: 10px;">Hello, <strong>{{ user.username }}</strong></span>
-                {% endif %}
-                <span>🔔</span>
-                <span>💬</span>
-                <div class="profile-circle"></div>
-            </div>
-        </div>
-        <div class="content">
+    {% block content %}
             <h1 style="text-align: left; margin-bottom: 20px;">MARKETPLACE</h1>
 
             <div class="search-container">
                 <form action="{{ url_for('marketplace') }}" method="GET" class="search-form">
-                    <input type="text" name="q" placeholder="Search for tasks (e.g. 'delivery', 'tutor')..." value="{{ request.args.get('q', '') }}">
-                    <button type="submit" class="btn-search">🔍 Search</button>
-                </form>
-            </div>
-
-                <div class="task-grid">
-                    {% for task in tasks %}
-                    <div class="card">
-                        <div style="display: flex; justify-content: space-between;">
-                            <h3>{{ task.title }}</h3>
-                            <span style="color: #2e7d32; font-weight: bold;">RM {{ task.price }}</span>
-                        </div>
-                        
-                        <div style="margin: 10px 0;">
-                            <span class="tag">{{ task.category }}</span>
-                            {% if task.urgent %}<span class="tag urgent-tag">URGENT</span>{% endif %}
-                        </div>
-
-                        <p>{{ task.description }}</p>
-
-                        <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
-
-                        <div style="display: flex; align-items: center; gap: 10px; font-size: 14px;">
-                            <div style="width: 30px; height: 30px; background: #8e9aaf; border-radius: 50%;"></div>
-                            <span><strong>{{ task.user }}</strong></span> <span>⭐ {{ task.rating }}</span>
-                        </div>
-                        
-                        <a href="{{ url_for('task_detail', task_id=task.id) }}" class="btn-primary">SEE MORE INFO</a>
+                    <div class="search-input-wrapper">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" name="q" placeholder="Search for anything..." value="{{ request.args.get('q', '') }}">
                     </div>
-                    {% endfor %}
+                    
+                    <select name="cat" class="nav-select">
+                        <option value="">All Categories</option>
+                        <option value="Moving & Lifting" {% if request.args.get('cat') == 'Moving & Lifting' %}selected{% endif %}>Moving & Lifting</option>
+                        <option value="Food & Delivery" {% if request.args.get('cat') == 'Food & Delivery' %}selected{% endif %}>Food & Delivery</option>
+                        <option value="Academic & Education" {% if request.args.get('cat') == 'Academic & Education' %}selected{% endif %}>Academic & Education</option>
+                        <option value="Creative & Digital" {% if request.args.get('cat') == 'Creative & Digital' %}selected{% endif %}>Creative & Digital</option>
+                        <option value="Technical & IT" {% if request.args.get('cat') == 'Technical & IT' %}selected{% endif %}>Technical & IT</option>
+                    </select>
+                    
+                    <button type="submit" class="btn-search">Search</button>
+                </form>
+
+                <div class="category-chips">
+                    <a href="{{ url_for('marketplace') }}" class="chip {% if not request.args.get('cat') %}active{% endif %}">All Tasks</a>
+                    <a href="{{ url_for('marketplace', cat='Moving & Lifting') }}" class="chip {% if request.args.get('cat') == 'Moving & Lifting' %}active{% endif %}">Moving & Lifting</a>
+                    <a href="{{ url_for('marketplace', cat='Food & Delivery') }}" class="chip {% if request.args.get('cat') == 'Food & Delivery' %}active{% endif %}">Food & Delivery</a>
+                    <a href="{{ url_for('marketplace', cat='Academic & Education') }}" class="chip {% if request.args.get('cat') == 'Academic & Education' %}active{% endif %}">Academic & Education</a>
+                    <a href="{{ url_for('marketplace', cat='Creative & Digital') }}" class="chip {% if request.args.get('cat') == 'Creative & Digital' %}active{% endif %}">Creative & Digital</a>
+                    <a href="{{ url_for('marketplace', cat='Technical & IT') }}" 
+                    class="chip {% if request.args.get('cat') == 'Technical & IT' %}active{% endif %}">
+   Technical & IT
+</a>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <a href="{{ url_for('post_task') }}" class="fab">+ Create Task</a>
+            <div class="task-grid">
+                {% if tasks %}
+                    {% for task in tasks %}
+                        <div class="card">
+                            <div style="display: flex; justify-content: space-between;">
+                                <h3>{{ task.title }}</h3>
+                                <span style="color: #2e7d32; font-weight: bold;">RM {{ task.price }}</span>
+                            </div>
+                            
+                            <div style="margin: 10px 0;">
+                                <span class="tag">{{ task.category }}</span>
+                                {% if task.urgent %}<span class="tag urgent-tag">URGENT</span>{% endif %}
+                            </div>
+
+                            <p>{{ task.description }}</p>
+
+                            <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+
+                            <div style="display: flex; align-items: center; gap: 10px; font-size: 14px;">
+                                <div style="width: 30px; height: 30px; background: #8e9aaf; border-radius: 50%;"></div>
+                                <span><strong>{{ task.user }}</strong></span> 
+                                <span>⭐ {{ task.rating if task.rating else '5.0' }}</span>
+                            </div>
+                            
+                            <a href="{{ url_for('task_detail', task_id=task.id) }}" class="btn-primary">SEE MORE INFO</a>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p>No tasks available at the moment.</p>
+                {% endif %}
+            </div>
+
+            <a href="{{ url_for('post_task') }}" class="fab">+ Create Task</a>
+            {% endblock %}
+            
 </body>
 </html>

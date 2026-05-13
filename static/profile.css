@@ -1,0 +1,177 @@
+.profile-wrapper {
+    padding: 30px;
+    height: 100%;
+}
+
+.tab-container {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 25px;
+}
+
+.tab {
+    background: #e3d7f4;
+    color: white;
+    border: none;
+    padding: 10px 22px;
+    border-radius: 12px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.tab.active {
+    background: #b194d5;
+    font-weight: bold;
+}
+
+.profile-main-card {
+    background: #e3d7f4;
+    border-radius: 25px;
+    display: flex;
+    padding: 40px;
+    min-height: 550px;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+}
+
+.profile-left-panel {
+    flex: 1;
+    text-align: center;
+    border-right: 1.5px solid rgba(255, 255, 255, 0.3);
+    padding-right: 30px;
+}
+
+.section-title {
+    font-size: 14px;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+.avatar-box {
+    width: 110px;
+    height: 110px;
+    background: #b194d5;
+    border-radius: 50%;
+    margin: 0 auto 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 35px;
+}
+
+.photo-controls {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 60px;
+}
+
+.small-btn {
+    background: #efefef;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.edit-mode {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+}
+
+.inline-input {
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid #5a6794;
+    border-radius: 8px;
+    padding: 5px 10px;
+    font-size: 14px;
+    flex-grow: 1;
+    color: #333;
+}
+
+.save-inline-btn {
+    background: #b194d5;
+    color: white;
+    border: none;
+    padding: 5px 15px;
+    border-radius: 10px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.save-inline-btn:hover {
+    background: #a389c7;
+}
+
+.log-out-delete {
+    margin-top: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+}
+
+.logout-link-btn {
+    background: #efefef;
+    color: black;
+    text-decoration: none;
+    padding: 8px 25px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.delete-acc-btn {
+    background: #b194d5;
+    color: white;
+    border: none;
+    padding: 8px 25px;
+    border-radius: 15px;
+    font-size: 11px;
+}
+
+.profile-right-panel {
+    flex: 2;
+    padding-left: 30px;
+}
+
+.detail-row {
+    margin-bottom: 30px;
+    border-bottom: 2px solid #b194d5;
+    padding-bottom: 12px;
+}
+
+.detail-row label {
+    display: block;
+    font-weight: bold;
+    font-size: 13px;
+    margin-bottom: 8px;
+    color: #222;
+}
+
+.field-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.field-content span {
+    font-size: 16px;
+    color: #333;
+}
+
+.empty-text {
+    color: #666;
+}
+
+.edit-btn {
+    background: #efefef;
+    border: none;
+    padding: 5px 20px;
+    border-radius: 15px;
+    font-size: 12px;
+    cursor: pointer;
+}
