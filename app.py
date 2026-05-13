@@ -99,6 +99,13 @@ class Message(db.Model):
     timestamp = db.Column(db.DateTime, default=db.func.now())
     is_read = db.Column(db.Boolean, default=False)
 
+    is_edited = db.Column(db.Boolean, default=False)
+    is_deleted = db.Column(db.Boolean, default=False)
+    reply_to_id = db.Column(db.Integer, db.ForeignKey('message.id'), nullable=True)
+    
+    # 建立引用关系，方便获取被回复的消息内容
+    replied_message = db.relationship('Message', remote_side=[id], backref='replies')
+
 
 class Earning(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -697,10 +704,12 @@ def handle_message(data):
     new_msg = Message(
         task_id=int(room), 
         sender=sender_name, 
-        content=data['message']
+        content=data['message'],
+        reply_to_id=data.get('reply_to_id')
     )
     db.session.add(new_msg)
     db.session.commit()
+    emit('receive_message', data, room=data['room'])
 
     # 3. --- 群聊红点广播逻辑 (WhatsApp/WeChat Style) ---
     task = db.session.get(Task, int(room))
@@ -726,6 +735,39 @@ def handle_message(data):
             print(f"群发红点：已通知成员 {username}")
 
 
+# --- 编辑消息 ---
+@socketio.on('edit_message')
+def handle_edit(data):
+    msg_id = data.get('message_id')
+    new_content = data.get('new_content')
+    msg = Message.query.get(msg_id)    # 只有发送者本人能编辑
+    if msg and msg.sender == session.get('user_username'):
+        msg.content = new_content
+        msg.is_edited = True
+        db.session.commit()
+        # 广播给所有人：哪条消息变了，新内容是什么
+        emit('message_edited', {
+            'message_id': msg.id,
+            'new_content': msg.content
+        }, room=str(msg.task_id))
+
+# --- 删除消息 ---
+@socketio.on('delete_message')
+def handle_delete(data):
+    msg_id = data.get('message_id')
+    # 先拿到当前登录的用户对象
+    current_user = User.query.get(session.get('user_id'))
+    
+    msg = db.session.get(Message, msg_id)
+    if msg and current_user:
+        # 用名字字符串进行对比
+        if msg.sender == current_user.username:
+            msg.is_deleted = True
+            db.session.commit()
+            emit('message_deleted', {'message_id': msg_id}, room=str(msg.task_id))
+
+
+
 @socketio.on('connect')
 def handle_connect():
     if 'user_id' in session:
@@ -735,5 +777,9 @@ def handle_connect():
 
 if __name__ == '__main__':
     with app.app_context():
-        patch_database() 
+        
+        # 按照你写好的新 Message 类重新建表
+        db.create_all()
+        print("!!! Database has been reset with NEW columns !!!")
+        
     socketio.run(app, debug=True, port=8000)
