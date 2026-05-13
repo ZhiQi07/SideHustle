@@ -115,6 +115,35 @@ class Earning(db.Model):
 with app.app_context():
     db.create_all()
 
+def cleanup_expired_tasks():
+    # 1. Get today's date in YYYY-MM-DD format to match the database
+    today = datetime.now().strftime('%Y-%m-%d')
+    
+    # 2. Find Available tasks that are past their deadline
+    expired_tasks = Task.query.filter(
+        Task.deadline != "", 
+        Task.deadline < today, 
+        Task.status == 'Available'
+    ).all()
+    
+    for task in expired_tasks:
+        # 3. Only proceed if 0 people have applied
+        if task.get_applicant_count() == 0:
+            # 4. Notify the creator before deleting
+            owner = User.query.filter_by(username=task.user).first()
+            if owner:
+                expired_note = Notification(
+                    user_id=owner.id,
+                    message=f"System: Your task '{task.title}' has expired and was removed due to 0 applicants.",
+                    status='unread'
+                )
+                db.session.add(expired_note)
+            
+            # 5. Remove the task from the marketplace
+            db.session.delete(task)
+            
+    db.session.commit()
+        
 # --- Add this first so the main URL works ---
 @app.route('/')
 def index():
@@ -126,17 +155,19 @@ def home():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
+        # Grab email and password directly
         email = request.form.get('email', '').lower()
         password = request.form.get('password')
 
+        # Security check
         if not email.endswith('@student.mmu.edu.my'):
             flash("Only MMU student emails are allowed to log in!")
             return redirect(url_for('login'))
 
+        # Search by email
         user = User.query.filter_by(email=email, password=password).first()
 
         if user:
-            # IMPORTANT: Indentation must be 12 spaces here (inside the IF)
             session['user_id'] = user.id
             return redirect(url_for('marketplace'))
         
@@ -249,6 +280,8 @@ def update_password():
 
 @app.route('/marketplace')
 def marketplace():
+    cleanup_expired_tasks()
+
     query = request.args.get('q')
     category = request.args.get('cat')
 
@@ -415,14 +448,31 @@ def delete_task(task_id):
         flash("Unauthorized action!")
         return redirect(url_for('my_task'))
 
-    # Logical Check: Don't delete if someone is already working on it
+    # 1. Logic Check: Cannot delete if anyone is already HIRED
     if task.get_hired_count() > 0:
         flash("Cannot delete a task that has active hired help!")
         return redirect(url_for('my_task'))
 
+    # 2. Notify PENDING applicants before deletion
+    pending_apps = Application.query.filter_by(task_id=task.id, status='Pending').all()
+    for app_record in pending_apps:
+        applicant = User.query.filter_by(username=app_record.applicant_username).first()
+        if applicant:
+            deletion_note = Notification(
+                user_id=applicant.id,
+                message=f"Alert: The task '{task.title}' you applied for was deleted by the owner.",
+                status='unread'
+            )
+            db.session.add(deletion_note)
+
+    # 3. Clean up associated records (Applications) to avoid Foreign Key errors
+    Application.query.filter_by(task_id=task.id).delete()
+    
+    # 4. Finally delete the task
     db.session.delete(task)
     db.session.commit()
-    flash("Task deleted successfully.")
+    
+    flash("Task deleted successfully. Pending applicants have been notified.")
     return redirect(url_for('my_task'))
 
 def patch_database():
@@ -510,6 +560,8 @@ def apply(task_id):
 
 @app.route('/my_task')
 def my_task():
+    cleanup_expired_tasks()
+
     if 'user_id' not in session:
         return redirect(url_for('login'))
 
@@ -604,6 +656,8 @@ def reject_applicant(app_id):
     
     # 5. Redirect back to the list so you can see the update
     return redirect(url_for('view_applicants', task_id=application.task_id))
+
+# --- Add this helper function ---
 
 @app.route('/chat/<int:task_id>')
 def chat(task_id):
