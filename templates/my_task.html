@@ -1,6 +1,6 @@
-<!DOCTYPE html>
-<html>
-<head>
+{% extends "base.html" %}
+
+{% block content %}
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
         .progress-popover {
@@ -83,22 +83,46 @@
 
                 {% if view == 'created' %}
                     {% for task in created %}
-                        <div class="card">
+                        <div class="card" style="position: relative;"> 
+                            <div class="card-options">
+                                <button class="options-trigger" onclick="toggleMenu(event, '{{ task.id }}')">⋮</button>
+                                <div id="menu-{{ task.id }}" class="options-dropdown">
+                                    <a href="{{ url_for('edit_task', task_id=task.id) }}">✏️ Edit Task</a>
+                                    <a href="javascript:void(0)" 
+                                    class="delete-option" 
+                                    onclick="openDeleteModal('{{ url_for('delete_task', task_id=task.id) }}')">
+                                    🗑️ Delete Task
+                                    </a>
+                                </div>
+                            </div>
+
                             <div class="card-header">
                                 <span class="tag">{{ task.category }}</span>
-                                <span class="tag" style="background: #f0f0f0; color: #666;">{{ task.status | upper }}</span>
+                                {% if task.urgent %}<span class="tag urgent-tag">URGENT</span>{% endif %}
                             </div>
-                            <h3>{{ task.title }}</h3>
-                            <p style="color: #666; font-size: 14px; margin-bottom: 15px;">{{ task.description[:60] }}...</p>
 
-                            <div class="card-footer" style="border-top: 1px solid #eee; padding-top: 15px;">
+                            <div class="card-body" style="margin: 15px 0;">
+                                <h3 style="margin: 0;">{{ task.title }}</h3>
+                                <p style="color: #2e7d32; font-weight: bold; margin-top: 5px;">RM {{ task.price }}</p>
+                            </div>
+
+                            <div class="card-footer" style="margin-top: auto; border-top: 1px solid #eee; padding-top: 15px;">  
                                 {% if task.get_hired_count() == 0 %}
-                                    <a href="{{ url_for('view_applicants', task_id=task.id) }}" class="btn-outline">Review Applicants →</a>
+                                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                                        <div style="display: flex; align-items: center; gap: 5px;">
+                                            <span>👥</span>
+                                            <strong>{{ task.get_applicant_count() }}</strong> applicants
+                                        </div>
+                                        <a href="{{ url_for('view_applicants', task_id=task.id) }}" class="btn-outline">Review Applicants →</a>
+                                    </div>
                                 {% else %}
-                                    <div style="width: 100%;">
-                                        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                                            <span style="font-size: 12px; color: #4caf50;">Hired: {{ task.get_hired_count() }}/{{ task.capacity }}</span>
-                                            <span style="font-size: 12px; color: #666;">{{ task.progress }}%</span>
+                                    <div class="full-width">
+                                        <div class="hired-info-box">
+                                            <div class="user-meta">
+                                                <div class="mini-profile"></div> 
+                                                <span>Hired: <strong>{{ task.get_hired_count() }} / {{ task.capacity }}</strong></span>
+                                            </div>
+                                            <a href="{{ url_for('view_applicants', task_id=task.id) }}" class="btn-outline">View Team</a>
                                         </div>
 
                                         {% if task.get_hired_count() < task.capacity %}
@@ -131,11 +155,12 @@
                                 {% endif %}
                             </div>
                         </div>
-                    {% endfor %}
+                        {% endfor %}
 
                 {% elif view == 'applied' %}
-                    {% for app in applied %}
-                        {% set task = Task.query.get(app.task_id) %}
+                    {% for item in applied_tasks %}
+                        {% set app = item.app %}
+                        {% set task = item.task %}
                         {% if task %}
                             <div class="card">
                                 <div class="card-header">
@@ -207,6 +232,18 @@
             </div>
         </div>
     </div>
+
+                <div id="deleteModal" class="modal-overlay">
+                    <div class="modal-content">
+                        <div class="modal-icon">⚠️</div>
+                        <h3>Delete Task?</h3>
+                        <p>Are you sure you want to delete this task? This action cannot be undone.</p>
+                        <div class="modal-actions">
+                            <button onclick="closeDeleteModal()" class="btn-cancel-modal">No, Keep It</button>
+                            <a id="confirmDeleteBtn" href="#" class="btn-confirm-delete">Yes, Delete</a>
+                        </div>
+                    </div>
+                </div>
 
     <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
     <script>
@@ -284,6 +321,21 @@
             displaySpan.innerText = newVal + '%';
         }
     }
+// --- Modal Logic ---
+    function openDeleteModal(deleteUrl) {
+        const modal = document.getElementById('deleteModal');
+        const confirmBtn = document.getElementById('confirmDeleteBtn');
+        
+        // Set the "Yes, Delete" button's link to the correct task URL
+        confirmBtn.href = deleteUrl;
+        
+        // Show the modal
+        modal.style.display = 'flex';
+    }
+
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').style.display = 'none';
+    }
 
     function confirmSubmission(id, originalVal) {
         const slider = document.getElementById('slider-' + id);
@@ -293,6 +345,33 @@
         }
         return true;
     }
+    function toggleMenu(event, id) {
+    // Prevent the click from bubbling up (if you eventually make the whole card clickable)
+        event.stopPropagation(); 
+        
+        const menu = document.getElementById('menu-' + id);
+        
+        // Close any other open menus first
+        document.querySelectorAll('.options-dropdown').forEach(m => {
+            if (m.id !== 'menu-' + id) {
+                m.style.display = 'none';
+            }
+        });
+
+        // Toggle the current menu
+        if (menu.style.display === 'block') {
+            menu.style.display = 'none';
+        } else {
+            menu.style.display = 'block';
+        }
+    }
+
+    // Close menus if the user clicks anywhere else on the screen
+    window.addEventListener('click', function() {
+        document.querySelectorAll('.options-dropdown').forEach(m => {
+            m.style.display = 'none';
+        });
+    });
 
     window.onclick = function(event) {
         if (!event.target.matches('.btn-outline') && !event.target.closest('.progress-popover')) {
@@ -303,3 +382,4 @@
 
 </body>
 </html>
+    {% endblock %}

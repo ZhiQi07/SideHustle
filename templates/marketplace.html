@@ -39,6 +39,9 @@
         </div>
 
         <div class="content">
+    {% extends "base.html" %}
+
+    {% block content %}
             <h1 style="text-align: left; margin-bottom: 20px;">MARKETPLACE</h1>
 
             <div class="search-container">
@@ -118,5 +121,8 @@
         });
     </script>
 
+            <a href="{{ url_for('post_task') }}" class="fab">+ Create Task</a>
+            {% endblock %}
+            
 </body>
 </html>
