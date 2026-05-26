@@ -133,21 +133,21 @@
         {% endfor %}
 
     {% elif view == 'applied' %}
-        {% for item in applied_tasks %}
-            {% set app = item.app %}
+        {% for item in applied %}
+            {% set application = item.app %}
             {% set task = item.task %}
             {% if task %}
             <div class="card">
                 <div class="card-header">
                     <span class="tag">{{ task.category }}</span>
-                    <span class="tag" style="background: {% if app.status == 'Hired' %}#e8f5e9; color: #2e7d32;{% elif app.status == 'Rejected' %}#ffebee; color: #c62828;{% else %}#fff3e0; color: #ef6c00;{% endif %}">
-                        {{ app.status | upper }}
+                    <span class="tag" style="background: {% if application.status == 'Hired' %}#e8f5e9; color: #2e7d32;{% elif application.status == 'Rejected' %}#ffebee; color: #c62828;{% else %}#fff3e0; color: #ef6c00;{% endif %}">
+                        {{ application.status | upper }}
                     </span>
                 </div>
                 <h3>{{ task.title }}</h3>
                 <p style="color: #666; font-size: 14px; margin-top: 5px;">Client: <strong>{{ task.user }}</strong></p>
 
-                {% if app.status == 'Hired' %}
+                {% if application.status == 'Hired' %}
                     <div class="card-footer" style="flex-direction: column; align-items: flex-start; gap: 15px; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; position: relative;">
                         <div style="width: 100%;">
                             <div class="progress-header">
@@ -191,7 +191,7 @@
                             </a>
                         </div>
                     </div>
-                {% elif app.status == 'Rejected' %}
+                {% elif application.status == 'Rejected' %} <div id="ffebee"></div>;
                     <p style="color: #d32f2f; font-size: 13px; margin-top: 15px;">Sorry, the client has chosen another tasker for this job.</p>
                 {% else %}
                     <p style="color: #666; font-size: 13px; margin-top: 15px;">Your application is being reviewed. Check back soon!</p>

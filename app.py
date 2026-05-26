@@ -126,6 +126,7 @@ class Rating(db.Model):
     score = db.Column(db.Integer, nullable=False)
     review_content = db.Column(db.Text)
     timestamp = db.Column(db.DateTime, default=db.func.now())
+    task = db.relationship('Task', backref='ratings')
 
 
 class Notification(db.Model):
@@ -519,6 +520,8 @@ def my_task():
 
         applied_tasks.append({'app': app, 'task': task})
 
+    print(f"DEBUG FINAL: view={view}, applied_tasks count={len(applied_tasks)}")
+
     return render_template('my_task.html',
         created=created_tasks, applied=applied_tasks,
         view=view, user=current_user,
@@ -674,6 +677,21 @@ def view_ratings():
     ).order_by(Rating.timestamp.desc()).all()
     avg_rating = round(user.total_rating / user.review_count, 1) if user.review_count > 0 else 5.0
     return render_template('view_ratings.html', user=user, reviews=real_reviews, avg_rating=avg_rating)
+
+@app.route('/completed_tasks')
+def completed_tasks():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+        
+    user = db.session.get(User, session['user_id'])
+    
+    # 查找当前用户作为发布者(Owner)或者接收者(Tasker)且状态为 Completed 的所有任务
+    done_tasks = Task.query.filter(
+        (Task.status == 'Completed') & 
+        ((Task.user == user.username) | (Task.tasker == user.username))
+    ).all()
+    
+    return render_template('completed_tasks.html', user=user, tasks=done_tasks)
 
 
 # =========================
