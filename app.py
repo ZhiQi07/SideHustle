@@ -338,7 +338,11 @@ def dashboard():
     user = db.session.get(User, session['user_id'])
     hired_apps = Application.query.filter_by(applicant_username=user.username, status='Hired').all()
     hired_task_ids = [app.task_id for app in hired_apps]
-    tracking_list = Task.query.filter(Task.id.in_(hired_task_ids)).all()
+    # 只查询进度小于 100% 且你被录用了的任务
+    tracking_list = Task.query.filter(
+        Task.id.in_(hired_task_ids),
+        Task.progress < 100
+    ).all()
     avg_rating = round(user.total_rating / user.review_count, 1) if user.review_count > 0 else 5.0
     return render_template('dashboard.html',
         username=user.username, total_credit=user.credit,
@@ -686,11 +690,24 @@ def completed_tasks():
     user = db.session.get(User, session['user_id'])
     
     # 查找当前用户作为发布者(Owner)或者接收者(Tasker)且状态为 Completed 的所有任务
-    done_tasks = Task.query.filter(
-        (Task.status == 'Completed') & 
-        ((Task.user == user.username) | (Task.tasker == user.username))
+    done_tasks = Task.query.filter_by(
+        status='Completed',
+        tasker=user.username
     ).all()
     
+    for task in done_tasks:
+        # 去 Earning 表里找这个任务对应的进账记录
+        earning_record = Earning.query.filter_by(
+            user_id=user.id,
+            activity=f"Completed Task: {task.title}"
+        ).first()
+        
+        # 如果找到了，就把进账时间借给 task 用；找不到就用系统当前时间垫底
+        if earning_record:
+            task.completed_time = earning_record.timestamp.strftime('%Y-%m-%d %H:%M')
+        else:
+            task.completed_time = "Recently"
+
     return render_template('completed_tasks.html', user=user, tasks=done_tasks)
 
 

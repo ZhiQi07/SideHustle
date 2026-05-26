@@ -52,10 +52,13 @@
                         </div>
                     </a>
 
-                    <div class="summary-card">
-                        <div class="card-title">Tasks Done</div>
-                        <div class="card-value">{{ tasks_done if tasks_done is not none else '0' }}</div>
-                    </div>
+                    <a href="{{ url_for('completed_tasks') }}" style="text-decoration: none; color: inherit;">
+                        <div class="summary-card" style="cursor: pointer;">
+                            <div class="card-title">Tasks Done</div>
+                            <div class="card-value">{{ tasks_done if tasks_done is not none else '0' }}</div>
+                            <div style="font-size: 11px; color: #5a32a8; margin-top: 5px;">View History →</div>
+                        </div>
+                    </a>
                 </div>
 
                 <h2 class="tracking-section-title">Tasks Tracking 📈</h2>
