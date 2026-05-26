@@ -1,46 +1,35 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
-        {% extends "base.html" %}
-
-        {% block content %}
-            <a href="{{ url_for('marketplace') }}" class="back-link">← Back to Marketplace</a>
-            <div style="display: flex; gap: 30px;">
-                <div style="flex: 2; background: #ced2f4; padding: 40px; border-radius: 30px;">
-                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                        <span class="tag available-tag">{{ task.status }}</span>
-                        <span class="tag" style="background: white;">{{ task.category }}</span>
-                        {% if task.urgent %}<span class="tag urgent-tag">URGENT</span>{% endif %}
-                    </div>
-                    <h1 style="font-size: 45px; margin: 0;">{{ task.title }}</h1>
-                    <p>🕒 Deadline: {{ task.deadline }} | 👥 Spots: {{ task.capacity }}</p>
-                    <div style="background: white; padding: 25px; border-radius: 20px; margin-top: 20px; min-height: 150px;">
-                        <h3>Description</h3>
-                        <p>{{ task.description }}</p>
-                    </div>
-                </div>
-
-                <div style="flex: 1;">
-                    <p style="text-align: right; color: #d32f2f; font-weight: bold; cursor: pointer; margin-bottom: 10px;">⚠️ Report task</p>
-                    
-                    <div class="side-card">
-                        <p style="margin: 0; color: #555;">Budget</p>
-                        <h2 style="font-size: 36px;">RM {{ task.price }}</h2>
-                        
-                        <a href="{{ url_for('apply', task_id=task.id) }}" class="btn-primary" style="background: #6168a8;">Apply Now</a>
-                    </div>
-
-                    <div style="text-align: center; margin-top: 20px; background: white; padding: 25px; border-radius: 25px; border: 1px solid #eee;">
-                        <div style="width: 60px; height: 60px; background: #3c1a75; border-radius: 50%; margin: 0 auto 10px;"></div>
-                        <p style="margin: 0;"><strong>{{ task.user }}</strong></p>
-                        <p style="margin: 5px 0;">⭐ {{ task.rating }}</p>
-                    </div>
-                </div>
-                </div>
-            </div>
-        {% endblock %}
-</body>
-</html>
+{% extends "base.html" %}
+{% block content %}
+<a href="{{ url_for('marketplace') }}" class="back-link">← Back to Marketplace</a>
+<div style="display: flex; gap: 30px; margin-top: 20px;">
+    <div style="flex: 2; background: #ced2f4; padding: 40px; border-radius: 30px;">
+        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+            <span class="tag available-tag">{{ task.status }}</span>
+            <span class="tag" style="background: white;">{{ task.category }}</span>
+            {% if task.urgent %}<span class="tag urgent-tag">URGENT</span>{% endif %}
+        </div>
+        <h1 style="font-size: 45px; margin: 0;">{{ task.title }}</h1>
+        <p>🕒 Deadline: {{ task.deadline }} | 👥 Spots: {{ task.capacity }}</p>
+        <div style="background: white; padding: 25px; border-radius: 20px; margin-top: 20px; min-height: 150px;">
+            <h3>Description</h3>
+            <p>{{ task.description }}</p>
+        </div>
+    </div>
+    <div style="flex: 1;">
+        <p style="text-align: right; color: #d32f2f; font-weight: bold; cursor: pointer; margin-bottom: 10px;">⚠️ Report task</p>
+        <div class="side-card">
+            <p style="margin: 0; color: #555;">Budget</p>
+            <h2 style="font-size: 36px;">RM {{ task.price }}</h2>
+            {% if user.username == task.user %}
+                <p style="color: #666; font-style: italic; font-size: 13px;">This is your task.</p>
+            {% else %}
+                <a href="{{ url_for('apply', task_id=task.id) }}" class="btn-primary" style="background: #6168a8;">Apply Now</a>
+            {% endif %}
+        </div>
+        <div style="text-align: center; margin-top: 20px; background: white; padding: 25px; border-radius: 25px; border: 1px solid #eee;">
+            <div style="width: 60px; height: 60px; background: #3c1a75; border-radius: 50%; margin: 0 auto 10px;"></div>
+            <p style="margin: 0;"><strong>{{ task.user }}</strong></p>
+        </div>
+    </div>
+</div>
+{% endblock %}

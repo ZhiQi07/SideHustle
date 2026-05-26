@@ -7,14 +7,13 @@
 </head>
 <body>
     <div class="main-layout">
-        
         <div class="sidebar">
             <div class="sidebar-top">
                 <h2>SideHustle</h2>
                 <div class="sidebar-menu">
                     <a href="{{ url_for('marketplace') }}">🏠 Marketplace</a>
                     <a href="{{ url_for('dashboard') }}">📊 Dashboard</a>
-                    <a href="/my_task" style="position: relative;">
+                    <a href="/my_task" id="my-task-link" style="position: relative;">
                         📋 My Task
                         {% if global_unread_count > 0 %}
                             <span class="dot-small"></span>
@@ -39,9 +38,6 @@
         </div>
 
         <div class="content">
-    {% extends "base.html" %}
-
-    {% block content %}
             <h1 style="text-align: left; margin-bottom: 20px;">MARKETPLACE</h1>
 
             <div class="search-container">
@@ -87,7 +83,7 @@
                                 {% if task.urgent %}<span class="tag urgent-tag">URGENT</span>{% endif %}
                             </div>
 
-                            <p>{{ task.description }}</p>
+                            <p style="font-size: 14px; color: #666;">{{ task.description[:100] }}...</p>
 
                             <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
 
@@ -97,7 +93,7 @@
                                 <span>⭐ {{ task.rating if task.rating else '5.0' }}</span>
                             </div>
                             
-                            <a href="{{ url_for('task_detail', task_id=task.id) }}" class="btn-primary">SEE MORE INFO</a>
+                            <a href="{{ url_for('task_detail', task_id=task.id) }}" class="btn-primary" style="display: block; text-align: center; margin-top: 15px; text-decoration: none;">SEE MORE INFO</a>
                         </div>
                     {% endfor %}
                 {% else %}
@@ -114,15 +110,10 @@
     <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
     <script>
         const socket = io();
-
         socket.on('new_unread', function(data) {
             const dot = document.querySelector('#my-task-link .dot-small');
             if (dot) dot.style.display = 'inline-block';
         });
     </script>
-
-            <a href="{{ url_for('post_task') }}" class="fab">+ Create Task</a>
-            {% endblock %}
-            
 </body>
 </html>
