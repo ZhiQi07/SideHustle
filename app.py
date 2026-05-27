@@ -689,7 +689,6 @@ def completed_tasks():
         
     user = db.session.get(User, session['user_id'])
     
-    # 查找当前用户作为发布者(Owner)或者接收者(Tasker)且状态为 Completed 的所有任务
     done_tasks = Task.query.filter_by(
         status='Completed',
         tasker=user.username
@@ -702,8 +701,8 @@ def completed_tasks():
             activity=f"Completed Task: {task.title}"
         ).first()
         
-        # 如果找到了，就把进账时间借给 task 用；找不到就用系统当前时间垫底
         if earning_record:
+            # 格式化好时间
             task.completed_time = earning_record.timestamp.strftime('%Y-%m-%d %H:%M')
         else:
             task.completed_time = "Recently"
@@ -747,13 +746,24 @@ def handle_message(data):
 
 @socketio.on('edit_message')
 def handle_edit(data):
-    msg = Message.query.get(data.get('message_id'))
-    if msg and msg.sender == session.get('user_username'):
+    # 1. 统一用 user_id 从数据库获取当前登录的完整用户对象
+    current_user = db.session.get(User, session.get('user_id'))
+    msg = db.session.get(Message, data.get('message_id'))
+    
+    # 2. 修复核心：用 current_user.username 代替 session.get('user_username')
+    if msg and current_user and msg.sender == current_user.username:
         msg.content = data.get('new_content')
         msg.is_edited = True
         db.session.commit()
-        emit('message_edited', {'message_id': msg.id, 'new_content': msg.content}, room=str(msg.task_id))
-
+        
+        # 3. 广播给房间所有人
+        room_id = str(msg.task_id)
+        emit('message_edited', {
+            'message_id': msg.id, 
+            'new_content': msg.content
+        }, room=room_id)
+    else:
+        print("DEBUG: Edit failed. Check if user matches sender.")
 
 @socketio.on('delete_message')
 def handle_delete(data):
