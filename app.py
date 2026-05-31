@@ -59,13 +59,14 @@ class Task(db.Model):
     price = db.Column(db.Float, nullable=False)
     description = db.Column(db.Text, nullable=False)
     category = db.Column(db.String(50), nullable=False)
-    status = db.Column(db.String(20), default='Available') # Available, In Progress, Completed
-    user = db.Column(db.String(50)) # 发布者
-    tasker = db.Column(db.String(50)) # 执行者
+    status = db.Column(db.String(20), default='Available')
+    user = db.Column(db.String(50))
+    tasker = db.Column(db.String(50))
     deadline = db.Column(db.String(50))
     capacity = db.Column(db.Integer, default=1)
-    progress = db.Column(db.Integer, default=0) # Stores 0, 25, 50, 75, or 100
+    progress = db.Column(db.Integer, default=0)
     urgent = db.Column(db.Boolean, default=False)
+    is_negotiable = db.Column(db.Boolean, default=False)
 
     def get_unread_count(self, current_username):
         return Message.query.filter_by(
@@ -396,13 +397,11 @@ def earnings():
 
 @app.route('/post', methods=['GET', 'POST'])
 def post_task():
-    # 1. Safety Check: Make sure the user is actually logged in
     if 'user_id' not in session:
         flash("Please login to post a task!")
         return redirect(url_for('login'))
 
     if request.method == 'POST':
-        # 2. Get the actual user object from the database using the session ID
         current_user = User.query.get(session['user_id'])
 
         new_task = Task(
@@ -413,13 +412,13 @@ def post_task():
             deadline=request.form.get('deadline'),
             capacity=request.form.get('capacity'),
             urgent=True if request.form.get('urgent') else False,
-            # 3. FIX: Assign the logged-in username to the 'user' field
-            user=current_user.username 
+            user=current_user.username,
+            # --- ADD THIS LINE TO SAVE THE NEGOTIATION DATA ---
+            is_negotiable=True if request.form.get('is_negotiable') else False
         )
         db.session.add(new_task)
         db.session.commit()
         
-        # After posting, go see it in My Task!
         return redirect(url_for('my_task')) 
         
     return render_template('post_task.html')
@@ -541,8 +540,12 @@ def patch_database():
         task_cols = [row[1] for row in conn.execute(text("PRAGMA table_info(task)")).fetchall()]
         if "urgent" not in task_cols:
             conn.execute(text("ALTER TABLE task ADD COLUMN urgent BOOLEAN DEFAULT 0"))
+        # --- NEW CODE: Dynamically patches and creates the is_negotiable column column on your disk database ---
+        if "is_negotiable" not in task_cols:
+            conn.execute(text("ALTER TABLE task ADD COLUMN is_negotiable BOOLEAN DEFAULT 0"))
+            print("✅ Task table patched with is_negotiable column!")
         
-        # --- 3. 新增：检查 Message 表 (修复 bug 的关键) ---
+        # 3. 检查 Message 表
         table_check = conn.execute(text("SELECT name FROM sqlite_master WHERE type='table' AND name='message'")).fetchone()
 
         if table_check:

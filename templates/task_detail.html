@@ -36,9 +36,21 @@
                 <div class="detail-sidebar-column">
                     <p style="text-align: right; color: #b71c1c; font-weight: 700; font-size: 13px; cursor: pointer; margin-bottom: 15px; transition: 0.2s;" onclick="openReportModal()">⚠️ Report Task</p>
                     
+                    <!-- Compensation Box -->
                     <div class="premium-side-card">
                         <p class="label-text">Compensation</p>
-                        <h2 class="price-display">RM {{ task.price }}</h2>
+                        <h2 class="price-display" style="margin-bottom: 5px;">RM {{ task.price }}</h2>
+                        
+                        <!-- This checks if the task was marked negotiable on creation -->
+                        {% if task.is_negotiable %}
+                            <div style="background-color: #f3f0fa; border: 1px dashed #5a32a8; border-radius: 12px; padding: 12px; margin: 15px 0; text-align: left;">
+                                <p style="color: #5a32a8; font-size: 13px; font-weight: 700; margin: 0 0 4px 0; text-transform: uppercase; letter-spacing: 0.3px;">💬 Rate Negotiable</p>
+                                <p style="color: #4a4257; font-size: 12px; margin: 0; line-height: 1.4;">Feel free to apply and text the client directly via chat to discuss the final payment details!</p>
+                            </div>
+                        {% else %}
+                            <div style="margin-bottom: 15px;"></div>
+                        {% endif %}
+                        
                         <a href="{{ url_for('apply', task_id=task.id) }}" class="btn-primary" style="margin-top: 0; background: #5a32a8; border-radius: 12px;">Apply Now</a>
                     </div>
 

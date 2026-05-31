@@ -47,9 +47,15 @@
                 {% if tasks %}
                     {% for task in tasks %}
                         <div class="card">
-                            <div style="display: flex; justify-content: space-between;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
                                 <h3>{{ task.title }}</h3>
-                                <span style="color: #2e7d32; font-weight: bold;">RM {{ task.price }}</span>
+                                <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+                                    <span style="color: #2e7d32; font-weight: bold;">RM {{ task.price }}</span>
+                                    <!-- NEW: Negotiable badge display conditional -->
+                                    {% if task.is_negotiable %}
+                                        <span class="tag-negotiable">Negotiable</span>
+                                    {% endif %}
+                                </div>
                             </div>
                             
                             <div style="margin: 10px 0;">

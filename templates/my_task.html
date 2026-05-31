@@ -199,7 +199,13 @@
 
                             <div class="card-body" style="margin: 15px 0;">
                                 <h3 style="margin: 0;">{{ task.title }}</h3>
-                                <p style="color: #2e7d32; font-weight: bold; margin-top: 5px;">RM {{ task.price }}</p>
+                                <div style="display: flex; align-items: center; gap: 8px; margin-top: 5px;">
+                                    <p style="color: #2e7d32; font-weight: bold; margin: 0;">RM {{ task.price }}</p>
+                                    <!-- NEW: Appends the Negotiable tag beside the price block if enabled -->
+                                    {% if task.is_negotiable %}
+                                        <span class="tag-negotiable">Negotiable</span>
+                                    {% endif %}
+                                </div>
                             </div>
 
                             <div class="card-footer" style="margin-top: auto; border-top: 1px solid #eee; padding-top: 15px;">  
@@ -267,6 +273,12 @@
 
                                 <h3>{{ task.title }}</h3>
                                 <p style="color: #666; font-size: 14px; margin-top: 5px;">Client: <strong>{{ task.user }}</strong></p>
+                                
+                                {% if task.is_negotiable %}
+                                    <div style="margin-bottom: 15px;">
+                                        <span class="tag-negotiable">Negotiable Budget</span>
+                                    </div>
+                                {% endif %}
 
                                 {% if app.status == 'Hired' %}
                                     <div class="card-footer" style="flex-direction: column; align-items: flex-start; gap: 15px; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; position: relative;">
