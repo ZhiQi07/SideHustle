@@ -1,49 +1,72 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body class="center-screen">
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container edit-container">
     <a href="/marketplace" class="back-link">← Back to Marketplace</a>
-    <div class="form-card">
-        <h2>CREATE NEW TASK</h2>
-        <form method="POST">
-            <label>Task Title</label>
-            <input type="text" name="title" style="width: 100%; padding: 10px; margin: 10px 0;" required>
 
-            <div style="display: flex; gap: 10px;">
-                <div style="flex: 1;">
-                    <label>Budget (RM)</label>
-                    <input type="number" name="price" style="width: 90%; padding: 10px;" required>
+    <div class="center-form-wrapper">
+        <div class="form-card">
+            <h2>CREATE NEW TASK</h2>
+            <p class="form-subtitle">Fill in the details to list your task on the marketplace.</p>
+            
+            <form method="POST">
+                <div class="form-group">
+                    <label>Task Title</label>
+                    <input type="text" name="title" placeholder="e.g., Academic Essay Proofreading" required>
                 </div>
-                <div style="flex: 1;">
-                    <label>People Needed</label>
-                    <input type="number" name="capacity" style="width: 90%; padding: 10px;" placeholder="1">
+
+                <div class="form-row">
+                    <div class="form-group flex-1">
+                        <label>Budget (RM / Person)</label>
+                        <input type="number" name="price" placeholder="50" min="1" required>
+                    </div>
+                    <div class="form-group flex-1">
+                        <label>People Needed</label>
+                        <input type="number" name="capacity" value="1" min="1" placeholder="1" required>
+                    </div>
                 </div>
-            </div>
 
-            <label style="display: block; margin-top: 15px;">Deadline</label>
-            <input type="date" name="deadline" style="width: 100%; padding: 10px;">
+                <div class="form-group">
+                    <label>Category</label>
+                    <select name="category" required>
+                        <option value="" disabled selected>Select a job field...</option>
+                        <option>Moving & Lifting</option>
+                        <option>Food & Delivery</option>
+                        <option>Academic & Education</option>
+                        <option>Creative & Digital</option>
+                        <option>Technical & IT</option>
+                        <option>Others</option>
+                    </select>
+                </div>
 
-            <label style="display: block; margin-top: 15px;">Category</label>
-            <select name="category" style="width: 100%; padding: 10px;">
-                <option>Moving & Lifting</option>
-                <option>Food & Delivery</option>
-                <option>Academic & Education</option>
-                <option>Creative & Digital</option>
-                <option>Technical & IT</option>
-                <option>Others</option>
-            </select>
+                <div class="form-group">
+                    <label>Deadline</label>
+                    <input type="date" name="deadline">
+                </div>
 
-            <label style="display: block; margin-top: 15px;">Description</label>
-            <textarea name="description" style="width: 100%; height: 80px;"></textarea>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea name="description" class="edit-textarea" placeholder="Describe the task requirements, expectations, and any tools provided..." required></textarea>
+                </div>
 
-            <label style="margin-top: 15px; display: inline-block;">
-                <input type="checkbox" name="urgent"> Mark as <strong>URGENT</strong>
-            </label>
+                <div style="display: flex; gap: 30px; margin-top: 15px; margin-bottom: 5px;">
+                    <div class="form-group checkbox-group" style="margin-bottom: 0;">
+                        <input type="checkbox" name="urgent" id="urgent">
+                        <label for="urgent" style="color: #2d263b;">Mark as <strong style="color: #c62828;">URGENT</strong></label>
+                    </div>
 
-            <button type="submit" class="btn-primary" style="margin-top: 20px;">Post Task</button>
-        </form>
+                    <div class="form-group checkbox-group" style="margin-bottom: 0;">
+                        <input type="checkbox" name="is_negotiable" id="is_negotiable">
+                        <label for="is_negotiable" style="color: #2d263b;">Budget is <strong>NEGOTIABLE</strong></label>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Post Task</button>
+                    <a href="/marketplace" class="btn-cancel">Cancel</a>
+                </div>
+            </form>
+        </div>
     </div>
-</body>
-</html>
+</div>
+{% endblock %}

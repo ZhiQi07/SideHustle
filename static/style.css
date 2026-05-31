@@ -131,7 +131,23 @@ body {
     box-shadow: 0 12px 30px rgba(90, 50, 168, 0.08);
     border-color: #dcd3ec;
 }
+.card h3 {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 17px;
+    font-weight: 600;
+    color: #231935; /* Crisp dark purple-slate */
+    line-height: 1.4;
+    letter-spacing: -0.1px;
+}
 
+/* Target the RM Price Tag inside the card */
+.card span[style*="color: #2e7d32"] {
+    font-family: 'Segoe UI', Roboto, sans-serif;
+    font-size: 16px !important;/* Keeps it distinct but scaled comfortably with the title */
+    font-weight: 700 !important;/* Bold enough to catch the eye, but scaled down */
+    color: #2e7d32 !important;  /* Retains your custom green accent */
+    letter-spacing: -0.1px;
+}
 /* Base Tag Setup */
 .tag {
     display: inline-block;
@@ -142,6 +158,21 @@ body {
     background: #f1ecf7;
     color: #5a32a8;
     margin-right: 8px;
+}
+
+/* --- NEGOTIABLE OPTION ACCENT INDICATOR --- */
+.tag-negotiable {
+    background-color: #e8eaf6 !important; /* Elegant light soft indigo tint */
+    color: #3f51b5 !important;            /* Formal Indigo anchor text */
+    border: 1px solid #c5cae9;
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    display: inline-flex;
+    align-items: center;
+    font-weight: 700;
 }
 
 /* --- CATEGORY-SPECIFIC LIGHT LIGHT BACKGROUNDS --- */
@@ -223,14 +254,22 @@ body {
     background: #f0f2f5;
     padding: 20px;
 }
+.center-form-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    min-height: calc(100vh - 120px); /* Centers form vertically on dashboard canvas */
+    padding: 20px 0;
+}
 
 .form-card {
     background: white;
-    padding: 50px;
+    padding: 45px 50px;
     border-radius: 35px;
-    box-shadow: 0 15px 40px rgba(0,0,0,0.08);
+    box-shadow: 0 15px 40px rgba(90, 50, 168, 0.04); /* Subtly tinted theme shadow */
     width: 100%;
-    max-width: 600px; /* Focused form width */
+    max-width: 620px; /* Formal structured width constraint */
 }
 
 .back-link {
@@ -328,21 +367,43 @@ body {
 /* The Category Chips Row */
 .category-chips {
     display: flex;
-    gap: 15px; /* Space between each chip */
-    flex-wrap: wrap; /* Prevents them from squishing */
+    gap: 12px;               /* Clean, uniform spacing between your boxes */
+    width: 100%;             /* Stretches the row container to match the search bar width */
+    align-items: center;
+    justify-content: space-between;
+    
+    /* Responsive behaviors */
+    flex-wrap: nowrap;       
+    overflow-x: visible;     /* Disables the horizontal scrollbar on full screen */
 }
 
-/* Individual Chip - "Longer Shape" */
+/* Individual Chip - Styled to stretch and grow perfectly */
 .chip {
     text-decoration: none;
-    padding: 12px 35px; /* Increased side padding for 'longer' shape */
+    padding: 12px 10px;      /* Vertical padding stays comfy, horizontal padding is minimal since flex handles the width */
     border-radius: 50px;
     background-color: white;
     color: #666;
-    font-weight: 500;
+    font-weight: 600;        /* Slightly bolder text for better readability as it stretches */
     border: 1.5px solid #eee;
     transition: all 0.3s ease;
-    white-space: nowrap; /* Keeps text on one line */
+    white-space: nowrap;     
+    
+    /* THE MAGIC SQUEEZE LINE: */
+    flex: 1;                 /* Forces every single chip to grow equally and fill the row completely */
+    text-align: center;      /* Keeps your category labels perfectly centered inside their longer boxes */
+    font-size: 14px;
+}
+
+/* --- Responsive adjustments for split screen / half screen --- */
+@media (max-width: 1200px) {
+    .category-chips {
+        flex-wrap: wrap;     /* Drops them neatly into rows if you drag the window smaller */
+    }
+    .chip {
+        flex: unset;         /* Stops stretching when screen space is tight so they don't break */
+        padding: 10px 25px;  /* Falls back to default padded look on smaller windows */
+    }
 }
 
 .chip:hover {
@@ -395,19 +456,18 @@ body {
     box-shadow: 0 4px 12px rgba(0, 77, 64, 0.2);
 }
 
-/* 1. Card Tag Color Profile */
 .tag-others {
-    background-color: #f1f3f5 !important; /* Elegant light slate gray */
-    color: #495057 !important;            /* Dark graphite text */
-    border: 1px solid #dee2e6;
+    background-color: #f6f0fa !important; /* Soft light lilac background (not gray!) */
+    color: #6a5280 !important;            /* Rich deep plum/purple text */
+    border: 1px solid #e3d2f0;            /* Delicate lavender border line */
 }
 
 /* 2. Search Filter Chip Active Color Profile */
 .chip-others.active {
-    background-color: #f1f3f5 !important;
-    color: #495057 !important;
-    border-color: #dee2e6 !important;
-    box-shadow: 0 4px 12px rgba(73, 80, 87, 0.15);
+    background-color: #f6f0fa !important; /* Matches the tag background */
+    color: #6a5280 !important;            /* Matches the text */
+    border-color: #e3d2f0 !important;
+    box-shadow: 0 4px 12px rgba(106, 82, 128, 0.15); /* Soft matching purple shadow glow */
 }
 /* --- MY TASKS DASHBOARD --- */
 
@@ -787,54 +847,65 @@ display: flex;
 
 /* --- 9. EDIT TASK & FORM EXTENSIONS --- */
 
-/* Specific container for the Edit page to match your padding logic */
 .edit-container {
     padding: 20px;
     width: 100%;
 }
 
-/* Subtitle for the form */
+.form-card h2 {
+    font-family: 'Segoe UI', Roboto, sans-serif;
+    font-weight: 800;             /* Extra bold clean look */
+    letter-spacing: -0.5px;
+    color: #1e1233;               /* Deep rich custom dark slate */
+    margin-bottom: 5px;
+}
+
 .form-subtitle {
-    color: #666;
+    color: #7b728c;               /* Muted slate-purple text */
     margin-bottom: 25px;
     font-size: 14px;
 }
 
-/* Form Grouping for spacing */
 .form-group {
     margin-bottom: 20px;
-    text-align: left; /* Ensures labels stay left even in centered cards */
+    text-align: left;
 }
 
+/* Updated Form Labels */
 .form-group label {
     display: block;
     margin-bottom: 8px;
-    font-weight: 600;
-    font-size: 14px;
-    color: #444;
+    font-weight: 700;             /* Clean bold tracking */
+    font-size: 13px;              /* Slightly smaller for modern form aesthetic */
+    text-transform: uppercase;    /* Looks incredibly neat above text fields */
+    letter-spacing: 0.5px;
+    color: #5a32a8;               /* Theme Purple Labels */
 }
 
-/* Styling inputs to match your 'MMU Purple' theme */
+/* Modern Input Box Styling */
 .form-group input[type="text"],
 .form-group input[type="number"],
 .form-group input[type="date"],
 .form-group select {
     width: 100%;
-    padding: 12px 15px;
-    border: 1px solid #ddd;
-    border-radius: 12px;
+    padding: 14px 16px;
+    border: 1px solid #eae6f0;    /* Changed from harsh #ddd to soft purple-tint border */
+    border-radius: 14px;
     font-size: 15px;
-    background-color: #fff;
+    font-family: inherit;
+    color: #2d263b;               /* Matching deep plum text */
+    background-color: #fdfcff;    /* Ultra-clean tinted paper background */
     outline: none;
-    transition: border-color 0.3s;
+    transition: all 0.3s ease;
 }
 
 .form-group input:focus, 
 .form-group select:focus {
     border-color: #5a32a8;
+    background-color: #ffffff;
+    box-shadow: 0 0 0 3px rgba(90, 50, 168, 0.1); /* Soft purple input glow focus */
 }
 
-/* For side-by-side inputs (Budget & Capacity) */
 .form-row {
     display: flex;
     gap: 15px;
@@ -844,20 +915,49 @@ display: flex;
     flex: 1;
 }
 
-/* Specific styling for the description area */
+.form-group input:disabled, 
+.form-group select:disabled {
+    background-color: #f5f4f8 !important;
+    color: #8c8599 !important;
+    border-color: #e1dde6 !important;
+    cursor: not-allowed;
+}
+
+.lock-notice {
+    font-size: 12px;
+    color: #c62828;
+    font-weight: 600;
+    margin-top: 6px;
+    display: block;
+}
+
+/* Beautifulized Description Box */
 .edit-textarea {
     width: 100%;
     height: 140px;
-    padding: 12px 15px;
-    border-radius: 12px;
-    border: 1px solid #ddd;
+    padding: 14px 16px;
+    border-radius: 14px;
+    border: 1px solid #eae6f0;
     font-family: inherit;
     font-size: 15px;
+    line-height: 1.6;
+    
+    /* THE COLOR FIXES: */
+    background-color: #fcfbfe;    /* Softer paper contrast */
+    color: #4a4257;               /* Balanced slate-purple body text (less harsh than pure black) */
+    
     resize: vertical;
     outline: none;
+    transition: all 0.3s ease;
 }
 
-/* Checkbox alignment */
+.edit-textarea:focus {
+    border-color: #5a32a8;
+    background-color: #ffffff;
+    color: #2d263b;               /* Contrast deepens when actively editing */
+    box-shadow: 0 0 0 3px rgba(90, 50, 168, 0.1);
+}
+
 .checkbox-group {
     display: flex;
     align-items: center;
@@ -865,44 +965,53 @@ display: flex;
     margin-top: 10px;
 }
 
+.checkbox-group label {
+    text-transform: none;         /* Keep check string natural casing */
+    font-weight: 500;
+    color: #2d263b;
+    font-size: 14px;
+    letter-spacing: normal;
+}
+
 .checkbox-group input[type="checkbox"] {
     width: 18px;
     height: 18px;
     cursor: pointer;
+    accent-color: #5a32a8;        /* System level purple checkbox tint mapping */
 }
 
-/* Footer actions for the form */
 .form-actions {
     margin-top: 35px;
     display: flex;
     gap: 15px;
 }
 
-/* Making the Save button more prominent */
 .form-actions .btn-primary {
-    margin-top: 0; /* Removing the default top margin from your global class */
+    margin-top: 0;
     flex: 2;
+    border-radius: 14px;
+    padding: 14px;
 }
 
-/* Neutral Cancel Button */
 .btn-cancel {
     flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: #f8f9fa;
-    color: #666;
-    border: 1px solid #ddd;
-    padding: 16px;
-    border-radius: 15px;
+    background-color: #ffffff;
+    color: #7b728c;
+    border: 1px solid #eae6f0;
+    padding: 14px;
+    border-radius: 14px;
     text-decoration: none;
-    font-weight: bold;
-    transition: 0.2s;
+    font-weight: 700;
+    transition: all 0.2s ease;
 }
 
 .btn-cancel:hover {
-    background-color: #eee;
-    color: #333;
+    background-color: #fff1f0;    /* Soft warm warning tint on cancel hover */
+    color: #d32f2f;
+    border-color: #ffcdcf;
 }
 
 /* Styling for the Dashboard/Marketplace alerts */
@@ -1083,7 +1192,7 @@ display: flex;
     grid-template-columns: 2fr 1fr;
     gap: 30px;
     margin-top: 20px;
-    align-items: start;
+    align-items: stretch; /* 💡 This forces both columns to be exactly the same height! */
 }
 
 .main-detail-panel {
@@ -1092,6 +1201,8 @@ display: flex;
     border-radius: 24px;
     border: 1px solid #eae6f0;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.02);
+    display: flex;
+    flex-direction: column;
 }
 
 .detail-header-meta {
@@ -1102,12 +1213,12 @@ display: flex;
 }
 
 .detail-title {
-    font-size: 38px;
-    font-weight: 800;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 30px;
+    font-weight: 700;
     color: #1e1233;
-    line-height: 1.2;
-    margin-bottom: 15px;
-    letter-spacing: -0.5px;
+    line-height: 1.25;
+    letter-spacing: -0.4px;
 }
 
 .detail-subtitle-row {
@@ -1141,6 +1252,12 @@ display: flex;
     color: #4a4257;
     font-size: 15px;
 }
+.detail-sidebar-column {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    justify-content: flex-start;
+}
 
 /* Premium Side Cards */
 .premium-side-card {
@@ -1150,7 +1267,15 @@ display: flex;
     border: 1px solid #eae6f0;
     box-shadow: 0 10px 30px rgba(90, 50, 168, 0.02);
     text-align: center;
-    margin-bottom: 25px;
+    margin-bottom: 20px; /* Uniform spacing */
+}
+
+.premium-side-card:last-child {
+    margin-bottom: 0;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 .premium-side-card .label-text {
@@ -1163,10 +1288,12 @@ display: flex;
 }
 
 .premium-side-card .price-display {
-    font-size: 42px;
-    font-weight: 800;
-    color: #2e7d32;
+    font-family: 'Segoe UI', Roboto, sans-serif;
+    font-size: 34px;            /* Scaled comfortably down from giant 42px */
+    font-weight: 700;           /* Clean bold style to catch attention naturally */
+    color: #2e7d32;             /* Custom dashboard green */
     margin-bottom: 20px;
+    letter-spacing: -0.5px;
 }
 
 .author-profile-box {
@@ -1182,4 +1309,100 @@ display: flex;
     border-radius: 50%;
     margin-bottom: 12px;
     box-shadow: 0 4px 15px rgba(90, 50, 168, 0.2);
+}
+
+/* --- REPORT MODAL LAYOUT STYLES --- */
+.report-modal-overlay {
+    display: none; /* Hidden by default */
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 6000; /* Above top-nav components */
+    justify-content: center;
+    align-items: center;
+}
+
+.report-modal-content {
+    background: white;
+    padding: 35px;
+    border-radius: 25px;
+    width: 90%;
+    max-width: 480px;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+    animation: modalPop 0.3s ease-out;
+}
+
+.report-modal-content h3 {
+    font-size: 22px;
+    margin-bottom: 5px;
+    color: #1e1233;
+}
+
+.report-modal-content p {
+    font-size: 14px;
+    color: #7b728c;
+    margin-bottom: 20px;
+}
+
+.report-form-group {
+    margin-bottom: 15px;
+    text-align: left;
+}
+
+.report-form-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #5a32a8;
+    margin-bottom: 6px;
+    letter-spacing: 0.5px;
+}
+
+.report-form-group select,
+.report-form-group textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #eae6f0;
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 14px;
+    background-color: #fdfcff;
+    outline: none;
+}
+
+.report-form-group textarea {
+    height: 100px;
+    resize: vertical;
+}
+
+.report-modal-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 25px;
+}
+
+.btn-report-submit {
+    flex: 2;
+    padding: 12px;
+    border-radius: 12px;
+    background: #d32f2f;
+    color: white;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.btn-report-cancel {
+    flex: 1;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid #eae6f0;
+    background: #ffffff;
+    color: #7b728c;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 14px;
 }

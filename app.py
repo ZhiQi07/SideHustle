@@ -112,6 +112,14 @@ class Earning(db.Model):
     amount = db.Column(db.Float, nullable=False)
     timestamp = db.Column(db.DateTime, default=db.func.now())
 
+class Report(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    task_id = db.Column(db.Integer, db.ForeignKey('task.id'), nullable=False)
+    reporter_username = db.Column(db.String(50), nullable=False)
+    reason = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    timestamp = db.Column(db.DateTime, default=db.func.now())
+
 with app.app_context():
     db.create_all()
 
@@ -428,11 +436,18 @@ def edit_task(task_id):
 
     if request.method == 'POST':
         task.title = request.form.get('title')
-        task.price = float(request.form.get('price'))
         task.category = request.form.get('category')
         task.description = request.form.get('description')
         task.deadline = request.form.get('deadline')
         
+        # --- NEW PRICE SAFE LOCK CHECK ---
+        # Only update the price if NO helper matches active hired tracking values
+        if task.get_hired_count() == 0:
+            task.price = float(request.form.get('price', task.price))
+        else:
+            # If someone tries to hack the disabled HTML input, force keep the database price
+            print(f"🔒 Price change blocked for Task {task.id} because a team member is already hired.")
+
         db.session.commit()
         flash("Task updated successfully!")
         return redirect(url_for('my_task'))
@@ -474,6 +489,40 @@ def delete_task(task_id):
     
     flash("Task deleted successfully. Pending applicants have been notified.")
     return redirect(url_for('my_task'))
+
+@app.route('/report_task/<int:task_id>', methods=['POST'])
+def report_task(task_id):
+    if 'user_id' not in session:
+        flash("Please login to report a task!")
+        return redirect(url_for('login'))
+        
+    current_user = User.query.get(session['user_id'])
+    task = Task.query.get_or_404(task_id)
+    
+    reason = request.form.get('reason')
+    description = request.form.get('description')
+    
+    if not reason or not description:
+        flash("Please fill in all fields to submit a report.")
+        return redirect(url_for('task_detail', task_id=task.id))
+        
+    # Prevent self-reporting (Optional but recommended for demo)
+    if task.user == current_user.username:
+        flash("You cannot report your own task!")
+        return redirect(url_for('task_detail', task_id=task.id))
+
+    new_report = Report(
+        task_id=task.id,
+        reporter_username=current_user.username,
+        reason=reason,
+        description=description
+    )
+    
+    db.session.add(new_report)
+    db.session.commit()
+    
+    flash("Thank you. The task has been reported to an admin for review.")
+    return redirect(url_for('task_detail', task_id=task.id))
 
 def patch_database():
     with db.engine.connect() as conn:
