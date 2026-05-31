@@ -7,9 +7,9 @@
 
 body {
     font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    background-color: #f4f7f9;
-    color: #333;
-    overflow-x: hidden; /* Prevents horizontal scrolling */
+    background-color: #f7f6fa; /* Subtle purple tint instead of sterile blue-gray */
+    color: #2d263b;            /* Darker, rich plum text instead of raw #333 */
+    overflow-x: hidden;
 }
 
 /* --- 2. LAYOUT: SIDEBAR & TOP NAV --- */
@@ -92,11 +92,10 @@ body {
 .content {
     margin-left: 240px; 
     margin-top: 80px;  
-    padding: 40px 30px; /* Reduced left/right padding from 60px to 30px */
+    padding: 40px 40px; /* Enhanced internal whitespace */
     width: calc(100% - 240px);
     box-sizing: border-box;
 }
-/* --- 4. MARKETPLACE CARDS (BIGGER & WIDER) --- */
 /* --- 4. MARKETPLACE CARDS (3 Tasks Per Row) --- */
 .task-grid {
     display: grid;
@@ -115,35 +114,66 @@ body {
 }
 
 .card {
-    background: white;
-    border-radius: 25px;
-    padding: 30px;
-    border: 1px solid #eee;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+    background: #ffffff;
+    border-radius: 20px; /* More natural curvature */
+    padding: 24px;
+    border: 1px solid #eae6f0; /* Soft purple-gray border */
+    box-shadow: 0 4px 20px rgba(90, 50, 168, 0.03);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    
-    /* CHANGE THIS: Lower min-height makes it look more natural when wider */
-    min-height: 350px; 
+    min-height: 320px; 
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 .card:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+    transform: translateY(-5px);
+    box-shadow: 0 12px 30px rgba(90, 50, 168, 0.08);
+    border-color: #dcd3ec;
 }
 
-/* Tags & Labels */
+/* Base Tag Setup */
 .tag {
     display: inline-block;
     padding: 6px 14px;
-    border-radius: 20px;
-    font-size: 13px;
-    font-weight: bold;
-    background: #f0f2f5;
+    border-radius: 8px; /* Sharp modern look instead of basic pills */
+    font-size: 12px;
+    font-weight: 600;
+    background: #f1ecf7;
+    color: #5a32a8;
     margin-right: 8px;
 }
 
+/* --- CATEGORY-SPECIFIC LIGHT LIGHT BACKGROUNDS --- */
+.tag-moving {
+    background-color: #fff3e0 !important; /* Soft Pastel Orange */
+    color: #e65100 !important;
+    border: 1px solid #ffe0b2;
+}
+
+.tag-food {
+    background-color: #ffebee !important; /* Soft Pastel Red/Pink */
+    color: #c62828 !important;
+    border: 1px solid #ffcdcf;
+}
+
+.tag-academic {
+    background-color: #e3f2fd !important; /* Soft Pastel Blue */
+    color: #0d47a1 !important;
+    border: 1px solid #bbdefb;
+}
+
+.tag-creative {
+    background-color: #f3e5f5 !important; /* Soft Pastel Purple */
+    color: #4a148c !important;
+    border: 1px solid #e1bee7;
+}
+
+.tag-technical {
+    background-color: #e0f2f1 !important; /* Soft Pastel Teal */
+    color: #004d40 !important;
+    border: 1px solid #b2dfdb;
+}
 .urgent-tag { background: #ffebee; color: #c62828; }
 .available-tag { background: #e8f5e9; color: #2e7d32; }
 
@@ -321,13 +351,64 @@ body {
 }
 
 /* Active Chip - Bold and clear */
+/* Default active style for "All Tasks" (Stays MMU Purple) */
 .chip.active {
-    background-color: #5a32a8; /* MMU Purple */
-    color: white;
-    border-color: #5a32a8;
-    box-shadow: 0 4px 10px rgba(90, 50, 168, 0.2);
+    background-color: #5a32a8 !important;
+    color: white !important;
+    border-color: #5a32a8 !important;
+    box-shadow: 0 4px 12px rgba(90, 50, 168, 0.25);
 }
 
+/* Custom Active Colors for each individual chip */
+.chip-moving.active {
+    background-color: #fff3e0 !important; /* Orange Tint */
+    color: #e65100 !important;
+    border-color: #ffe0b2 !important;
+    box-shadow: 0 4px 12px rgba(230, 81, 0, 0.2);
+}
+
+.chip-food.active {
+    background-color: #ffebee !important; /* Pink/Red Tint */
+    color: #c62828 !important;
+    border-color: #ffcdcf !important;
+    box-shadow: 0 4px 12px rgba(198, 40, 40, 0.2);
+}
+
+.chip-academic.active {
+    background-color: #e3f2fd !important; /* Blue Tint */
+    color: #0d47a1 !important;
+    border-color: #bbdefb !important;
+    box-shadow: 0 4px 12px rgba(13, 71, 161, 0.2);
+}
+
+.chip-creative.active {
+    background-color: #f3e5f5 !important; /* Purple Tint */
+    color: #4a148c !important;
+    border-color: #e1bee7 !important;
+    box-shadow: 0 4px 12px rgba(74, 20, 140, 0.2);
+}
+
+.chip-technical.active {
+    background-color: #e0f2f1 !important; /* Teal Tint */
+    color: #004d40 !important;
+    border-color: #b2dfdb !important;
+    box-shadow: 0 4px 12px rgba(0, 77, 64, 0.2);
+}
+
+/* 1. Card Tag Color Profile */
+.tag-others {
+    background-color: #f1f3f5 !important; /* Elegant light slate gray */
+    color: #495057 !important;            /* Dark graphite text */
+    border: 1px solid #dee2e6;
+}
+
+/* 2. Search Filter Chip Active Color Profile */
+.chip-others.active {
+    background-color: #f1f3f5 !important;
+    color: #495057 !important;
+    border-color: #dee2e6 !important;
+    box-shadow: 0 4px 12px rgba(73, 80, 87, 0.15);
+}
 /* --- MY TASKS DASHBOARD --- */
 
 /* 1. Tab Buttons at the top */
@@ -994,4 +1075,111 @@ display: flex;
 
 .btn-confirm-delete:hover {
     background: #b71c1c;
+}
+
+/* --- 10. PREMIUM DETAIL PAGE EXTENSIONS --- */
+.detail-grid-container {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 30px;
+    margin-top: 20px;
+    align-items: start;
+}
+
+.main-detail-panel {
+    background: #ffffff;
+    padding: 40px;
+    border-radius: 24px;
+    border: 1px solid #eae6f0;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.02);
+}
+
+.detail-header-meta {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    align-items: center;
+}
+
+.detail-title {
+    font-size: 38px;
+    font-weight: 800;
+    color: #1e1233;
+    line-height: 1.2;
+    margin-bottom: 15px;
+    letter-spacing: -0.5px;
+}
+
+.detail-subtitle-row {
+    font-size: 14px;
+    color: #7b728c;
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #f1ecf7;
+}
+
+.detail-desc-box {
+    background: #fdfcff;
+    padding: 25px;
+    border-radius: 16px;
+    border: 1px solid #f5f2f9;
+    margin-top: 20px;
+}
+
+.detail-desc-box h3 {
+    font-size: 16px;
+    color: #5a32a8;
+    margin-bottom: 12px;
+    font-weight: 700;
+}
+
+.detail-desc-box p {
+    line-height: 1.7;
+    color: #4a4257;
+    font-size: 15px;
+}
+
+/* Premium Side Cards */
+.premium-side-card {
+    background: #ffffff;
+    padding: 30px;
+    border-radius: 24px;
+    border: 1px solid #eae6f0;
+    box-shadow: 0 10px 30px rgba(90, 50, 168, 0.02);
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.premium-side-card .label-text {
+    font-size: 13px;
+    color: #7b728c;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 1px;
+    margin-bottom: 5px;
+}
+
+.premium-side-card .price-display {
+    font-size: 42px;
+    font-weight: 800;
+    color: #2e7d32;
+    margin-bottom: 20px;
+}
+
+.author-profile-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.author-avatar {
+    width: 70px;
+    height: 70px;
+    background: linear-gradient(135deg, #5a32a8, #8c6cd4);
+    border-radius: 50%;
+    margin-bottom: 12px;
+    box-shadow: 0 4px 15px rgba(90, 50, 168, 0.2);
 }

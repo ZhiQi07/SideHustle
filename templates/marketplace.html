@@ -25,6 +25,7 @@
                         <option value="Academic & Education" {% if request.args.get('cat') == 'Academic & Education' %}selected{% endif %}>Academic & Education</option>
                         <option value="Creative & Digital" {% if request.args.get('cat') == 'Creative & Digital' %}selected{% endif %}>Creative & Digital</option>
                         <option value="Technical & IT" {% if request.args.get('cat') == 'Technical & IT' %}selected{% endif %}>Technical & IT</option>
+                        <option value="Others" {% if request.args.get('cat') == 'Others' %}selected{% endif %}>Others</option>
                     </select>
                     
                     <button type="submit" class="btn-search">Search</button>
@@ -32,14 +33,13 @@
 
                 <div class="category-chips">
                     <a href="{{ url_for('marketplace') }}" class="chip {% if not request.args.get('cat') %}active{% endif %}">All Tasks</a>
-                    <a href="{{ url_for('marketplace', cat='Moving & Lifting') }}" class="chip {% if request.args.get('cat') == 'Moving & Lifting' %}active{% endif %}">Moving & Lifting</a>
-                    <a href="{{ url_for('marketplace', cat='Food & Delivery') }}" class="chip {% if request.args.get('cat') == 'Food & Delivery' %}active{% endif %}">Food & Delivery</a>
-                    <a href="{{ url_for('marketplace', cat='Academic & Education') }}" class="chip {% if request.args.get('cat') == 'Academic & Education' %}active{% endif %}">Academic & Education</a>
-                    <a href="{{ url_for('marketplace', cat='Creative & Digital') }}" class="chip {% if request.args.get('cat') == 'Creative & Digital' %}active{% endif %}">Creative & Digital</a>
-                    <a href="{{ url_for('marketplace', cat='Technical & IT') }}" 
-                    class="chip {% if request.args.get('cat') == 'Technical & IT' %}active{% endif %}">
-   Technical & IT
-</a>
+                    
+                    <a href="{{ url_for('marketplace', cat='Moving & Lifting') }}" class="chip chip-moving {% if request.args.get('cat') == 'Moving & Lifting' %}active{% endif %}">Moving & Lifting</a>
+                    <a href="{{ url_for('marketplace', cat='Food & Delivery') }}" class="chip chip-food {% if request.args.get('cat') == 'Food & Delivery' %}active{% endif %}">Food & Delivery</a>
+                    <a href="{{ url_for('marketplace', cat='Academic & Education') }}" class="chip chip-academic {% if request.args.get('cat') == 'Academic & Education' %}active{% endif %}">Academic & Education</a>
+                    <a href="{{ url_for('marketplace', cat='Creative & Digital') }}" class="chip chip-creative {% if request.args.get('cat') == 'Creative & Digital' %}active{% endif %}">Creative & Digital</a>
+                    <a href="{{ url_for('marketplace', cat='Technical & IT') }}" class="chip chip-technical {% if request.args.get('cat') == 'Technical & IT' %}active{% endif %}">Technical & IT</a>
+                    <a href="{{ url_for('marketplace', cat='Others') }}" class="chip chip-others {% if request.args.get('cat') == 'Others' %}active{% endif %}">Others</a>
                 </div>
             </div>
 
@@ -53,7 +53,16 @@
                             </div>
                             
                             <div style="margin: 10px 0;">
-                                <span class="tag">{{ task.category }}</span>
+                                <span class="tag 
+                                    {% if task.category == 'Moving & Lifting' %}tag-moving
+                                    {% elif task.category == 'Food & Delivery' %}tag-food
+                                    {% elif task.category == 'Academic & Education' %}tag-academic
+                                    {% elif task.category == 'Creative & Digital' %}tag-creative
+                                    {% elif task.category == 'Technical & IT' %}tag-technical
+                                    {% elif task.category == 'Others' %}tag-others
+                                    {% endif %}">
+                                    {{ task.category }}
+                                </span>
                                 {% if task.urgent %}<span class="tag urgent-tag">URGENT</span>{% endif %}
                             </div>
 
