@@ -199,13 +199,20 @@
 
                             <div class="card-body" style="margin: 15px 0;">
                                 <h3 style="margin: 0;">{{ task.title }}</h3>
-                                <div style="display: flex; align-items: center; gap: 8px; margin-top: 5px;">
-                                    <p style="color: #2e7d32; font-weight: bold; margin: 0;">RM {{ task.price }}</p>
-                                    <!-- NEW: Appends the Negotiable tag beside the price block if enabled -->
+                                <div style="display: flex; align-items: center; gap: 8px; margin-top: 5px; margin-bottom: 12px;">
+                                    <!-- SAFE VERSION: Fallback default value prevents hidden pricing strings -->
+                                    <p style="color: #2e7d32; font-weight: bold; margin: 0;">
+                                        RM {{ task.price if task.price is not none else '0' }}
+                                    </p>
                                     {% if task.is_negotiable %}
                                         <span class="tag-negotiable">Negotiable</span>
                                     {% endif %}
                                 </div>
+
+                                <!-- NEW: Task Description Content Output Panel for application tracking cards -->
+                                <p style="font-size: 13px; color: #4a4257; line-height: 1.5; background-color: #faf8fd; padding: 10px 12px; border-radius: 10px; border: 1px solid #f1ecf7; margin-bottom: 15px;">
+                                    {{ task.description }}
+                                </p>
                             </div>
 
                             <div class="card-footer" style="margin-top: auto; border-top: 1px solid #eee; padding-top: 15px;">  
