@@ -55,11 +55,19 @@
                     </div>
 
                     <div class="premium-side-card">
-                        <div class="author-profile-box">
+                        <div class="author-profile-box" style="display: flex; flex-direction: column; align-items: center; width: 100%;">
                             <div class="author-avatar"></div>
                             <p class="label-text" style="margin-bottom: 2px;">Posted By</p>
                             <p style="font-size: 18px; font-weight: 700; color: #1e1233;">{{ task.user }}</p>
                             <p style="margin-top: 5px; font-size: 14px; color: #ff9800; font-weight: 600;">⭐ {{ task.rating if task.rating else '5.0' }}</p>
+                            
+                            <!-- FIXED: Removed the faulty 'if user' checker so the button always displays correctly for other users -->
+                            {% if session.get('user_id') and task.user != session.get('username') %}
+                                <a href="{{ url_for('private_chat', username=task.user) }}" class="btn-message-pm" 
+                                style="margin-top: 15px; width: 100%; justify-content: center; box-sizing: border-box;">
+                                ✉️ Private Message Client
+                                </a>
+                            {% endif %}
                         </div>
                     </div>
                 </div> 

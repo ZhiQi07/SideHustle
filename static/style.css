@@ -131,13 +131,15 @@ body {
     box-shadow: 0 12px 30px rgba(90, 50, 168, 0.08);
     border-color: #dcd3ec;
 }
+/* --- PREMIUM CARD TITLE FONT FIX --- */
 .card h3 {
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    font-size: 17px;
-    font-weight: 600;
-    color: #231935; /* Crisp dark purple-slate */
-    line-height: 1.4;
-    letter-spacing: -0.1px;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif !important;
+    font-size: 19px !important;       /* Slightly larger and easier to read */
+    font-weight: 600 !important;       /* Clean semibold, not too blocky */
+    color: #1e1233 !important;         /* Premium deep plum purple text */
+    line-height: 1.4 !important;
+    letter-spacing: -0.3px !important; /* Slightly tighter modern tech look */
+    text-transform: capitalize;        /* Automatically makes it look neat (e.g., "Feed Cat") */
 }
 
 /* Target the RM Price Tag inside the card */
@@ -1405,4 +1407,137 @@ display: flex;
     font-weight: bold;
     cursor: pointer;
     font-size: 14px;
+}
+
+/* --- 11. PREMIUM APPLICANT REVIEW SYSTEM --- */
+.applicant-review-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px 0;
+}
+
+.review-header-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1e1233;
+    letter-spacing: -0.5px;
+    margin-top: 15px;
+}
+
+.review-subtitle-meta {
+    color: #7b728c;
+    font-size: 15px;
+    margin-bottom: 30px;
+}
+
+/* Enhanced Applicant Card Layout */
+.applicant-card {
+    background: #ffffff;
+    border-radius: 24px;
+    padding: 30px;
+    border: 1px solid #eae6f0;
+    box-shadow: 0 8px 30px rgba(90, 50, 168, 0.02);
+    min-height: unset !important; /* Overrides global card constraints */
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.applicant-profile-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #fcfbfe;
+}
+
+.applicant-meta-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.applicant-avatar-sphere {
+    background: linear-gradient(135deg, #5a32a8, #8c6cd4);
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    box-shadow: 0 4px 12px rgba(90, 50, 168, 0.15);
+}
+
+.applicant-title-info h3 {
+    font-family: system-ui, -apple-system, sans-serif !important;
+    font-size: 18px !important;
+    font-weight: 700 !important;
+    color: #1e1233 !important;
+    margin-bottom: 3px;
+}
+
+/* Formal Status Tags */
+.status-pill {
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    padding: 5px 12px;
+    border-radius: 6px;
+    letter-spacing: 0.5px;
+}
+.status-pending { background: #fff3e0; color: #ef6c00; border: 1px solid #ffe0b2; }
+.status-hired { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+.status-rejected { background: #ffebee; color: #c62828; border: 1px solid #ffcdcf; }
+
+/* Structural Content Fields */
+.response-block {
+    background: #fdfcff;
+    padding: 20px;
+    border-radius: 16px;
+    border: 1px solid #f5f2f9;
+}
+
+.response-block strong {
+    display: block;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #5a32a8;
+    margin-bottom: 8px;
+}
+
+.response-block p {
+    font-size: 14px;
+    color: #4a4257;
+    line-height: 1.6;
+}
+
+/* Unified Footer Action Alignment */
+.applicant-actions-wrapper {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 5px;
+}
+
+/* --- PREMIUM MESSAGE ACTION BUTTON --- */
+.btn-message-pm {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background-color: #f3f0fa;      /* Soft light-lavender tint background */
+    color: #5a32a8;                 /* MMU Theme Purple font */
+    padding: 10px 18px;
+    border-radius: 12px;            /* Modern curved corners */
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none !important; /* Strips away the ugly link underline */
+    border: 1px solid #e3d2f0;      /* Delicate lavender border line */
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.btn-message-pm:hover {
+    background-color: #5a32a8 !important;   /* Flips to solid purple on hover */
+    color: #ffffff !important;              /* FORCES text to become perfectly white */
+    border-color: #5a32a8 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(90, 50, 168, 0.15);
 }

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container" style="max-width: 600px; margin: 0 auto; padding: 20px 0;">
+    <h1 style="color: #1e1233; font-weight: 800; margin-bottom: 25px;">Your Direct Messages</h1>
+    
+    {% if not chat_partners %}
+        <div class="card" style="text-align: center; padding: 40px; background: white; border-radius: 20px; border: 1px solid #eae6f0;">
+            <p style="color: #7b728c;">No private chats found. You can message people directly through task profile links!</p>
+        </div>
+    {% else %}
+        <div style="display: flex; flex-direction: column; gap: 15px;">
+            {% for partner in chat_partners %}
+                <a href="{{ url_for('private_chat', username=partner) }}" style="text-decoration: none; color: inherit; display: block;">
+                    <div class="card" style="min-height: auto; padding: 20px; display: flex; align-items: center; gap: 15px; background: white; border-radius: 20px; border: 1px solid #eae6f0; transition: 0.2s;">
+                        <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #5a32a8, #8c6cd4); border-radius: 50%;"></div>
+                        <div>
+                            <h3 style="margin: 0; font-size: 16px; color: #1e1233;">{{ partner }}</h3>
+                            <p style="margin: 3px 0 0 0; font-size: 13px; color: #7b728c;">Click to open text history</p>
+                        </div>
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

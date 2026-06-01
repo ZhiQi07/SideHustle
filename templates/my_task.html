@@ -193,7 +193,16 @@
                             </div>
 
                             <div class="card-header">
-                                <span class="tag">{{ task.category }}</span>
+                                <span class="tag 
+                                    {% if task.category == 'Moving & Lifting' %}tag-moving
+                                    {% elif task.category == 'Food & Delivery' %}tag-food
+                                    {% elif task.category == 'Academic & Education' %}tag-academic
+                                    {% elif task.category == 'Creative & Digital' %}tag-creative
+                                    {% elif task.category == 'Technical & IT' %}tag-technical
+                                    {% elif task.category == 'Others' %}tag-others
+                                    {% endif %}">
+                                    {{ task.category }}
+                                </span>
                                 {% if task.urgent %}<span class="tag urgent-tag">URGENT</span>{% endif %}
                             </div>
 
@@ -272,7 +281,16 @@
                         {% if task %}
                             <div class="card">
                                 <div class="card-header">
-                                    <span class="tag">{{ task.category }}</span>
+                                    <span class="tag 
+                                        {% if task.category == 'Moving & Lifting' %}tag-moving
+                                        {% elif task.category == 'Food & Delivery' %}tag-food
+                                        {% elif task.category == 'Academic & Education' %}tag-academic
+                                        {% elif task.category == 'Creative & Digital' %}tag-creative
+                                        {% elif task.category == 'Technical & IT' %}tag-technical
+                                        {% elif task.category == 'Others' %}tag-others
+                                        {% endif %}">
+                                        {{ task.category }}
+                                    </span>
                                     <span class="tag" style="background: {% if app.status == 'Hired' %}#e8f5e9; color: #2e7d32;{% elif app.status == 'Rejected' %}#ffebee; color: #c62828;{% else %}#fff3e0; color: #ef6c00;{% endif %}">
                                         {{ app.status | upper }}
                                     </span>

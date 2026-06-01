@@ -105,6 +105,13 @@ class Message(db.Model):
     timestamp = db.Column(db.DateTime, default=db.func.now())
     is_read = db.Column(db.Boolean, default=False)
 
+class DirectMessage(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    sender_username = db.Column(db.String(50), nullable=False)
+    receiver_username = db.Column(db.String(50), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    timestamp = db.Column(db.DateTime, default=db.func.now())
+    is_read = db.Column(db.Boolean, default=False)
 
 class Earning(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -662,32 +669,35 @@ def view_applicants(task_id):
 @app.route('/hire-applicant/<int:app_id>')
 def hire_applicant(app_id):
     if 'user_id' not in session:
-        return redirect(url_for('login'))
+        return redirect(url_for('login'))[cite: 17]
 
-    application = Application.query.get_or_404(app_id)
-    task = Task.query.get(application.task_id)
+    application = Application.query.get_or_404(app_id)[cite: 17]
+    task = Task.query.get(application.task_id)[cite: 17]
 
-    # 1. Check if we still have space based on capacity
+    # Check if we still have space based on capacity[cite: 17]
     if task.get_hired_count() < task.capacity:
-        application.status = 'Hired'
-        # Create the notification with the task_id included
+        application.status = 'Hired'[cite: 17]
+        
+        # Explicitly commit the application change to database right now!
+        db.session.commit() 
+        
+        # Send Notification[cite: 17]
         new_note = Notification(
             user_id=User.query.filter_by(username=application.applicant_username).first().id,
-            task_id=task.id, # Link it to the task
-            message=f"You have been HIRED for the task: {task.title}!"
+            task_id=task.id,
+            message=f"You have been HIRED for the task: {task.title}!"[cite: 17]
         )
         db.session.add(new_note)
         
-        # 2. Check if this was the LAST person needed
-        if task.get_hired_count() + 1 == task.capacity:
-            task.status = 'In Progress' # Task officially starts
+        if task.get_hired_count() >= task.capacity:
+            task.status = 'In Progress' # Task officially starts and hides from marketplace[cite: 17]
         
         db.session.commit()
-        flash(f"You have hired {application.applicant_username}!")
+        flash(f"You have hired {application.applicant_username}!")[cite: 17]
     else:
-        flash("Task is already at full capacity!")
+        flash("Task is already at full capacity!")[cite: 17]
 
-    return redirect(url_for('my_task', view='created'))
+    return redirect(url_for('my_task', view='created'))[cite: 17]
 
 @app.route('/reject_applicant/<int:app_id>')
 def reject_applicant(app_id):
@@ -777,7 +787,60 @@ def handle_connect():
         print(f"User {session['user_id']} connected to their private room.")
 
 
+@app.route('/private_inbox')
+def private_inbox():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    current_user = User.query.get(session['user_id'])
+    
+    # Fetch all unique users that the current user has exchanged private messages with
+    sent_msgs = DirectMessage.query.filter_by(sender_username=current_user.username).all()
+    rcvd_msgs = DirectMessage.query.filter_by(receiver_username=current_user.username).all()
+    
+    chat_partners = set()
+    for msg in sent_msgs:
+        chat_partners.add(msg.receiver_username)
+    for msg in rcvd_msgs:
+        chat_partners.add(msg.sender_username)
+        
+    return render_template('private_inbox.html', chat_partners=list(chat_partners), user=current_user)
 
+
+@app.route('/private_chat/<username>', methods=['GET', 'POST'])
+def private_chat(username):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+        
+    current_user = User.query.get(session['user_id'])
+    target_user = User.query.filter_by(username=username).first_or_404()
+    
+    if request.method == 'POST':
+        msg_content = request.form.get('content')
+        if msg_content:
+            new_dm = DirectMessage(
+                sender_username=current_user.username,
+                receiver_username=target_user.username,
+                content=msg_content
+            )
+            db.session.add(new_dm)
+            db.session.commit()
+            
+            # Emit socket event for real-time updates (matches your teammate's setup)
+            socketio.emit('receive_private_message', {
+                'sender': current_user.username,
+                'message': msg_content
+            }, room=f"private_{min(current_user.username, target_user.username)}_{max(current_user.username, target_user.username)}")
+            
+        return redirect(url_for('private_chat', username=username))
+        
+    # Fetch conversation history between these two specific users
+    history = DirectMessage.query.filter(
+        ((DirectMessage.sender_username == current_user.username) & (DirectMessage.receiver_username == target_user.username)) |
+        ((DirectMessage.sender_username == target_user.username) & (DirectMessage.receiver_username == current_user.username))
+    ).order_by(DirectMessage.timestamp.asc()).all()
+    
+    return render_template('private_chat.html', target_user=target_user, user=current_user, history=history)
 
 @app.context_processor
 def inject_notifications():
