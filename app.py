@@ -669,35 +669,36 @@ def view_applicants(task_id):
 @app.route('/hire-applicant/<int:app_id>')
 def hire_applicant(app_id):
     if 'user_id' not in session:
-        return redirect(url_for('login'))[cite: 17]
+        return redirect(url_for('login'))
 
-    application = Application.query.get_or_404(app_id)[cite: 17]
-    task = Task.query.get(application.task_id)[cite: 17]
+    application = Application.query.get_or_404(app_id)
+    task = Task.query.get(application.task_id)
 
-    # Check if we still have space based on capacity[cite: 17]
+    # Check if we still have space based on capacity
     if task.get_hired_count() < task.capacity:
-        application.status = 'Hired'[cite: 17]
+        application.status = 'Hired'
         
-        # Explicitly commit the application change to database right now!
+        # Explicitly commit the application change to the database right now!
         db.session.commit() 
         
-        # Send Notification[cite: 17]
+        # Send Notification
         new_note = Notification(
             user_id=User.query.filter_by(username=application.applicant_username).first().id,
             task_id=task.id,
-            message=f"You have been HIRED for the task: {task.title}!"[cite: 17]
+            message=f"You have been HIRED for the task: {task.title}!"
         )
         db.session.add(new_note)
         
+        # Check the dynamic count after the change has been saved to the database disk
         if task.get_hired_count() >= task.capacity:
-            task.status = 'In Progress' # Task officially starts and hides from marketplace[cite: 17]
+            task.status = 'In Progress' # Task officially starts and hides from marketplace
         
         db.session.commit()
-        flash(f"You have hired {application.applicant_username}!")[cite: 17]
+        flash(f"You have hired {application.applicant_username}!")
     else:
-        flash("Task is already at full capacity!")[cite: 17]
+        flash("Task is already at full capacity!")
 
-    return redirect(url_for('my_task', view='created'))[cite: 17]
+    return redirect(url_for('my_task', view='created'))
 
 @app.route('/reject_applicant/<int:app_id>')
 def reject_applicant(app_id):
