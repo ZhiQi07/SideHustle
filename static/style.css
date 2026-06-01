@@ -853,3 +853,9 @@ body {
 }
 
 .btn-confirm-delete:hover { background: #b71c1c; }
+
+
+.message-text {
+    white-space: pre-wrap; /* 👈 核心：让聊天气泡能正确认出并显示换行符 */
+    word-break: break-word;
+}

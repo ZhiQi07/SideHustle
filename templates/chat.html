@@ -5,10 +5,9 @@
     <title>Chat - {{ task.title }}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
-        /* 保留你原本的样式 */
-        body { font-family: sans-serif; margin: 0; background-color: #f5f5f5; }
+        body { font-family: sans-serif; margin: 0; background-color: #ededed !important; } 
         .chat-header {
-            padding: 15px 20px;
+            padding: 12px 20px;
             display: flex;
             align-items: center;
             gap: 20px;
@@ -17,51 +16,97 @@
             position: sticky; top: 0; z-index: 100;
         }
         #chat-box {
-            height: calc(100vh - 180px); /* 稍微调高一点，留位置给引用预览 */
+            height: calc(100vh - 190px); 
             overflow-y: auto;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
+            padding: 15px 20px;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 12px !important; 
         }
+        
+        /* 💡 绝对锁定：阻断任何来自 style.css 的全局 width: 100% 污染 */
+        .msg-container {
+            display: flex !important;
+            flex-direction: column !important;
+            max-width: 60% !important; 
+            margin-bottom: 4px !important;
+            width: fit-content !important; /* 核心：防止容器自发拉满 */
+        }
+        .my-container { align-self: flex-end !important; align-items: flex-end !important; margin-left: auto !important; }
+        .others-container { align-self: flex-start !important; align-items: flex-start !important; margin-right: auto !important; }
+
+        /* 💡 终极锁定：保证气泡在任何时候都是紧贴文字的 */
         .message {
-            max-width: 70%;
-            padding: 10px 15px;
-            border-radius: 15px;
-            font-size: 14px;
-            line-height: 1.4;
-            position: relative;
+            padding: 8px 14px !important;
+            border-radius: 12px !important;
+            font-size: 14px !important;
+            line-height: 1.4 !important;
+            position: relative !important;
+            box-shadow: 0 1px 1px rgba(0,0,0,0.1) !important;
+            width: -moz-fit-content !important;
+            width: fit-content !important;      
+            min-width: 0px !important;          
+            max-width: 100% !important;
+            display: inline-block !important;   
+            min-height: 0px !important;         
+            box-sizing: border-box !important;
         }
-        .others-msg { align-self: flex-start; background-color: white; border: 1px solid #eee; }
-        .my-msg { align-self: flex-end; background-color: #dcf8c6; text-align: left; }
+        .my-msg { 
+            background-color: #d9fdd3 !important; 
+            border-top-right-radius: 2px !important;
+        }
+        .others-msg { 
+            background-color: white !important; 
+            border-top-left-radius: 2px !important;
+        }
 
-        /* 新增：操作按钮样式 */
-        .msg-ops {
+        .sender-name-hint {
             font-size: 11px;
-            margin-top: 5px;
-            display: flex;
-            gap: 10px;
-            color: #5a32a8;
+            color: #4a148c;
+            margin-bottom: 2px;
+            font-weight: bold;
+            padding-left: 2px;
         }
-        .msg-ops span { cursor: pointer; opacity: 0.7; }
-        .msg-ops span:hover { opacity: 1; text-decoration: underline; }
 
-        /* 新增：引用内容样式 */
+        .text-body {
+            white-space: pre-wrap !important;
+            word-break: break-word !important;
+            display: inline !important; 
+        }
+
+        /* 💡 按钮样式固定，确保与大容器方向始终靠齐 */
+        .msg-ops {
+            font-size: 11px !important;
+            margin-top: 3px !important;
+            display: flex !important;
+            gap: 8px !important;
+            color: #727272 !important;
+            padding: 0 4px !important;
+            opacity: 0.4;
+            transition: opacity 0.2s;
+            width: fit-content !important;
+        }
+        .msg-container:hover .msg-ops { opacity: 1; } 
+        .msg-ops span { cursor: pointer !important; }
+        .msg-ops span:hover { text-decoration: underline !important; color: #4a148c !important; }
+
         .reply-quote {
-            background: rgba(0,0,0,0.05);
-            border-left: 3px solid #5a32a8;
-            padding: 5px 8px;
-            margin-bottom: 8px;
-            font-size: 12px;
-            border-radius: 4px;
-            color: #666;
+            background: rgba(0,0,0,0.05) !important;
+            border-left: 3px solid #00a884 !important; 
+            padding: 4px 8px !important;
+            margin-bottom: 5px !important;
+            font-size: 12px !important;
+            border-radius: 4px !important;
+            color: #555 !important;
+            white-space: pre-wrap !important; 
+            width: fit-content !important;      
+            max-width: 100% !important;         
         }
 
-        /* 新增：输入框上方的引用预览栏 */
         #reply-preview-bar {
             display: none;
             padding: 8px 20px;
-            background: #eee;
+            background: #f0f0f0;
             border-top: 1px solid #ddd;
             font-size: 13px;
             color: #555;
@@ -70,19 +115,43 @@
         }
 
         .input-area {
-            padding: 15px;
-            background: white;
+            padding: 10px 20px;
+            background: #f0f2f5;
             display: flex;
+            align-items: flex-end; 
             gap: 10px;
             position: fixed;
             bottom: 0;
             width: 100%;
             box-sizing: border-box;
         }
-        #message-input { flex-grow: 1; padding: 12px; border: 1px solid #ddd; border-radius: 20px; outline: none; }
-        .btn-send { padding: 0 25px; background: #4a148c; color: white; border: none; border-radius: 20px; cursor: pointer; font-weight: bold; }
         
-        .is-deleted { font-style: italic; color: #999 !important; }
+        #message-input { 
+            flex-grow: 1; 
+            padding: 10px 14px; 
+            border: none; 
+            border-radius: 20px; 
+            outline: none; 
+            font-family: inherit;
+            font-size: 14px;
+            resize: none; 
+            max-height: 100px; 
+            overflow-y: auto;
+            line-height: 1.4;
+            background: white;
+        }
+        .btn-send { 
+            padding: 0 22px; 
+            background: #00a884; 
+            color: white; 
+            border: none; 
+            border-radius: 20px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            height: 38px; 
+        }
+        
+        .is-deleted { font-style: italic !important; color: #8696a0 !important; } 
     </style>
 </head>
 <body>
@@ -90,44 +159,55 @@
     <div class="chat-header">
         <a href="{{ url_for('my_task') }}" style="padding: 8px 18px; background: #eee; border-radius: 20px; color: #333; text-decoration: none; font-weight: bold; font-size: 13px;">← Back</a>
         <div>
-            <h2 style="margin: 0; font-size: 16px;">Chatting: {{ task.title }}</h2>
-            <small style="color: #888;">Logged in as: <strong>{{ user.username }}</strong></small>
+            <h2 style="margin: 0; font-size: 16px; color: #333;">
+                Chatting with: 
+                <span style="color: #4a148c;">
+                    {% if user.username == task.user %}
+                        {% set hired_names = task.get_hired_usernames() %}
+                        {% if hired_names %}
+                            @{{ hired_names | join(', @') }}
+                        {% else %}
+                            @Team
+                        {% endif %}
+                    {% else %}
+                        @{{ task.user }}
+                    {% endif %}
+                </span>
+            </h2>
+            <small style="color: #777;">Topic: {{ task.title }}</small>
         </div>
     </div>
 
     <div id="chat-box">
         {% for m in history %}
-            <div id="msg-wrapper-{{ m.id }}" style="display: flex; flex-direction: column; {% if m.sender == user.username %}align-items: flex-end;{% endif %}">
+            <div id="msg-wrapper-{{ m.id }}" class="msg-container {% if m.sender == user.username %}my-container{% else %}others-container{% endif %}">
+                
+                {% if m.sender != user.username and not m.is_deleted %}
+                    <div class="sender-name-hint">@{{ m.sender }}</div>
+                {% endif %}
+
                 <div class="message {% if m.sender == user.username %}my-msg{% else %}others-msg{% endif %}">
                     
                     {% if m.reply_to_id and not m.is_deleted %}
                         <div class="reply-quote">
-                            <small>Replying to:</small><br>
                             {{ m.replied_message.content | truncate(40) }}
                         </div>
                     {% endif %}
 
                     <div class="msg-content-text">
-                        <strong>{{ 'Me' if m.sender == user.username else m.sender }}:</strong> 
-                        <span class="text-body {% if m.is_deleted %}is-deleted{% endif %}">
-                            {% if m.is_deleted %}
-                                <i>This message was deleted</i>
-                            {% else %}
-                                {{ m.content }}
-                            {% endif %}
-                        </span>
+                        <span id="body-text-{{ m.id }}" class="text-body {% if m.is_deleted %}is-deleted{% endif %}" data-raw="{{ m.content }}">{% if m.is_deleted %}This message was deleted{% else %}{{ m.content }}{% endif %}</span>
                         {% if m.is_edited and not m.is_deleted %}
-                            <small style="color:#aaa; font-size: 10px;">(edited)</small>
+                            <small style="color:#8696a0; font-size: 10px; margin-top: 2px; display: block; text-align: right;">(edited)</small>
                         {% endif %}
                     </div>
                 </div>
 
                 {% if not m.is_deleted %}
-                <div class="msg-ops">
-                    <span onclick="setReply('{{ m.id }}', '{{ m.sender }}', '{{ m.content|truncate(20) }}')">Reply</span>
+                <div id="ops-bar-{{ m.id }}" class="msg-ops">
+                    <span onclick="triggerReply('{{ m.id }}', '{{ m.sender }}')">Reply</span>
                     {% if m.sender == user.username %}
-                        <span onclick="startEdit('{{ m.id }}', '{{ m.content }}')">Edit</span>
-                        <span onclick="deleteMsg('{{ m.id }}')" style="color: #ff4d4d;">Delete</span>
+                        <span onclick="triggerEdit('{{ m.id }}')">Edit</span>
+                        <span onclick="deleteMsg('{{ m.id }}')" style="color: #ea0038;">Delete</span>
                     {% endif %}
                 </div>
                 {% endif %}
@@ -141,7 +221,7 @@
     </div>
 
     <div class="input-area">
-        <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off">
+        <textarea id="message-input" placeholder="Type a message..." rows="1" autocomplete="off"></textarea>
         <button id="send-btn" class="btn-send">Send</button>
     </div>
 
@@ -163,11 +243,21 @@
         chatBox.scrollTop = chatBox.scrollHeight;
         socket.emit('join', { room: ROOM_ID, username: USERNAME });
 
-        // --- 功能 1: 引用 (Reply) ---
-        function setReply(id, sender, text) {
+        function autoResizeInput() {
+            messageInput.style.height = 'auto';
+            const nextHeight = Math.min(messageInput.scrollHeight, 100);
+            messageInput.style.height = nextHeight + 'px';
+        }
+        messageInput.addEventListener('input', autoResizeInput);
+
+        function triggerReply(id, sender) {
             currentReplyId = id;
-            currentEditId = null; // 取消编辑状态
-            replyText.innerHTML = `Replying to <b>${sender}</b>: "${text}"`;
+            currentEditId = null; 
+            
+            const rawText = document.getElementById('body-text-' + id).getAttribute('data-raw') || "";
+            const shortText = rawText.length > 20 ? rawText.substring(0, 20) + "..." : rawText;
+            
+            replyText.innerHTML = `Replying to <b>${sender}</b>: "${shortText}"`;
             replyBar.style.display = 'flex';
             messageInput.focus();
         }
@@ -177,30 +267,31 @@
             replyBar.style.display = 'none';
         }
 
-        // --- 功能 2: 编辑 (Edit) ---
-        function startEdit(id, text) {
+        function triggerEdit(id) {
             currentEditId = id;
-            currentReplyId = null; // 取消引用状态
+            currentReplyId = null; 
             cancelReply();
-            messageInput.value = text;
-            messageInput.style.background = "#fff9c4"; // 变成淡黄色表示编辑中
+            
+            const textNode = document.getElementById('body-text-' + id);
+            const rawText = textNode.getAttribute('data-raw') || textNode.innerText;
+            
+            messageInput.value = rawText; 
+            messageInput.style.background = "#fff9c4"; 
+            autoResizeInput(); 
             messageInput.focus();
         }
 
-        // --- 功能 3: 删除 (Delete) ---
         function deleteMsg(id) {
             if (confirm("Delete this message?")) {
                 socket.emit('delete_message', { message_id: id, room: ROOM_ID });
             }
         }
 
-        // --- 核心发送逻辑 (整合了发送、回复、编辑) ---
         function doSend() {
-            const msg = messageInput.value;
-            if (msg.trim() === "") return;
+            const msg = messageInput.value.trim(); 
+            if (msg === "") return;
 
             if (currentEditId) {
-                // 执行编辑
                 socket.emit('edit_message', {
                     message_id: currentEditId,
                     new_content: msg,
@@ -209,7 +300,6 @@
                 currentEditId = null;
                 messageInput.style.background = "white";
             } else {
-                // 执行发送或回复
                 socket.emit('send_message', {
                     room: ROOM_ID,
                     username: USERNAME,
@@ -219,66 +309,86 @@
             }
             
             messageInput.value = "";
+            messageInput.style.height = 'auto'; 
             cancelReply();
+            messageInput.focus(); 
         }
 
         sendBtn.onclick = doSend;
-        messageInput.onkeydown = (e) => { if (e.key === 'Enter') doSend(); };
 
-        // 接收新消息
-        socket.on('receive_message', (data) => {
-            // 注意：为了让删除/编辑生效，新消息也需要一个包裹容器 ID
-            location.reload(); // 最简单的办法是刷新，或者像下面这样手动追加 DOM
+        messageInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                if (!e.shiftKey) {
+                    e.preventDefault();
+                    doSend();
+                } else {
+                    setTimeout(autoResizeInput, 10);
+                }
+            }
         });
 
-        // --- 监听编辑广播 ---
-socket.on('message_edited', (data) => {
-    // 找到这条消息的包裹容器
-    const container = document.getElementById(`msg-wrapper-${data.message_id}`);
-    if (container) {
-        // 1. 寻找存放文字内容的 span (根据你之前的 HTML 结构)
-        const textBody = container.querySelector('.text-body');
-        
-        if (textBody) {
-            // 直接更新文字，不刷新页面
-            textBody.innerText = data.new_content;
-            
-            // 2. 如果还没有 (edited) 标记，就补一个
-            if (!container.querySelector('.edit-tag')) {
-                const small = document.createElement('small');
-                small.className = 'edit-tag';
-                small.style.cssText = "color:#aaa; font-size: 10px; margin-left: 5px;";
-                small.innerText = "(edited)";
-                textBody.parentNode.appendChild(small);
+        // 💡 修复：这里由于动态刷新页面的逻辑可能在各端不同步，我们直接用全字段渲染追加。
+        // 为了防止页面消息 ID 获取断流，当自发的 receive_message 触发时，直接重载一次或者安全渲染：
+        socket.on('receive_message', (data) => {
+            // 最稳定且保留焦点的方案：如果收到了新消息，我们直接局部刷新，这样既能拿到最新的后端数据库自增 Message.id，又能拿到全量的功能按钮。
+            // 💡 技巧：我们在刷新前把焦点记下来，刷新后恢复焦点
+            sessionStorage.setItem('chat_focus_ref', 'true');
+            location.reload();
+        });
+
+        // 页面重载后，自动检测并继续聚焦输入框！这就彻底解决了每次打完字失去焦点的问题
+        window.addEventListener('load', () => {
+            if (sessionStorage.getItem('chat_focus_ref') === 'true') {
+                sessionStorage.removeItem('chat_focus_ref');
+                messageInput.focus();
+                // 自动滑到底部
+                chatBox.scrollTop = chatBox.scrollHeight;
             }
-        }
-    }
-});
+        });
 
-// --- 监听删除广播 ---
-socket.on('message_deleted', (data) => {
-    const container = document.getElementById(`msg-wrapper-${data.message_id}`);
-    if (container) {
-        // 1. 找到内容区域，直接替换成删除提示
-        const textBody = container.querySelector('.text-body');
-        if (textBody) {
-            textBody.innerHTML = 'This message was deleted';
-            textBody.classList.add('is-deleted');
-            textBody.style.fontStyle = 'italic';
-            textBody.style.color = '#999';
-        }
-        
-        // 2. 物理消失：把编辑、删除、回复按钮全部藏起来
-        const ops = container.querySelector('.msg-ops');
-        if (ops) {
-            ops.style.display = 'none';
-        }
+        socket.on('message_edited', (data) => {
+            const container = document.getElementById(`msg-wrapper-${data.message_id}`);
+            if (container) {
+                const textBody = container.querySelector('.text-body');
+                if (textBody) {
+                    textBody.innerText = data.new_content;
+                    textBody.setAttribute('data-raw', data.new_content); 
+                    if (!container.querySelector('.edit-tag')) {
+                        const small = document.createElement('small');
+                        small.className = 'edit-tag';
+                        small.style.cssText = "color:#8696a0; font-size: 10px; margin-top: 2px; display: block; text-align: right;";
+                        small.innerText = "(edited)";
+                        textBody.parentNode.appendChild(small);
+                    }
+                }
+            }
+        });
 
-        // 3. 如果有引用（回复）的部分，也给它变灰（可选）
-        const quote = container.querySelector('.reply-quote');
-        if (quote) quote.style.opacity = '0.5';
-    }
-});
+        socket.on('message_deleted', (data) => {
+            const container = document.getElementById(`msg-wrapper-${data.message_id}`);
+            if (container) {
+                const textBody = container.querySelector('.text-body');
+                if (textBody) {
+                    textBody.innerHTML = 'This message was deleted';
+                    textBody.className = 'text-body is-deleted'; 
+                    textBody.removeAttribute('data-raw');
+                }
+                
+                const opsBar = document.getElementById(`ops-bar-${data.message_id}`);
+                if (opsBar) {
+                    opsBar.remove(); 
+                }
+                
+                const quote = container.querySelector('.reply-quote');
+                if (quote) {
+                    quote.remove();
+                }
+                const hint = container.querySelector('.sender-name-hint');
+                if (hint) {
+                    hint.style.display = 'none';
+                }
+            }
+        });
     </script>
 </body>
 </html>

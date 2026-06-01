@@ -37,16 +37,19 @@ class User(db.Model):
         if role == 'created':
             tasks = Task.query.filter_by(user=self.username).all()
         elif role == 'applied':
-            # FIX: 用 Application 表查，支持多人任务
             hired_apps = Application.query.filter_by(
                 applicant_username=self.username, status='Hired'
             ).all()
             task_ids = [a.task_id for a in hired_apps]
             tasks = Task.query.filter(Task.id.in_(task_ids)).all()
         else:
-            tasks = Task.query.filter(
-                (Task.user == self.username) | (Task.tasker == self.username)
+            created_tasks = Task.query.filter_by(user=self.username).all()
+            hired_apps = Application.query.filter_by(
+                applicant_username=self.username, status='Hired'
             ).all()
+            task_ids = {task.id for task in created_tasks}
+            task_ids.update(a.task_id for a in hired_apps)
+            tasks = Task.query.filter(Task.id.in_(task_ids)).all()
         total = 0
         for task in tasks:
             total += task.get_unread_count(self.username)
@@ -86,6 +89,10 @@ class Task(db.Model):
 
     def get_hired_count(self):
         return Application.query.filter_by(task_id=self.id, status='Hired').count()
+
+    def get_hired_usernames(self):
+        hired_apps = Application.query.filter_by(task_id=self.id, status='Hired').all()
+        return [app.applicant_username for app in hired_apps]
 
 
 class Application(db.Model):
@@ -147,6 +154,26 @@ with app.app_context():
     db.create_all()
 
 
+def get_task_member_usernames(task):
+    members = {task.user}
+    for app_record in Application.query.filter_by(task_id=task.id, status='Hired').all():
+        members.add(app_record.applicant_username)
+    return members
+
+
+def user_can_access_task_chat(task, user):
+    return user and user.username in get_task_member_usernames(task)
+
+
+def user_can_rate_target(task, reviewer_username, target_username):
+    hired_usernames = set(task.get_hired_usernames())
+    if reviewer_username == task.user:
+        return target_username in hired_usernames
+    if reviewer_username in hired_usernames:
+        return target_username == task.user
+    return False
+
+
 @app.context_processor
 def inject_global_unread():
     if 'user_id' not in session:
@@ -157,12 +184,18 @@ def inject_global_unread():
             return {"global_unread_count": 0}
         count = db.session.execute(
             text("""
-                SELECT COUNT(*) FROM message 
-                WHERE is_read = 0 
-                AND sender != :uname
-                AND task_id IN (
-                    SELECT id FROM task 
-                    WHERE user = :uname OR tasker = :uname
+                SELECT COUNT(*)
+                FROM message m
+                WHERE m.sender != :uname
+                AND m.task_id IN (
+                    SELECT id FROM task WHERE user = :uname
+                    UNION
+                    SELECT task_id FROM application
+                    WHERE applicant_username = :uname AND status = 'Hired'
+                )
+                AND NOT EXISTS (
+                    SELECT 1 FROM message_read mr
+                    WHERE mr.message_id = m.id AND mr.username = :uname
                 )
             """),
             {"uname": user.username}
@@ -356,6 +389,10 @@ def update_progress(task_id):
         return redirect(url_for('login'))
     new_progress = int(request.form.get('progress', 0))
     task = db.session.get(Task, task_id)
+    user = db.session.get(User, session['user_id'])
+    if not task or not user_can_rate_target(task, user.username, task.user):
+        flash("Only hired taskers can update this task progress.")
+        return redirect(url_for('my_task'))
     if new_progress == 100 and task.status != 'Completed':
         task.status = 'Completed'
         for app_record in Application.query.filter_by(task_id=task.id, status='Hired').all():
@@ -395,13 +432,14 @@ def post_task():
         return redirect(url_for('login'))
     if request.method == 'POST':
         current_user = User.query.get(session['user_id'])
+        capacity = request.form.get('capacity') or 1
         db.session.add(Task(
             title=request.form.get('title'),
             price=float(request.form.get('price')),
             description=request.form.get('description'),
             category=request.form.get('category'),
             deadline=request.form.get('deadline'),
-            capacity=request.form.get('capacity'),
+            capacity=max(1, int(capacity)),
             urgent=True if request.form.get('urgent') else False,
             user=current_user.username
         ))
@@ -537,8 +575,11 @@ def view_applicants(task_id):
     if 'user_id' not in session:
         return redirect(url_for('login'))
     task = Task.query.get_or_404(task_id)
-    apps = Application.query.filter_by(task_id=task_id).all()
     user = User.query.get(session['user_id'])
+    if task.user != user.username:
+        flash("You are not authorized to view these applicants.")
+        return redirect(url_for('my_task'))
+    apps = Application.query.filter_by(task_id=task_id).all()
     return render_template('view_applicants.html', task=task, apps=apps, user=user)
 
 
@@ -548,6 +589,10 @@ def hire_applicant(app_id):
         return redirect(url_for('login'))
     application = Application.query.get_or_404(app_id)
     task = Task.query.get(application.task_id)
+    user = User.query.get(session['user_id'])
+    if not task or task.user != user.username:
+        flash("You are not authorized to hire for this task.")
+        return redirect(url_for('my_task'))
     if application.status == 'Hired':
         flash(f"{application.applicant_username} is already hired!")
         return redirect(url_for('view_applicants', task_id=task.id))
@@ -580,6 +625,11 @@ def reject_applicant(app_id):
     if 'user_id' not in session:
         return redirect(url_for('login'))
     application = Application.query.get_or_404(app_id)
+    task = Task.query.get(application.task_id)
+    user = User.query.get(session['user_id'])
+    if not task or task.user != user.username:
+        flash("You are not authorized to reject applicants for this task.")
+        return redirect(url_for('my_task'))
     application.status = 'Rejected'
     db.session.commit()
     flash("Applicant has been rejected.")
@@ -592,6 +642,9 @@ def chat(task_id):
         return redirect(url_for('login'))
     task = Task.query.get_or_404(task_id)
     user = User.query.get(session['user_id'])
+    if not user_can_access_task_chat(task, user):
+        flash("You are not part of this task chat.")
+        return redirect(url_for('my_task'))
     for msg in Message.query.filter_by(task_id=task_id, is_read=False).filter(Message.sender != user.username).all():
         msg.is_read = True
         if not MessageRead.query.filter_by(message_id=msg.id, username=user.username).first():
@@ -608,6 +661,9 @@ def group_chat(task_id):
         return redirect(url_for('login'))
     task = Task.query.get_or_404(task_id)
     user = User.query.get(session['user_id'])
+    if not user_can_access_task_chat(task, user):
+        flash("You are not part of this task chat.")
+        return redirect(url_for('my_task'))
     for msg in Message.query.filter_by(task_id=task_id, is_read=False).filter(Message.sender != user.username).all():
         if not MessageRead.query.filter_by(message_id=msg.id, username=user.username).first():
             db.session.add(MessageRead(message_id=msg.id, username=user.username))
@@ -627,6 +683,9 @@ def rate_user(task_id, target_user):
     c_name = current_user.username.strip()
     if c_name == t_name:
         flash("You cannot rate yourself!")
+        return redirect(url_for('my_task'))
+    if not user_can_rate_target(task, c_name, t_name):
+        flash("You can only rate people you worked with on this task.")
         return redirect(url_for('my_task'))
     if Rating.query.filter_by(task_id=task_id, reviewer_username=c_name, target_username=t_name).first():
         flash(f"You already rated {t_name}!")
@@ -650,25 +709,45 @@ def submit_rating(task_id, target_user):
     if 'user_id' not in session:
         return redirect(url_for('login'))
     current_user = db.session.get(User, session['user_id'])
-    if Rating.query.filter_by(task_id=task_id, reviewer_username=current_user.username).first():
-        flash("You have already rated this task.")
+    task = Task.query.get_or_404(task_id)
+    t_name = target_user.strip()
+    c_name = current_user.username.strip()
+    if c_name == t_name:
+        flash("You cannot rate yourself!")
+        return redirect(url_for('my_task'))
+    if not user_can_rate_target(task, c_name, t_name):
+        flash("You can only rate people you worked with on this task.")
+        return redirect(url_for('my_task'))
+    if Rating.query.filter_by(task_id=task_id, reviewer_username=c_name, target_username=t_name).first():
+        flash(f"You already rated {t_name}!")
         return redirect(url_for('my_task'))
     rating_val = int(request.form.get('rating', 5))
     db.session.add(Rating(
         task_id=task_id,
-        reviewer_username=current_user.username,
-        target_username=target_user,
+        reviewer_username=c_name,
+        target_username=t_name,
         score=rating_val,
         review_content=request.form.get('review', ''),
         timestamp=datetime.now(my8)
     ))
-    user_to_rate = User.query.filter_by(username=target_user).first()
+    user_to_rate = User.query.filter_by(username=t_name).first()
     if user_to_rate:
         user_to_rate.total_rating += rating_val
         user_to_rate.review_count += 1
     db.session.commit()
     flash("Rating submitted successfully!")
-    return redirect(url_for('dashboard'))
+
+    if c_name == task.user:
+        rated_targets = {
+            r.target_username for r in Rating.query.filter_by(
+                task_id=task_id, reviewer_username=c_name
+            ).all()
+        }
+        for hired_username in task.get_hired_usernames():
+            if hired_username not in rated_targets:
+                return redirect(url_for('rate_user', task_id=task_id, target_user=hired_username))
+
+    return redirect(url_for('my_task'))
 
 
 @app.route('/view_ratings')
@@ -689,9 +768,13 @@ def completed_tasks():
         
     user = db.session.get(User, session['user_id'])
     
-    done_tasks = Task.query.filter_by(
-        status='Completed',
-        tasker=user.username
+    hired_apps = Application.query.filter_by(
+        applicant_username=user.username, status='Hired'
+    ).all()
+    hired_task_ids = [app_record.task_id for app_record in hired_apps]
+    done_tasks = Task.query.filter(
+        Task.id.in_(hired_task_ids),
+        Task.status == 'Completed'
     ).all()
     
     for task in done_tasks:
@@ -715,33 +798,43 @@ def completed_tasks():
 # =========================
 @socketio.on('join')
 def on_join(data):
-    join_room(data['room'])
-    print(f"用户 {data['username']} 加入了房间 {data['room']}")
+    task = db.session.get(Task, int(data['room']))
+    user = db.session.get(User, session.get('user_id'))
+    if task and user_can_access_task_chat(task, user):
+        join_room(data['room'])
+        print(f"用户 {user.username} 加入了房间 {data['room']}")
 
 
 @socketio.on('send_message')
 def handle_message(data):
     room = data['room']
-    emit('receive_message', data, room=room)
-    db.session.add(Message(
+    task = db.session.get(Task, int(room))
+    current_user = db.session.get(User, session.get('user_id'))
+    if not task or not user_can_access_task_chat(task, current_user):
+        return
+
+    message = Message(
         task_id=int(room),
-        sender=data['username'],
+        sender=current_user.username,
         content=data['message'],
         reply_to_id=data.get('reply_to_id')
-    ))
+    )
+    db.session.add(message)
     db.session.commit()
 
-    task = db.session.get(Task, int(room))
-    if task:
-        all_members = {task.user}
-        for app in Application.query.filter_by(task_id=int(room), status='Hired').all():
-            all_members.add(app.applicant_username)
-        for username in all_members:
-            if username != data['username']:
-                member = User.query.filter_by(username=username).first()
-                if member:
-                    role = 'created' if username == task.user else 'applied'
-                    socketio.emit('new_unread', {'task_id': int(room), 'role': role}, room=str(member.id))
+    emit('receive_message', {
+        'room': room,
+        'username': current_user.username,
+        'message': message.content,
+        'reply_to_id': message.reply_to_id
+    }, room=room)
+
+    for username in get_task_member_usernames(task):
+        if username != current_user.username:
+            member = User.query.filter_by(username=username).first()
+            if member:
+                role = 'created' if username == task.user else 'applied'
+                socketio.emit('new_unread', {'task_id': int(room), 'role': role}, room=str(member.id))
 
 
 @socketio.on('edit_message')
