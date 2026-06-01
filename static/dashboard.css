@@ -94,7 +94,7 @@ body {
 }
 
 .summary-card {
-    background: #dfe8f5; /* 配合你图二的颜色 */
+    background: #eef2ff; /* Softer dashboard card color */
     border-radius: 25px;
     padding: 30px;
     min-height: 180px;
@@ -113,11 +113,13 @@ body {
     font-weight: bold;
     font-size: 18px;
     margin-bottom: 15px;
+    color: #374151;
 }
 
 .card-value {
     font-size: 36px;
     font-weight: bold;
+    color: #2e2c50;
 }
 
 /* --- 6. 任务追踪列表 (同步你要求的布局) --- */

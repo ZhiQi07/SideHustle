@@ -174,6 +174,14 @@ def user_can_rate_target(task, reviewer_username, target_username):
     return False
 
 
+@app.template_filter('money_amount')
+def money_amount(value):
+    amount = round(float(value or 0), 2)
+    if amount.is_integer():
+        return f"{amount:,.0f}"
+    return f"{amount:,.2f}"
+
+
 @app.context_processor
 def inject_global_unread():
     if 'user_id' not in session:
