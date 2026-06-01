@@ -797,6 +797,11 @@ def completed_tasks():
             task.completed_time = earning_record.timestamp.strftime('%Y-%m-%d %H:%M')
         else:
             task.completed_time = "Recently"
+        hired_usernames = task.get_hired_usernames()
+        task.finish_with_usernames = [
+            username for username in hired_usernames
+            if username != user.username
+        ] if len(hired_usernames) > 1 else []
 
     return render_template('completed_tasks.html', user=user, tasks=done_tasks)
 

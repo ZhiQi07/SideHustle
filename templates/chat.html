@@ -31,6 +31,7 @@
             max-width: 60% !important; 
             margin-bottom: 4px !important;
             width: fit-content !important; /* 核心：防止容器自发拉满 */
+            position: relative !important;
         }
         .my-container { align-self: flex-end !important; align-items: flex-end !important; margin-left: auto !important; }
         .others-container { align-self: flex-start !important; align-items: flex-start !important; margin-right: auto !important; }
@@ -50,7 +51,9 @@
             display: inline-block !important;   
             min-height: 0px !important;         
             box-sizing: border-box !important;
+            cursor: default !important;
         }
+        .message.can-open-actions { cursor: pointer !important; }
         .my-msg { 
             background-color: #d9fdd3 !important; 
             border-top-right-radius: 2px !important;
@@ -74,21 +77,40 @@
             display: inline !important; 
         }
 
-        /* 💡 按钮样式固定，确保与大容器方向始终靠齐 */
-        .msg-ops {
-            font-size: 11px !important;
-            margin-top: 3px !important;
-            display: flex !important;
-            gap: 8px !important;
-            color: #727272 !important;
-            padding: 0 4px !important;
-            opacity: 0.4;
-            transition: opacity 0.2s;
-            width: fit-content !important;
+        .msg-action-menu {
+            display: none !important;
+            position: absolute !important;
+            top: calc(100% + 4px) !important;
+            z-index: 220 !important;
+            min-width: 108px !important;
+            padding: 4px !important;
+            background: white !important;
+            border: 1px solid #ddd !important;
+            border-radius: 8px !important;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.16) !important;
+            box-sizing: border-box !important;
         }
-        .msg-container:hover .msg-ops { opacity: 1; } 
-        .msg-ops span { cursor: pointer !important; }
-        .msg-ops span:hover { text-decoration: underline !important; color: #4a148c !important; }
+        .my-container .msg-action-menu { right: 0 !important; }
+        .others-container .msg-action-menu { left: 0 !important; }
+        .msg-action-menu.is-open {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 2px !important;
+        }
+        .msg-action-menu button {
+            width: 100% !important;
+            border: 0 !important;
+            background: transparent !important;
+            color: #333 !important;
+            cursor: pointer !important;
+            font-size: 12px !important;
+            text-align: left !important;
+            padding: 7px 9px !important;
+            border-radius: 6px !important;
+            font-family: inherit !important;
+        }
+        .msg-action-menu button:hover { background: #f3f1f7 !important; color: #4a148c !important; }
+        .msg-action-menu button.danger { color: #d92d20 !important; }
 
         .reply-quote {
             background: rgba(0,0,0,0.05) !important;
@@ -186,7 +208,7 @@
                     <div class="sender-name-hint">@{{ m.sender }}</div>
                 {% endif %}
 
-                <div class="message {% if m.sender == user.username %}my-msg{% else %}others-msg{% endif %}">
+                <div class="message {% if not m.is_deleted %}can-open-actions{% endif %} {% if m.sender == user.username %}my-msg{% else %}others-msg{% endif %}" {% if not m.is_deleted %}oncontextmenu="openMsgMenu(event, {{ m.id|tojson }})" title="Right-click for actions"{% endif %}>
                     
                     {% if m.reply_to_id and not m.is_deleted %}
                         <div class="reply-quote">
@@ -203,11 +225,11 @@
                 </div>
 
                 {% if not m.is_deleted %}
-                <div id="ops-bar-{{ m.id }}" class="msg-ops">
-                    <span onclick="triggerReply('{{ m.id }}', '{{ m.sender }}')">Reply</span>
+                <div id="ops-bar-{{ m.id }}" class="msg-action-menu" aria-hidden="true" onclick="event.stopPropagation()">
+                    <button type="button" onclick="triggerReply({{ m.id|tojson }}, {{ m.sender|tojson }}); closeMsgMenus();">Reply</button>
                     {% if m.sender == user.username %}
-                        <span onclick="triggerEdit('{{ m.id }}')">Edit</span>
-                        <span onclick="deleteMsg('{{ m.id }}')" style="color: #ea0038;">Delete</span>
+                        <button type="button" onclick="triggerEdit({{ m.id|tojson }}); closeMsgMenus();">Edit</button>
+                        <button type="button" class="danger" onclick="deleteMsg({{ m.id|tojson }}); closeMsgMenus();">Delete</button>
                     {% endif %}
                 </div>
                 {% endif %}
@@ -242,6 +264,39 @@
 
         chatBox.scrollTop = chatBox.scrollHeight;
         socket.emit('join', { room: ROOM_ID, username: USERNAME });
+
+        function closeMsgMenus() {
+            document.querySelectorAll('.msg-action-menu.is-open').forEach((menu) => {
+                menu.classList.remove('is-open');
+                menu.setAttribute('aria-hidden', 'true');
+            });
+        }
+
+        function openMsgMenu(event, id) {
+            event.preventDefault();
+            event.stopPropagation();
+            closeMsgMenus();
+
+            const menu = document.getElementById('ops-bar-' + id);
+            if (!menu) return;
+
+            menu.classList.add('is-open');
+            menu.setAttribute('aria-hidden', 'false');
+        }
+
+        document.addEventListener('click', (event) => {
+            if (!event.target.closest('.msg-action-menu')) {
+                closeMsgMenus();
+            }
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                closeMsgMenus();
+            }
+        });
+
+        chatBox.addEventListener('scroll', closeMsgMenus);
 
         function autoResizeInput() {
             messageInput.style.height = 'auto';
