@@ -44,7 +44,13 @@
                             </div>
                     </div>
                 </div>
-                <div class="profile-circle"></div>
+                <div class="profile-circle">
+                    {% if user and user.avatar %}
+                        <img src="{{ url_for('static', filename='uploads/' + user.avatar) }}" alt="Profile Picture">
+                    {% else %}
+                        <i class="fi fi-rr-user default-view-icon"></i>
+                    {% endif %}
+                </div>
             </div>
         </div>
 
