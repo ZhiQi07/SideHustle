@@ -57,6 +57,65 @@
     justify-content: center;
     color: white;
     font-size: 35px;
+    transition: all 0.3s ease;
+    overflow: hidden;
+    position: relative;
+}
+
+.avatar-box:hover {
+    background: #a389c7;
+    transform: scale(1.05);
+}
+
+.avatar-box:hover i {
+    color: #efefef;
+}
+
+.avatar-box .default-avatar-icon {
+    font-size: 50px;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.avatar-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-box .user-photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-hover-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(140, 114, 182, 0.6); /* Translucent dimming background cover */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.avatar-hover-overlay i {
+    color: #ffffff;
+    font-size: 26px;
+}
+
+.avatar-box:hover .avatar-hover-overlay {
+    opacity: 1;
+}
+
+.avatar-box:hover {
+    transform: scale(1.04);
 }
 
 .photo-controls {

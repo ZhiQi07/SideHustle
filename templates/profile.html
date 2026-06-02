@@ -16,17 +16,34 @@
         
         <div class="profile-left-panel">
             <h3 class="section-title">PROFILE PHOTO</h3>
-            <div class="avatar-box">
-                <i class="fi fi-rr-pencil"></i>
-            </div>
+            <form id="avatar-form" action="{{ url_for('update_profile') }}" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="field" value="avatar">
+                <input type="file" id="avatar-input" name="avatar" style="display: none;" accept="image/*" onchange="document.getElementById('avatar-form').submit()">
+                
+                <div class="avatar-box" onclick="document.getElementById('avatar-input').click()" style="cursor: pointer;">
+                    {% if user.avatar %}
+                        <img src="{{ url_for('static', filename='uploads/' + user.avatar) }}" style="width: 100%; height: 100%; object-fit: cover;">
+                    {% else %}
+                        <i class="fi fi-rr-user default-avatar-icon"></i>
+                    {% endif %}
+                    <div class="avatar-hover-overlay">
+                        <i class="fi fi-rr-pencil"></i>
+                    </div>
+                </div>
+            </form>
             <div class="photo-controls">
-                <button class="small-btn">Remove photo</button>
-                <button class="small-btn">Change photo</button>
+                <form action="{{ url_for('update_profile') }}" method="POST" style="display: inline;">
+                    <input type="hidden" name="field" value="remove_avatar">
+                    <button class="small-btn">Remove photo</button>
+                </form>
+                <button class="small-btn" onclick="document.getElementById('avatar-input').click()">Change photo</button>
             </div>
             
             <div class="log-out-delete">
                 <a href="{{ url_for('login') }}" class="logout-link-btn">LOG OUT</a>
-                <button class="delete-acc-btn">DELETE ACCOUNT</button>
+                <form action="{{ url_for('delete_account') }}" method="POST" onsubmit="return confirm('Are you absolutely sure you want to permanently delete your account? This action cannot be undone.');" style="display: inline;">
+                    <button type="submit" class="delete-acc-btn" style="cursor: pointer;">DELETE ACCOUNT</button>
+                </form>
             </div>
         </div>
 
@@ -67,7 +84,7 @@
             <div class="detail-row" id="row-bio">
                 <label>Bio</label>
                 <div class="field-content">
-                    <span class="view-mode">{{ user.bio }}</span>
+                    <span class="view-mode">{{ user.bio if user.bio and user.bio.strip() != "" else "No bio currently" }}</span>
                     <form action="{{ url_for('update_profile') }}" method="POST" class="edit-mode" style="display:none;">
                         <input type="hidden" name="field" value="bio">
                         <input type="text" name="value" value="{{ user.bio }}" class="inline-input">

@@ -32,6 +32,7 @@ class User(db.Model):
     security_question = db.Column(db.String(200), nullable=False)
     security_answer = db.Column(db.String(200), nullable=False)
     bio = db.Column(db.Text, default="No bio currently")
+    avatar = db.Column(db.String(200), nullable=True)
     
     # --- Shared & Your Features ---
     skills = db.Column(db.Text, default="No skills listed")
@@ -274,9 +275,37 @@ def update_profile():
         user.bio = value
     elif field == 'skills':
         user.skills = value
+    elif field == 'avatar':
+        file = request.files.get('avatar')
+        if file and file.filename != '':
+
+            upload_folder = os.path.join(basedir, 'static', 'uploads')
+            os.makedirs(upload_folder, exist_ok=True)
+            
+            filename = f"user_{user.id}_{file.filename}"
+            file.save(os.path.join(upload_folder, filename))
+            
+            user.avatar = filename
+        
+    elif field == 'remove_avatar':
+        user.avatar = None
 
     db.session.commit()
     return redirect(url_for('profile'))
+
+@app.route('/delete_account', methods=['POST'])
+def delete_account():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+        
+    user = db.session.get(User, session['user_id'])
+    if user:
+        db.session.delete(user)
+        db.session.commit()
+        
+    session.clear()
+    flash("Your account has been permanently deleted.")
+    return redirect(url_for('login'))
 
 @app.route('/marketplace')
 def marketplace():
