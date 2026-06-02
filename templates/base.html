@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>SideHustle</title>
 </head>
 <body>
     <div class="main-layout">
@@ -11,9 +13,15 @@
                 <div class="sidebar-menu">
                     <a href="{{ url_for('marketplace') }}">🏠 Marketplace</a>
                     <a href="{{ url_for('dashboard') }}">📊 Dashboard</a>
-                    <a href="{{ url_for('my_task') }}">📋 My Task</a>
+                    <a href="{{ url_for('my_task') }}" style="position: relative;">
+                        📋 My Task 
+                        <span id="global-nav-dot" class="dot-small" style="display: none;"></span>
+                    </a>
                     <a href="#">👤 Profile</a>
                 </div>
+            </div>
+            <div class="sidebar-bottom">
+                <a href="#" class="menu-item">❓ Help</a>
             </div>
         </div>
 
@@ -67,13 +75,59 @@
 
             {% block content %}{% endblock %}
         </div>
-    </div> <script>
+
+        <div class="content">
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                <div class="flash-alert">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </div>
+
+    </div>
+
+    <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
+    <script>
         const bell = document.getElementById('bell-icon');
         const popup = document.getElementById('notification-popup');
-        
+
         bell.addEventListener('click', (e) => {
             e.stopPropagation();
-            popup.style.display = popup.style.display === 'block' ? 'none' : 'block';
+            popup.style.display = (popup.style.display === 'block') ? 'none' : 'block';
+        });
+
+        document.addEventListener('click', (e) => {
+            if (popup && !popup.contains(e.target) && e.target !== bell) {
+                popup.style.display = 'none';
+            }
+        });
+
+        const globalSocket = io();
+        globalSocket.on('new_unread', function(data) {
+            const navDot = document.getElementById('global-nav-dot');
+            if (navDot) navDot.style.display = 'inline-block';
+
+            const createdDot = document.getElementById('created-unread-dot');
+            const appliedDot = document.getElementById('applied-unread-dot');
+            if (data.role === 'created' && createdDot) createdDot.style.display = 'inline-block';
+            else if (data.role === 'applied' && appliedDot) appliedDot.style.display = 'inline-block';
+
+            const chatBtn = document.querySelector(`a[href*="chat/${data.task_id}"], a[href*="group_chat/${data.task_id}"]`);
+            if (chatBtn) {
+                let badge = chatBtn.querySelector('.unread-badge');
+                if (!badge) {
+                    badge = document.createElement('span');
+                    badge.className = 'unread-badge';
+                    badge.innerText = '1';
+                    chatBtn.appendChild(badge);
+                } else {
+                    badge.innerText = parseInt(badge.innerText) + 1;
+                }
+            }
         });
         
         window.onclick = () => {

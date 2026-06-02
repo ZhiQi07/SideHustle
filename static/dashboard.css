@@ -94,7 +94,7 @@ body {
 }
 
 .summary-card {
-    background: #dfe8f5; /* 配合你图二的颜色 */
+    background: #eef2ff; /* Softer dashboard card color */
     border-radius: 25px;
     padding: 30px;
     min-height: 180px;
@@ -113,11 +113,13 @@ body {
     font-weight: bold;
     font-size: 18px;
     margin-bottom: 15px;
+    color: #374151;
 }
 
 .card-value {
     font-size: 36px;
     font-weight: bold;
+    color: #2e2c50;
 }
 
 /* --- 6. 任务追踪列表 (同步你要求的布局) --- */
@@ -237,4 +239,15 @@ body {
     color: #888;
     cursor: pointer;
     font-size: 14px;
+}
+
+.dot-small {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: #ff4d4f;
+    border-radius: 50%;
+    margin-left: 5px;
+    vertical-align: middle;
+    border: 1px solid white;
 }

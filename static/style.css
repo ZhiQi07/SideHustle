@@ -1,6 +1,6 @@
 /* --- 1. THE "MAGIC" RESET --- */
 * {
-    box-sizing: border-box; /* Keeps padding and buttons INSIDE the boxes */
+    box-sizing: border-box;
     margin: 0;
     padding: 0;
 }
@@ -29,7 +29,7 @@ body {
     flex-direction: column;
     justify-content: space-between;
     padding: 30px 20px;
-    z-index: 3000; /* Sidebar stays on top of everything */
+    z-index: 3000;
 }
 
 .sidebar h2 {
@@ -55,14 +55,13 @@ body {
     color: #5a32a8;
 }
 
-/* THE PURPLE TOP BAR */
 .top-nav {
     position: fixed;
-    top: 0;           /* Absolute top */
-    left: 240px;      /* Starts after sidebar */
+    top: 0;
+    left: 240px;
     right: 0;
     height: 80px;
-    background-color: #5a32a8; /* MMU Purple */
+    background-color: #5a32a8;
     display: flex;
     justify-content: flex-end;
     align-items: center;
@@ -88,7 +87,7 @@ body {
     cursor: pointer;
 }
 
-/* --- 3. MAIN CONTENT (SPACIOUS) --- */
+/* --- 3. MAIN CONTENT --- */
 .content {
     margin-left: 240px; 
     margin-top: 80px;  
@@ -99,18 +98,18 @@ body {
 /* --- 4. MARKETPLACE CARDS (3 Tasks Per Row) --- */
 .task-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr); /* Forces exactly 3 columns */
+    grid-template-columns: repeat(3, 1fr);
     gap: 25px;
     margin-top: 20px;
     width: 100%;
-    max-width: 1100px; /* This prevents the cards from becoming giant rectangles */
+    max-width: 1100px;
 }
 
 .card-link {
-  text-decoration: none;
-  color: inherit;
-  display: block;
-  flex: 1;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    flex: 1;
 }
 
 .card {
@@ -213,7 +212,7 @@ body {
 /* --- 5. BUTTONS --- */
 .btn-primary {
     display: block;
-    width: 100%;             /* Stays perfectly INSIDE the box */
+    width: 100%;
     background: #5a32a8;
     color: white;
     padding: 16px;
@@ -227,11 +226,8 @@ body {
     transition: 0.2s;
 }
 
-.btn-primary:hover {
-    background: #452682;
-}
+.btn-primary:hover { background: #452682; }
 
-/* Floating Create Button */
 .fab {
     position: fixed;
     bottom: 40px;
@@ -244,6 +240,98 @@ body {
     font-weight: bold;
     box-shadow: 0 8px 20px rgba(0,0,0,0.2);
     z-index: 4000;
+}
+
+.btn-outline {
+    text-decoration: none;
+    padding: 8px 15px;
+    border: 1.5px solid #5a32a8;
+    color: #5a32a8;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.btn-hire {
+    text-decoration: none;
+    padding: 10px 25px;
+    background-color: #5a32a8;
+    color: white;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 14px;
+    transition: 0.3s;
+}
+
+.btn-hire:hover {
+    background-color: #452682;
+    transform: translateY(-2px);
+}
+
+.btn-reject {
+    text-decoration: none;
+    padding: 10px 25px;
+    background-color: transparent;
+    color: #d32f2f;
+    border: 1.5px solid #d32f2f;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 14px;
+    transition: 0.3s;
+}
+
+.btn-reject:hover {
+    background-color: #ffebee;
+    transform: translateY(-2px);
+}
+
+.btn-rate {
+    flex: 1;
+    text-align: center;
+    background-color: #ff9800;
+    color: white;
+    border: none;
+    font-size: 12px;
+    padding: 10px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: 0.2s;
+}
+
+.btn-rate:hover { background-color: #e68a00; }
+
+.btn-msg-half {
+    flex: 1;
+    text-align: center;
+    background-color: #8e94a5;
+    color: white;
+    font-size: 12px;
+    padding: 10px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: bold;
+    position: relative;
+}
+
+.btn-cancel {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f8f9fa;
+    color: #666;
+    border: 1px solid #ddd;
+    padding: 16px;
+    border-radius: 15px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: 0.2s;
+}
+
+.btn-cancel:hover {
+    background-color: #eee;
+    color: #333;
 }
 
 /* --- 6. CENTERED PAGES (POST & APPLY) --- */
@@ -281,11 +369,8 @@ body {
     margin-bottom: 20px;
 }
 
-/* --- 7. DETAIL PAGE SPECIFICS --- */
-.detail-layout {
-    display: flex;
-    gap: 40px;
-}
+/* --- 7. DETAIL PAGE --- */
+.detail-layout { display: flex; gap: 40px; }
 
 .blue-box {
     background: #e9eff6;
@@ -301,26 +386,25 @@ body {
     text-align: center;
     display: flex;
     flex-direction: column;
-    align-items: center; /* Centers budget and apply button */
+    align-items: center;
 }
 
-/* --- SEARCH BAR STYLES --- */
+/* --- 8. SEARCH BAR --- */
 .search-container {
-    margin: 20px 0 50px 0; /* More space below the whole section */
+    margin: 20px 0 50px 0;
     display: flex;
-    flex-direction: column; /* Stacks Search on top of Chips */
-    gap: 25px; /* Space between search bar and chips */
+    flex-direction: column;
+    gap: 25px;
     width: 100%;
 }
 
-/* The Search Bar Row */
 .search-form {
     display: flex;
     gap: 15px;
     background: white;
     padding: 10px;
-    border-radius: 50px; /* Makes the whole row rounded */
-    box-shadow: 0 4px 15px rgba(0,0,0,0.05); /* Subtle shadow for 'natural' look */
+    border-radius: 50px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
     border: 1px solid #eee;
 }
 
@@ -355,7 +439,6 @@ body {
     transform: scale(1.05);
 }
 
-/* The Dropdown inside the search row */
 .nav-select {
     border: none;
     background: #f8f9fa;
@@ -366,7 +449,6 @@ body {
     outline: none;
 }
 
-/* The Category Chips Row */
 .category-chips {
     display: flex;
     gap: 12px;               /* Clean, uniform spacing between your boxes */
@@ -410,7 +492,7 @@ body {
 
 .chip:hover {
     background-color: #f0f0f0;
-    transform: translateY(-2px); /* Slight lift for feel */
+    transform: translateY(-2px);
 }
 
 /* Active Chip - Bold and clear */
@@ -491,21 +573,15 @@ body {
 }
 
 .tab-btn.active {
-    background: #5a32a8; /* Dark blue from your drawing */
+    background: #5a32a8;
     color: white;
 }
 
-/* 2. Task Card Enhancements */
 .card-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 15px;
-}
-
-.status-text {
-    font-size: 12px;
-    color: #888;
 }
 
 .card-footer {
@@ -514,13 +590,12 @@ body {
     align-items: center;
     margin-top: auto;
     font-size: 14px;
+    position: relative;
 }
 
-/* 3. Progress Bar based on your drawing */
-.progress-container {
-    margin-top: 20px;
-}
+.status-text { font-size: 12px; color: #888; }
 
+/* --- 10. PROGRESS BAR --- */
 .progress-bar {
     width: 100%;
     height: 10px;
@@ -531,91 +606,10 @@ body {
 
 .progress-fill {
     height: 100%;
-    background: #5a32a8; /* MMU Purple */
+    background: #5a32a8;
     border-radius: 10px;
 }
 
-/* 4. Small buttons inside cards */
-.btn-outline {
-    text-decoration: none;
-    padding: 8px 15px;
-    border: 1.5px solid #5a32a8;
-    color: #5a32a8;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: bold;
-}
-
-.mini-profile {
-    width: 25px;
-    height: 25px;
-    background: #ccc;
-    border-radius: 50%;
-}
-
-.tag-in-progress {
-    font-size: 10px;
-    background: #e4d7ff;
-    color: #5a32a8;
-    padding: 4px 8px;
-    border-radius: 5px;
-    font-weight: bold;
-}
-
-/* Hire Button: Purple/Solid */
-.btn-hire {
-    text-decoration: none;
-    padding: 10px 25px;
-    background-color: #5a32a8; /* MMU Purple */
-    color: white;
-    border-radius: 20px;
-    font-weight: bold;
-    font-size: 14px;
-    transition: 0.3s;
-}
-
-.btn-hire:hover {
-    background-color: #452682;
-    transform: translateY(-2px);
-}
-
-/* Reject Button: Red/Outline */
-.btn-reject {
-    text-decoration: none;
-    padding: 10px 25px;
-    background-color: transparent;
-    color: #d32f2f; /* Red for warning */
-    border: 1.5px solid #d32f2f;
-    border-radius: 20px;
-    font-weight: bold;
-    font-size: 14px;
-    transition: 0.3s;
-}
-
-.btn-reject:hover {
-    background-color: #ffebee;
-    transform: translateY(-2px);
-}
-
-.hired-info-box {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 15px;
-    background: #f8f9fa;
-    padding: 10px;
-    border-radius: 15px;
-}
-
-/* Grouping the profile circle and name together */
-.user-meta {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 14px;
-}
-
-/* The "Project Progress" text row */
 .progress-header {
     display: flex;
     justify-content: space-between;
@@ -628,14 +622,7 @@ body {
     font-weight: bold;
 }
 
-/* A specific color for the Message button */
-.btn-message {
-    background-color: #8e9aaf !important; /* Soft blue-gray */
-    font-size: 14px;
-    padding: 12px;
-}
-
-/* Ensuring the profile is always a circle */
+/* --- 11. CARD COMPONENTS --- */
 .mini-profile {
     width: 30px;
     height: 30px;
@@ -644,37 +631,54 @@ body {
     flex-shrink: 0;
 }
 
-/* --- HIRED STATE LAYOUTS --- */
-.card-footer-hired {
-    margin-top: 20px;
-    border-top: 1px solid #eee;
-    padding-top: 15px;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 15px;
-    width: 100%;
+.tag-in-progress {
+    font-size: 10px;
+    background: #e4d7ff;
+    color: #5a32a8;
+    padding: 4px 8px;
+    border-radius: 5px;
+    font-weight: bold;
 }
 
-.applicant-stats {
+.hired-info-box {
     display: flex;
     align-items: center;
-    gap: 5px;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    background: #f8f9fa;
+    padding: 10px;
+    border-radius: 15px;
 }
 
-.full-width {
-    width: 100%;
+.user-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
 }
 
-.action-buttons-row {
-display: flex;
+.full-width { width: 100%; }
+
+.btn-flex-container {
+    display: flex;
     gap: 10px;
     width: 100%;
 }
 
-/* --- 8. UNREAD NOTIFICATION SYSTEM (NEW) --- */
+.action-buttons-row {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+}
 
-/* 1. 按钮上的数字红点 - 这里的 z-index 设为 10 确保在按钮文字上方 */
+.status-badge {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+/* --- 12. UNREAD / RED DOT SYSTEM --- */
 .unread-badge {
     position: absolute;
     top: -8px;
@@ -690,7 +694,6 @@ display: flex;
     z-index: 10;
 }
 
-/* 2. 侧边栏和 Tab 的小圆点 (无数字)[cite: 1] */
 .dot-small {
     display: inline-block;
     width: 8px;
@@ -702,42 +705,21 @@ display: flex;
     border: 1px solid white;
 }
 
-/* 3. 统一按钮组布局 - 确保 100% 进度时两个按钮并排[cite: 1] */
-.btn-flex-container {
-    display: flex;
-    gap: 10px;
-    width: 100%;
-}
+/* --- 13. NOTIFICATION POPUP --- */
+.notification-container { position: relative; }
 
-.action-btn-centered {
-    flex: 1;
-    text-align: center;
-    padding: 10px;
-}
-
-.status-badge {
-    padding: 6px 14px;
-    border-radius: 20px;
-    font-size: 13px;
-    font-weight: bold;
-}
-
-/* --- NOTIFICATION POPUP --- */
-/* --- ENHANCED NOTIFICATION POPUP --- */
 .notification-popup {
     display: none;
     position: absolute;
-    top: 60px; /* Spacing from top bar */
+    top: 60px;
     right: 0;
     width: 360px;
     background: #ffffff;
     border-radius: 16px;
-    /* Soft, modern shadow */
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
     z-index: 5000;
     border: 1px solid #f0f0f0;
     overflow: hidden;
-    /* Entrance animation */
     animation: fadeInDown 0.2s ease-out;
 }
 
@@ -761,7 +743,6 @@ display: flex;
     overflow-y: auto;
 }
 
-/* Individual Notification Item */
 .notification-item {
     display: flex;
     flex-direction: column;
@@ -772,13 +753,10 @@ display: flex;
     background: #ffffff;
 }
 
-.notification-item:hover {
-    background: #f9f7ff; /* Very light purple tint */
-}
+.notification-item:hover { background: #f9f7ff; }
 
-/* Font styles for the message parts */
 .notification-item .note-title {
-    color: #5a32a8; /* MMU Purple */
+    color: #5a32a8;
     font-size: 14px;
     font-weight: 700;
     margin-bottom: 4px;
@@ -802,31 +780,11 @@ display: flex;
     text-transform: uppercase;
 }
 
-/* Empty State */
-/* --- YOUR CODE (Notifications) --- */
-
 .empty-notif {
     padding: 40px 20px;
     text-align: center;
     color: #999;
     font-size: 13px;
-} /* <--- MAKE SURE THIS BRACKET IS HERE! */
-
-/* --- FRIEND'S CODE (Buttons) --- */
-
-/* 4. Rating Button */
-.btn-rate {
-    flex: 1;
-    text-align: center;
-    background-color: #ff9800; 
-    color: white;
-    border: none;
-    font-size: 12px;
-    padding: 10px;
-    border-radius: 8px;
-    text-decoration: none;
-    font-weight: bold;
-    transition: 0.2s;
 }
 
 .btn-rate:hover {
@@ -865,7 +823,6 @@ display: flex;
 .form-subtitle {
     color: #7b728c;               /* Muted slate-purple text */
     margin-bottom: 25px;
-    font-size: 14px;
 }
 
 .form-group {
@@ -1018,7 +975,7 @@ display: flex;
 
 /* Styling for the Dashboard/Marketplace alerts */
 .flash-alert {
-    background-color: #e8f5e9; /* Light green for success */
+    background-color: #e8f5e9;
     color: #2e7d32;
     padding: 12px 20px;
     border-radius: 12px;
@@ -1028,14 +985,10 @@ display: flex;
     text-align: center;
 }
 
-/* Styling specifically for the Login page errors */
-.login-flash-container {
-    width: 100%;
-    margin-bottom: 15px;
-}
+.login-flash-container { width: 100%; margin-bottom: 15px; }
 
 .login-error-msg {
-    background-color: #ffebee; /* Light red */
+    background-color: #ffebee;
     color: #d32f2f;
     padding: 10px;
     border-radius: 8px;
@@ -1045,7 +998,7 @@ display: flex;
     border: 1px solid #ffcdd2;
 }
 
-/* --- 3-Dot Options Menu --- */
+/* --- 17. 3-DOT OPTIONS MENU --- */
 .card-options {
     position: absolute;
     top: 15px;
@@ -1065,13 +1018,10 @@ display: flex;
     line-height: 1;
 }
 
-.options-trigger:hover {
-    background: #f0f0f0;
-    color: #5a32a8; /* MMU Purple */
-}
+.options-trigger:hover { background: #f0f0f0; color: #5a32a8; }
 
 .options-dropdown {
-    display: none; /* Hidden by default */
+    display: none;
     position: absolute;
     right: 0;
     top: 40px;
@@ -1093,31 +1043,20 @@ display: flex;
     transition: background 0.2s;
 }
 
-.options-dropdown a:hover {
-    background: #f8f7ff;
-    color: #5a32a8;
-}
+.options-dropdown a:hover { background: #f8f7ff; color: #5a32a8; }
+.options-dropdown .delete-option { color: #d32f2f; border-top: 1px solid #f5f5f5; }
+.options-dropdown .delete-option:hover { background: #ffebee; color: #c62828; }
 
-.options-dropdown .delete-option {
-    color: #d32f2f;
-    border-top: 1px solid #f5f5f5;
-}
-
-.options-dropdown .delete-option:hover {
-    background: #ffebee;
-    color: #c62828;
-}
-
-/* --- Custom Delete Modal Styles --- */
+/* --- 18. DELETE MODAL --- */
 .modal-overlay {
-    display: none; /* Hidden by default */
+    display: none;
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
-    z-index: 9999; /* Higher than sidebar/top-nav */
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
     justify-content: center;
     align-items: center;
 }
@@ -1138,27 +1077,10 @@ display: flex;
     to { transform: scale(1); opacity: 1; }
 }
 
-.modal-icon {
-    font-size: 50px;
-    margin-bottom: 15px;
-}
-
-.modal-content h3 {
-    font-size: 22px;
-    margin-bottom: 10px;
-    color: #333;
-}
-
-.modal-content p {
-    color: #666;
-    margin-bottom: 25px;
-    line-height: 1.5;
-}
-
-.modal-actions {
-    display: flex;
-    gap: 15px;
-}
+.modal-icon { font-size: 50px; margin-bottom: 15px; }
+.modal-content h3 { font-size: 22px; margin-bottom: 10px; color: #333; }
+.modal-content p { color: #666; margin-bottom: 25px; line-height: 1.5; }
+.modal-actions { display: flex; gap: 15px; }
 
 .btn-cancel-modal {
     flex: 1;
