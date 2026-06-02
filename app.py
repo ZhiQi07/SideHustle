@@ -23,9 +23,14 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(150), unique=True, nullable=False)
     username = db.Column(db.String(150), unique=True, nullable=False)
+    display_name = db.Column(db.String(150), nullable=True)
     password = db.Column(db.String(150), nullable=False)
     security_question = db.Column(db.String(200), nullable=False)
     security_answer = db.Column(db.String(200), nullable=False)
+    bio = db.Column(db.Text, default="No bio currently")
+    avatar = db.Column(db.String(200), nullable=True)
+    
+    # --- Shared & Your Features ---
     skills = db.Column(db.Text, default="No skills listed")
     is_admin = db.Column(db.Boolean, default=False)
     credit = db.Column(db.Float, default=0.0)
@@ -366,6 +371,62 @@ def update_password():
         return redirect(url_for('login'))
     return redirect(url_for('forgot_password'))
 
+@app.route('/profile')
+def profile():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    user = db.session.get(User, session['user_id'])
+    return render_template('profile.html', user=user)
+
+@app.route('/update_profile', methods=['POST'])
+def update_profile():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    user = db.session.get(User, session['user_id'])
+    field = request.form.get('field')
+    value = request.form.get('value')
+
+    if field == 'displayname':
+        user.display_name = value
+    elif field == 'username':
+        user.username = value
+    elif field == 'bio':
+        user.bio = value
+    elif field == 'skills':
+        user.skills = value
+    elif field == 'avatar':
+        file = request.files.get('avatar')
+        if file and file.filename != '':
+
+            upload_folder = os.path.join(basedir, 'static', 'uploads')
+            os.makedirs(upload_folder, exist_ok=True)
+            
+            filename = f"user_{user.id}_{file.filename}"
+            file.save(os.path.join(upload_folder, filename))
+            
+            user.avatar = filename
+        
+    elif field == 'remove_avatar':
+        user.avatar = None
+
+    db.session.commit()
+    return redirect(url_for('profile'))
+
+@app.route('/delete_account', methods=['POST'])
+def delete_account():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+        
+    user = db.session.get(User, session['user_id'])
+    if user:
+        db.session.delete(user)
+        db.session.commit()
+        
+    session.clear()
+    flash("Your account has been permanently deleted.")
+    return redirect(url_for('login'))
 
 @app.route('/marketplace')
 def marketplace():
