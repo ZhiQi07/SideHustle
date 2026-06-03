@@ -985,11 +985,25 @@ def completed_tasks():
 # =========================
 @socketio.on('join')
 def on_join(data):
-    task = db.session.get(Task, int(data['room']))
+    room_id = str(data['room'])
     user = db.session.get(User, session.get('user_id'))
-    if task and user_can_access_task_chat(task, user):
-        join_room(data['room'])
-        print(f"用户 {user.username} 加入了房间 {data['room']}")
+    
+    if not user:
+        return
+
+    # 💬 NEW: Handle real-time Private Messaging Room joins
+    if room_id.startswith("private_"):
+        # Security: Only let the user join if their username is part of the room string title
+        if user.username in room_id:
+            join_room(room_id)
+            print(f"🔒 User {user.username} successfully entered private secure room: {room_id}")
+            
+    # 👥 Handle your teammate's existing Task Group Chat Room joins
+    else:
+        task = db.session.get(Task, int(room_id))
+        if task and user_can_access_task_chat(task, user):
+            join_room(room_id)
+            print(f"👥 User {user.username} entered task group room: {room_id}")
 
 
 @socketio.on('send_message')
