@@ -1,56 +1,55 @@
 {% extends "base.html" %}
-
 {% block content %}
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-
-<div class="container" style="padding: 20px;">
-    <a href="{{ url_for('my_task') }}" class="back-link">← Back to My Tasks</a>
+<div class="container applicant-review-container" style="max-width: 750px; padding: 20px 0;"> <a href="{{ url_for('my_task') }}" class="back-link">← Back to My Tasks</a>
     
-    <h1 style="margin-top: 20px;">Review Applicants</h1>
-    <p style="color: #666; margin-bottom: 30px;">Task: <strong>{{ task.title }}</strong></p>
+    <h1 class="review-header-title" style="font-size: 26px; margin-bottom: 5px;">Review Applicants</h1>
+    <p class="review-subtitle-meta" style="font-size: 14px; margin-bottom: 25px;">Task Campaign: <strong>{{ task.title }}</strong></p>
 
     {% if not apps %}
-        <div class="card" style="text-align: center; padding: 50px;">
-            <p>No one has applied for this task yet :P </p>
+        <div class="applicant-card" style="text-align: center; padding: 50px; justify-content: center;">
+            <p style="color: #7b728c; font-size: 14px;">😴 No entries recorded. No one has applied for this task yet.</p>
         </div>
     {% else %}
-        <div style="display: flex; flex-direction: column; gap: 20px;">
-            {% for app in apps %}
-            <div class="card" style="min-height: auto; padding: 20px;">
-                
-                <!-- 1. Header: Profile and Status -->
-                <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
-                    <div class="profile-circle" style="background: #5a32a8; width: 40px; height: 40px; border-radius: 50%;"></div>
-                    <div>
-                        <h3 style="margin: 0;">{{ app.applicant_username }}</h3>
-                        <span style="font-size: 12px; color: {% if app.status == 'Rejected' %}#d32f2f{% elif app.status == 'Hired' %}#2e7d32{% else %}#888{% endif %};">
-                            Status: <strong>{{ app.status }}</strong>
-                        </span>
+        <div style="display: flex; flex-direction: column; gap: 20px;"> {% for app in apps %}
+            <div class="applicant-card" style="padding: 30px; border-radius: 20px; gap: 18px;"> <div class="applicant-profile-row" style="padding-bottom: 15px; margin-bottom: 0;">
+                    <div class="applicant-meta-wrapper" style="gap: 15px;">
+                        <div class="applicant-avatar-sphere" style="width: 46px; height: 46px;"></div>
+                        <div class="applicant-title-info">
+                            <h3 style="font-size: 18px !important; margin-bottom: 4px;">{{ app.applicant_username }}</h3>
+                            <span class="status-pill 
+                                {% if app.status == 'Rejected' %}status-rejected
+                                {% elif app.status == 'Hired' %}status-hired
+                                {% else %}status-pending{% endif %}" style="padding: 5px 12px; font-size: 11px;">
+                                {{ app.status }}
+                            </span>
+                        </div>
                     </div>
                 </div>
 
-                <!-- 2. Content: Intro and Reason -->
-                <div style="background: #f8f9fa; padding: 15px; border-radius: 12px; margin-bottom: 10px;">
-                    <strong>Introduction:</strong>
-                    <p style="font-size: 14px; margin-top: 5px; line-height: 1.5;">{{ app.intro }}</p>
+                <div class="response-block" style="padding: 16px; border-radius: 12px;">
+                    <strong>Introduction</strong>
+                    <p style="font-size: 14px; margin-top: 4px;">{{ app.intro if app.intro else 'No introduction provided.' }}</p>
                 </div>
 
-                <div style="background: #f8f9fa; padding: 15px; border-radius: 12px; margin-bottom: 20px;">
-                    <strong>Why I'm a good fit:</strong>
-                    <p style="font-size: 14px; margin-top: 5px; line-height: 1.5;">{{ app.reason }}</p>
+                <div class="response-block" style="padding: 16px; border-radius: 12px;">
+                    <strong>Why I'm a good fit</strong>
+                    <p style="font-size: 14px; margin-top: 4px;">{{ app.reason if app.reason else 'No justification provided.' }}</p>
                 </div>
 
-                <!-- 3. Actions: Buttons -->
-                {# Only show buttons if the applicant hasn't been hired or rejected yet #}
-                {% if app.status == 'Pending' %}
-                <div style="display: flex; justify-content: flex-end; gap: 12px;">
-                    <a href="{{ url_for('reject_applicant', app_id=app.id) }}" class="btn-reject">Reject User</a>
-                    <a href="{{ url_for('hire_applicant', app_id=app.id) }}" class="btn-hire">Hire User</a>
-                </div>
-                {% endif %}
+                <div class="applicant-actions-wrapper" style="display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-top: 5px;">
+                    
+                    <!-- FIXED: Stripped out conflicting inline color and text-decoration values -->
+                    <a href="{{ url_for('private_chat', username=app.applicant_username) }}" class="btn-message-pm" style="margin-right: auto;">
+                    Private Message {{ app.applicant_username }}
+                    </a>
 
-            </div> <!-- END OF CARD -->
-            {% endfor %}
+                    {% if app.status == 'Pending' %}
+                        <a href="{{ url_for('reject_applicant', app_id=app.id) }}" class="btn-reject" style="padding: 10px 22px; font-size: 13px;">Reject User</a>
+                        <a href="{{ url_for('hire_applicant', app_id=app.id) }}" class="btn-hire" style="padding: 10px 22px; font-size: 13px;">Hire User</a>
+                    {% endif %}
+                </div>
+
+            </div> {% endfor %}
         </div>
     {% endif %}
 </div>

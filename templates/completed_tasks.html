@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Completed Tasks</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+    <style>
+        .history-card {
+            background: #d9f0f9;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
+            max-width: 100%;
+            border: 1px solid #e5eaeb;
+        }
+        .task-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 25px;
+            background: #fdfdfd;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            border: 1px solid #00668b;
+        }
+        .task-left {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            max-width: 60%;
+        }
+        .task-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .task-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+        .status-badge {
+            background: #e8f7ef;
+            color: #16765b;
+            font-size: 11px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+        .category-badge {
+            background: #f3f4f6;
+            color: #4b5563;
+            font-size: 11px;
+            padding: 3px 10px;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+        .task-desc {
+            font-size: 13px;
+            color: #6b7280;
+            line-height: 1.4;
+        }
+        .task-right {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 6px;
+            font-size: 13px;
+            color: #6b7280;
+            text-align: right;
+        }
+        .client-info strong {
+            color: #374151;
+        }
+        .collaborators {
+            font-size: 12px;
+            color: #0f2961;
+            background: #eff6ff;
+            padding: 4px 10px;
+            border-radius: 6px;
+            display: inline-block;
+            margin-top: 2px;
+            font-weight: 500;
+        }
+        .btn-back {
+            text-decoration: none;
+            color: #000000;
+            font-weight: 600;
+            border: 1px solid #002989;
+            padding: 10px 25px;
+            border-radius: 10px;
+            transition: 0.2s;
+            font-size: 14px;
+        }
+        
+    </style>
+</head>
+<body>
+    <div class="main-layout">
+        <div class="sidebar">
+            <div class="sidebar-top">
+                <h2>SideHustle</h2>
+                <div class="sidebar-menu">
+                    <a href="{{ url_for('marketplace') }}">🏠 Marketplace</a>
+                    <a href="{{ url_for('dashboard') }}" class="active">📊 Dashboard</a>
+                    <a href="{{ url_for('my_task') }}">📋 My Task</a>
+                    <a href="#">👤 Profile</a>
+                </div>
+            </div>
+            <div class="sidebar-bottom">
+                <a href="#" class="menu-item">❓ Help</a>
+            </div>
+        </div>
+
+        <div class="content-wrapper">
+            <header class="top-nav">
+                <div class="nav-icons">
+                    <span>🔔</span>
+                    <div class="profile-circle"></div>
+                </div>
+            </header>
+
+            <main style="padding: 40px 30px;">
+                <div style="margin-bottom: 30px;">
+                    <h1 style="font-size: 24px; color: #1a1a1a;">Completed Tasks</h1>
+                    <p style="color: #666;">Track all your successful collaborations and finished jobs.</p>
+                </div>
+
+                <div style="display: flex; gap: 20px; margin-bottom: 30px;">
+                    <div style="background: #ffffff; border-radius: 20px; padding: 20px 30px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04); flex: 1; border: 1px solid #e5e7eb;">
+                        <p style="color: #6b7280; font-size: 14px; margin-bottom: 5px;">Total Completed</p>
+                        <h3 style="font-size: 24px; color: #0b2b70; font-weight: 700;">{{ tasks|length }} Tasks</h3>
+                    </div>
+                </div>
+
+                <div class="history-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                        <h2 style="font-size: 18px; color: #1f2937; font-weight: 600;">Task History</h2>
+                    </div>
+
+                    <div class="history-list">
+                        {% for task in tasks %}
+                        <div class="task-item">
+                            <div class="task-left">
+                                <div class="task-header">
+                                    <span class="task-title">{{ task.title }}</span>
+                                    <span class="status-badge">Done</span>
+                                    <span class="category-badge">{{ task.category }}</span>
+                                </div>
+                                {% if task.description %}
+                                <div class="task-desc">
+                                    {{ task.description }}
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="task-right">
+                                <span class="client-info">Client: <strong>@{{ task.user }}</strong></span>
+
+                                {% if task.finish_with_usernames %}
+                                <span class="collaborators">
+                                    Finish with:
+                                    {% for username in task.finish_with_usernames %}
+                                        @{{ username }}{% if not loop.last %}, {% endif %}
+                                    {% endfor %}
+                                </span>
+                                {% endif %}
+
+                                {% if task.completed_time %}
+                                <span class="task-time">
+                                    📆 {{ task.completed_time }}
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% else %}
+                        <div style="text-align: center; padding: 40px; color: #9ca3af;">
+                            <p>No completed tasks found in your archive yet.</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <div style="text-align: right; margin-top: 25px;">
+                        <a href="{{ url_for('dashboard') }}" class="btn-back">
+                            Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+</body>
+</html>

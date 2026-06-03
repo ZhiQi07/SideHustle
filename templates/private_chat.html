@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container" style="max-width: 600px; margin: 0 auto; padding: 20px 0;">
+    <a href="{{ url_for('private_inbox') }}" class="back-link">← Back to Inbox</a>
+    
+    <div class="card" style="margin-top: 20px; min-height: 450px; background: white; border-radius: 25px; border: 1px solid #eae6f0; padding: 25px; display: flex; flex-direction: column;">
+        <div style="display: flex; align-items: center; gap: 12px; padding-bottom: 15px; border-bottom: 1px solid #f1ecf7; margin-bottom: 20px;">
+            <div style="width: 35px; height: 35px; background: linear-gradient(135deg, #5a32a8, #8c6cd4); border-radius: 50%;"></div>
+            <h2 style="font-size: 18px; color: #1e1233; margin: 0;">{{ target_user.username }}</h2>
+        </div>
+        
+        <!-- Chat History Window Panel -->
+        <div id="private-msg-box" style="flex-grow: 1; overflow-y: auto; max-height: 300px; display: flex; flex-direction: column; gap: 12px; padding-right: 5px; margin-bottom: 20px;">
+            {% for msg in history %}
+                <div style="max-width: 75%; padding: 12px 16px; border-radius: 16px; font-size: 14px; line-height: 1.4;
+                    {% if msg.sender_username == user.username %}
+                        background-color: #5a32a8; color: white; align-self: flex-end; border-bottom-right-radius: 4px;
+                    {% else %}
+                        background-color: #f1ecf7; color: #2d263b; align-self: flex-start; border-bottom-left-radius: 4px;
+                    {% endif %}">
+                    {{ msg.content }}
+                </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Messaging Submission Input Form Section -->
+        <form method="POST" style="display: flex; gap: 10px; margin-top: auto;">
+            <input type="text" name="content" placeholder="Type a private message..." autocomplete="off" required
+                   style="flex-grow: 1; padding: 14px; border: 1px solid #eae6f0; border-radius: 12px; outline: none; background-color: #fdfcff; font-size: 14px;">
+            <button type="submit" class="btn-primary" style="margin-top: 0; width: auto; padding: 0 25px; border-radius: 12px; background-color: #5a32a8;">Send</button>
+        </form>
+    </div>
+</div>
+
+
+    <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
+    <script>
+        const msgBox = document.getElementById('private-msg-box');
+        
+        // 1. Keep chat window auto-scrolled to the newest messages
+        msgBox.scrollTop = msgBox.scrollHeight;
+
+        // 2. Initialize the real-time WebSocket connection
+        const socket = io();
+        const currentUsername = "{{ user.username }}";
+        const targetUsername = "{{ target_user.username }}";
+
+        // Create a unique, alphabetically sorted room string matching your backend logic
+        const usernames = [currentUsername, targetUsername].sort();
+        const roomName = `private_${usernames[0]}_${usernames[1]}`;
+
+        // 3. Join the specific private messaging room upon page connect
+        socket.on('connect', () => {
+            socket.emit('join', { room: roomName, username: currentUsername });
+        });
+
+        // 4. LISTEN FOR REAL-TIME INCOMING MESSAGES!
+        socket.on('receive_private_message', function(data) {
+            // Create a brand new message bubble container dynamically
+            const newBubble = document.createElement('div');
+            
+            // Set basic structure matching your current theme proportions
+            newBubble.style.maxWidth = "75%";
+            newBubble.style.padding = "12px 16px";
+            newBubble.style.borderRadius = "16px";
+            newBubble.style.fontSize = "14px";
+            newBubble.style.lineHeight = "1.4";
+            newBubble.innerText = data.message;
+
+            // Apply different accent colors depending on who sent the message
+            if (data.sender === currentUsername) {
+                newBubble.style.backgroundColor = "#5a32a8";
+                newBubble.style.color = "white";
+                newBubble.style.alignSelf = "flex-end";
+                newBubble.style.borderBottomRightRadius = "4px";
+            } else {
+                newBubble.style.backgroundColor = "#f1ecf7";
+                newBubble.style.color = "#2d263b";
+                newBubble.style.alignSelf = "flex-start";
+                newBubble.style.borderBottomLeftRadius = "4px";
+            }
+
+            // Push the new message into the scroll container box
+            msgBox.appendChild(newBubble);
+            
+            // Instantly smooth scroll down to show the newly arrived bubble frame
+            msgBox.scrollTop = msgBox.scrollHeight;
+        });
+    </script>
+{% endblock %}
+

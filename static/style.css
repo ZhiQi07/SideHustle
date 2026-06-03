@@ -1,15 +1,15 @@
 /* --- 1. THE "MAGIC" RESET --- */
 * {
-    box-sizing: border-box; /* Keeps padding and buttons INSIDE the boxes */
+    box-sizing: border-box;
     margin: 0;
     padding: 0;
 }
 
 body {
     font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    background-color: #f4f7f9;
-    color: #333;
-    overflow-x: hidden; /* Prevents horizontal scrolling */
+    background-color: #f7f6fa; /* Subtle purple tint instead of sterile blue-gray */
+    color: #2d263b;            /* Darker, rich plum text instead of raw #333 */
+    overflow-x: hidden;
 }
 
 /* --- 2. LAYOUT: SIDEBAR & TOP NAV --- */
@@ -29,7 +29,7 @@ body {
     flex-direction: column;
     justify-content: space-between;
     padding: 30px 20px;
-    z-index: 3000; /* Sidebar stays on top of everything */
+    z-index: 3000;
 }
 
 .sidebar h2 {
@@ -55,14 +55,13 @@ body {
     color: #5a32a8;
 }
 
-/* THE PURPLE TOP BAR */
 .top-nav {
     position: fixed;
-    top: 0;           /* Absolute top */
-    left: 240px;      /* Starts after sidebar */
+    top: 0;
+    left: 240px;
     right: 0;
     height: 80px;
-    background-color: #5a32a8; /* MMU Purple */
+    background-color: #5a32a8;
     display: flex;
     justify-content: flex-end;
     align-items: center;
@@ -106,69 +105,132 @@ body {
     justify-content: center;
 }
 
-/* --- 3. MAIN CONTENT (SPACIOUS) --- */
+/* --- 3. MAIN CONTENT --- */
 .content {
     margin-left: 240px; 
     margin-top: 80px;  
-    padding: 40px 30px; /* Reduced left/right padding from 60px to 30px */
+    padding: 40px 40px; /* Enhanced internal whitespace */
     width: calc(100% - 240px);
     box-sizing: border-box;
 }
-/* --- 4. MARKETPLACE CARDS (BIGGER & WIDER) --- */
 /* --- 4. MARKETPLACE CARDS (3 Tasks Per Row) --- */
 .task-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr); /* Forces exactly 3 columns */
+    grid-template-columns: repeat(3, 1fr);
     gap: 25px;
     margin-top: 20px;
     width: 100%;
-    max-width: 1100px; /* This prevents the cards from becoming giant rectangles */
+    max-width: 1100px;
 }
 
 .card-link {
-  text-decoration: none;
-  color: inherit;
-  display: block;
-  flex: 1;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    flex: 1;
 }
 
 .card {
-    background: white;
-    border-radius: 25px;
-    padding: 30px;
-    border: 1px solid #eee;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+    background: #ffffff;
+    border-radius: 20px; /* More natural curvature */
+    padding: 24px;
+    border: 1px solid #eae6f0; /* Soft purple-gray border */
+    box-shadow: 0 4px 20px rgba(90, 50, 168, 0.03);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    
-    /* CHANGE THIS: Lower min-height makes it look more natural when wider */
-    min-height: 350px; 
+    min-height: 320px; 
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 .card:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+    transform: translateY(-5px);
+    box-shadow: 0 12px 30px rgba(90, 50, 168, 0.08);
+    border-color: #dcd3ec;
+}
+/* --- PREMIUM CARD TITLE FONT FIX --- */
+.card h3 {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif !important;
+    font-size: 19px !important;       /* Slightly larger and easier to read */
+    font-weight: 600 !important;       /* Clean semibold, not too blocky */
+    color: #1e1233 !important;         /* Premium deep plum purple text */
+    line-height: 1.4 !important;
+    letter-spacing: -0.3px !important; /* Slightly tighter modern tech look */
+    text-transform: capitalize;        /* Automatically makes it look neat (e.g., "Feed Cat") */
 }
 
-/* Tags & Labels */
+/* Target the RM Price Tag inside the card */
+.card span[style*="color: #2e7d32"] {
+    font-family: 'Segoe UI', Roboto, sans-serif;
+    font-size: 16px !important;/* Keeps it distinct but scaled comfortably with the title */
+    font-weight: 700 !important;/* Bold enough to catch the eye, but scaled down */
+    color: #2e7d32 !important;  /* Retains your custom green accent */
+    letter-spacing: -0.1px;
+}
+/* Base Tag Setup */
 .tag {
     display: inline-block;
     padding: 6px 14px;
-    border-radius: 20px;
-    font-size: 13px;
-    font-weight: bold;
-    background: #f0f2f5;
+    border-radius: 8px; /* Sharp modern look instead of basic pills */
+    font-size: 12px;
+    font-weight: 600;
+    background: #f1ecf7;
+    color: #5a32a8;
     margin-right: 8px;
 }
 
+/* --- NEGOTIABLE OPTION ACCENT INDICATOR --- */
+.tag-negotiable {
+    background-color: #e8eaf6 !important; /* Elegant light soft indigo tint */
+    color: #3f51b5 !important;            /* Formal Indigo anchor text */
+    border: 1px solid #c5cae9;
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    display: inline-flex;
+    align-items: center;
+    font-weight: 700;
+}
+
+/* --- CATEGORY-SPECIFIC LIGHT LIGHT BACKGROUNDS --- */
+.tag-moving {
+    background-color: #fff3e0 !important; /* Soft Pastel Orange */
+    color: #e65100 !important;
+    border: 1px solid #ffe0b2;
+}
+
+.tag-food {
+    background-color: #ffebee !important; /* Soft Pastel Red/Pink */
+    color: #c62828 !important;
+    border: 1px solid #ffcdcf;
+}
+
+.tag-academic {
+    background-color: #e3f2fd !important; /* Soft Pastel Blue */
+    color: #0d47a1 !important;
+    border: 1px solid #bbdefb;
+}
+
+.tag-creative {
+    background-color: #f3e5f5 !important; /* Soft Pastel Purple */
+    color: #4a148c !important;
+    border: 1px solid #e1bee7;
+}
+
+.tag-technical {
+    background-color: #e0f2f1 !important; /* Soft Pastel Teal */
+    color: #004d40 !important;
+    border: 1px solid #b2dfdb;
+}
 .urgent-tag { background: #ffebee; color: #c62828; }
 .available-tag { background: #e8f5e9; color: #2e7d32; }
 
 /* --- 5. BUTTONS --- */
 .btn-primary {
     display: block;
-    width: 100%;             /* Stays perfectly INSIDE the box */
+    width: 100%;
     background: #5a32a8;
     color: white;
     padding: 16px;
@@ -182,11 +244,8 @@ body {
     transition: 0.2s;
 }
 
-.btn-primary:hover {
-    background: #452682;
-}
+.btn-primary:hover { background: #452682; }
 
-/* Floating Create Button */
 .fab {
     position: fixed;
     bottom: 40px;
@@ -201,6 +260,98 @@ body {
     z-index: 4000;
 }
 
+.btn-outline {
+    text-decoration: none;
+    padding: 8px 15px;
+    border: 1.5px solid #5a32a8;
+    color: #5a32a8;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.btn-hire {
+    text-decoration: none;
+    padding: 10px 25px;
+    background-color: #5a32a8;
+    color: white;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 14px;
+    transition: 0.3s;
+}
+
+.btn-hire:hover {
+    background-color: #452682;
+    transform: translateY(-2px);
+}
+
+.btn-reject {
+    text-decoration: none;
+    padding: 10px 25px;
+    background-color: transparent;
+    color: #d32f2f;
+    border: 1.5px solid #d32f2f;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 14px;
+    transition: 0.3s;
+}
+
+.btn-reject:hover {
+    background-color: #ffebee;
+    transform: translateY(-2px);
+}
+
+.btn-rate {
+    flex: 1;
+    text-align: center;
+    background-color: #ff9800;
+    color: white;
+    border: none;
+    font-size: 12px;
+    padding: 10px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: 0.2s;
+}
+
+.btn-rate:hover { background-color: #e68a00; }
+
+.btn-msg-half {
+    flex: 1;
+    text-align: center;
+    background-color: #8e94a5;
+    color: white;
+    font-size: 12px;
+    padding: 10px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: bold;
+    position: relative;
+}
+
+.btn-cancel {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f8f9fa;
+    color: #666;
+    border: 1px solid #ddd;
+    padding: 16px;
+    border-radius: 15px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: 0.2s;
+}
+
+.btn-cancel:hover {
+    background-color: #eee;
+    color: #333;
+}
+
 /* --- 6. CENTERED PAGES (POST & APPLY) --- */
 .center-screen {
     display: flex;
@@ -211,14 +362,22 @@ body {
     background: #f0f2f5;
     padding: 20px;
 }
+.center-form-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    min-height: calc(100vh - 120px); /* Centers form vertically on dashboard canvas */
+    padding: 20px 0;
+}
 
 .form-card {
     background: white;
-    padding: 50px;
+    padding: 45px 50px;
     border-radius: 35px;
-    box-shadow: 0 15px 40px rgba(0,0,0,0.08);
+    box-shadow: 0 15px 40px rgba(90, 50, 168, 0.04); /* Subtly tinted theme shadow */
     width: 100%;
-    max-width: 600px; /* Focused form width */
+    max-width: 620px; /* Formal structured width constraint */
 }
 
 .back-link {
@@ -228,11 +387,8 @@ body {
     margin-bottom: 20px;
 }
 
-/* --- 7. DETAIL PAGE SPECIFICS --- */
-.detail-layout {
-    display: flex;
-    gap: 40px;
-}
+/* --- 7. DETAIL PAGE --- */
+.detail-layout { display: flex; gap: 40px; }
 
 .blue-box {
     background: #e9eff6;
@@ -248,26 +404,25 @@ body {
     text-align: center;
     display: flex;
     flex-direction: column;
-    align-items: center; /* Centers budget and apply button */
+    align-items: center;
 }
 
-/* --- SEARCH BAR STYLES --- */
+/* --- 8. SEARCH BAR --- */
 .search-container {
-    margin: 20px 0 50px 0; /* More space below the whole section */
+    margin: 20px 0 50px 0;
     display: flex;
-    flex-direction: column; /* Stacks Search on top of Chips */
-    gap: 25px; /* Space between search bar and chips */
+    flex-direction: column;
+    gap: 25px;
     width: 100%;
 }
 
-/* The Search Bar Row */
 .search-form {
     display: flex;
     gap: 15px;
     background: white;
     padding: 10px;
-    border-radius: 50px; /* Makes the whole row rounded */
-    box-shadow: 0 4px 15px rgba(0,0,0,0.05); /* Subtle shadow for 'natural' look */
+    border-radius: 50px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
     border: 1px solid #eee;
 }
 
@@ -302,7 +457,6 @@ body {
     transform: scale(1.05);
 }
 
-/* The Dropdown inside the search row */
 .nav-select {
     border: none;
     background: #f8f9fa;
@@ -313,39 +467,110 @@ body {
     outline: none;
 }
 
-/* The Category Chips Row */
 .category-chips {
     display: flex;
-    gap: 15px; /* Space between each chip */
-    flex-wrap: wrap; /* Prevents them from squishing */
+    gap: 12px;               /* Clean, uniform spacing between your boxes */
+    width: 100%;             /* Stretches the row container to match the search bar width */
+    align-items: center;
+    justify-content: space-between;
+    
+    /* Responsive behaviors */
+    flex-wrap: nowrap;       
+    overflow-x: visible;     /* Disables the horizontal scrollbar on full screen */
 }
 
-/* Individual Chip - "Longer Shape" */
+/* Individual Chip - Styled to stretch and grow perfectly */
 .chip {
     text-decoration: none;
-    padding: 12px 35px; /* Increased side padding for 'longer' shape */
+    padding: 12px 10px;      /* Vertical padding stays comfy, horizontal padding is minimal since flex handles the width */
     border-radius: 50px;
     background-color: white;
     color: #666;
-    font-weight: 500;
+    font-weight: 600;        /* Slightly bolder text for better readability as it stretches */
     border: 1.5px solid #eee;
     transition: all 0.3s ease;
-    white-space: nowrap; /* Keeps text on one line */
+    white-space: nowrap;     
+    
+    /* THE MAGIC SQUEEZE LINE: */
+    flex: 1;                 /* Forces every single chip to grow equally and fill the row completely */
+    text-align: center;      /* Keeps your category labels perfectly centered inside their longer boxes */
+    font-size: 14px;
+}
+
+/* --- Responsive adjustments for split screen / half screen --- */
+@media (max-width: 1200px) {
+    .category-chips {
+        flex-wrap: wrap;     /* Drops them neatly into rows if you drag the window smaller */
+    }
+    .chip {
+        flex: unset;         /* Stops stretching when screen space is tight so they don't break */
+        padding: 10px 25px;  /* Falls back to default padded look on smaller windows */
+    }
 }
 
 .chip:hover {
     background-color: #f0f0f0;
-    transform: translateY(-2px); /* Slight lift for feel */
+    transform: translateY(-2px);
 }
 
 /* Active Chip - Bold and clear */
+/* Default active style for "All Tasks" (Stays MMU Purple) */
 .chip.active {
-    background-color: #5a32a8; /* MMU Purple */
-    color: white;
-    border-color: #5a32a8;
-    box-shadow: 0 4px 10px rgba(90, 50, 168, 0.2);
+    background-color: #5a32a8 !important;
+    color: white !important;
+    border-color: #5a32a8 !important;
+    box-shadow: 0 4px 12px rgba(90, 50, 168, 0.25);
 }
 
+/* Custom Active Colors for each individual chip */
+.chip-moving.active {
+    background-color: #fff3e0 !important; /* Orange Tint */
+    color: #e65100 !important;
+    border-color: #ffe0b2 !important;
+    box-shadow: 0 4px 12px rgba(230, 81, 0, 0.2);
+}
+
+.chip-food.active {
+    background-color: #ffebee !important; /* Pink/Red Tint */
+    color: #c62828 !important;
+    border-color: #ffcdcf !important;
+    box-shadow: 0 4px 12px rgba(198, 40, 40, 0.2);
+}
+
+.chip-academic.active {
+    background-color: #e3f2fd !important; /* Blue Tint */
+    color: #0d47a1 !important;
+    border-color: #bbdefb !important;
+    box-shadow: 0 4px 12px rgba(13, 71, 161, 0.2);
+}
+
+.chip-creative.active {
+    background-color: #f3e5f5 !important; /* Purple Tint */
+    color: #4a148c !important;
+    border-color: #e1bee7 !important;
+    box-shadow: 0 4px 12px rgba(74, 20, 140, 0.2);
+}
+
+.chip-technical.active {
+    background-color: #e0f2f1 !important; /* Teal Tint */
+    color: #004d40 !important;
+    border-color: #b2dfdb !important;
+    box-shadow: 0 4px 12px rgba(0, 77, 64, 0.2);
+}
+
+.tag-others {
+    background-color: #f6f0fa !important; /* Soft light lilac background (not gray!) */
+    color: #6a5280 !important;            /* Rich deep plum/purple text */
+    border: 1px solid #e3d2f0;            /* Delicate lavender border line */
+}
+
+/* 2. Search Filter Chip Active Color Profile */
+.chip-others.active {
+    background-color: #f6f0fa !important; /* Matches the tag background */
+    color: #6a5280 !important;            /* Matches the text */
+    border-color: #e3d2f0 !important;
+    box-shadow: 0 4px 12px rgba(106, 82, 128, 0.15); /* Soft matching purple shadow glow */
+}
 /* --- MY TASKS DASHBOARD --- */
 
 /* 1. Tab Buttons at the top */
@@ -366,21 +591,15 @@ body {
 }
 
 .tab-btn.active {
-    background: #5a32a8; /* Dark blue from your drawing */
+    background: #5a32a8;
     color: white;
 }
 
-/* 2. Task Card Enhancements */
 .card-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 15px;
-}
-
-.status-text {
-    font-size: 12px;
-    color: #888;
 }
 
 .card-footer {
@@ -389,13 +608,12 @@ body {
     align-items: center;
     margin-top: auto;
     font-size: 14px;
+    position: relative;
 }
 
-/* 3. Progress Bar based on your drawing */
-.progress-container {
-    margin-top: 20px;
-}
+.status-text { font-size: 12px; color: #888; }
 
+/* --- 10. PROGRESS BAR --- */
 .progress-bar {
     width: 100%;
     height: 10px;
@@ -406,91 +624,10 @@ body {
 
 .progress-fill {
     height: 100%;
-    background: #5a32a8; /* MMU Purple */
+    background: #5a32a8;
     border-radius: 10px;
 }
 
-/* 4. Small buttons inside cards */
-.btn-outline {
-    text-decoration: none;
-    padding: 8px 15px;
-    border: 1.5px solid #5a32a8;
-    color: #5a32a8;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: bold;
-}
-
-.mini-profile {
-    width: 25px;
-    height: 25px;
-    background: #ccc;
-    border-radius: 50%;
-}
-
-.tag-in-progress {
-    font-size: 10px;
-    background: #e4d7ff;
-    color: #5a32a8;
-    padding: 4px 8px;
-    border-radius: 5px;
-    font-weight: bold;
-}
-
-/* Hire Button: Purple/Solid */
-.btn-hire {
-    text-decoration: none;
-    padding: 10px 25px;
-    background-color: #5a32a8; /* MMU Purple */
-    color: white;
-    border-radius: 20px;
-    font-weight: bold;
-    font-size: 14px;
-    transition: 0.3s;
-}
-
-.btn-hire:hover {
-    background-color: #452682;
-    transform: translateY(-2px);
-}
-
-/* Reject Button: Red/Outline */
-.btn-reject {
-    text-decoration: none;
-    padding: 10px 25px;
-    background-color: transparent;
-    color: #d32f2f; /* Red for warning */
-    border: 1.5px solid #d32f2f;
-    border-radius: 20px;
-    font-weight: bold;
-    font-size: 14px;
-    transition: 0.3s;
-}
-
-.btn-reject:hover {
-    background-color: #ffebee;
-    transform: translateY(-2px);
-}
-
-.hired-info-box {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 15px;
-    background: #f8f9fa;
-    padding: 10px;
-    border-radius: 15px;
-}
-
-/* Grouping the profile circle and name together */
-.user-meta {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 14px;
-}
-
-/* The "Project Progress" text row */
 .progress-header {
     display: flex;
     justify-content: space-between;
@@ -503,14 +640,7 @@ body {
     font-weight: bold;
 }
 
-/* A specific color for the Message button */
-.btn-message {
-    background-color: #8e9aaf !important; /* Soft blue-gray */
-    font-size: 14px;
-    padding: 12px;
-}
-
-/* Ensuring the profile is always a circle */
+/* --- 11. CARD COMPONENTS --- */
 .mini-profile {
     width: 30px;
     height: 30px;
@@ -519,37 +649,54 @@ body {
     flex-shrink: 0;
 }
 
-/* --- HIRED STATE LAYOUTS --- */
-.card-footer-hired {
-    margin-top: 20px;
-    border-top: 1px solid #eee;
-    padding-top: 15px;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 15px;
-    width: 100%;
+.tag-in-progress {
+    font-size: 10px;
+    background: #e4d7ff;
+    color: #5a32a8;
+    padding: 4px 8px;
+    border-radius: 5px;
+    font-weight: bold;
 }
 
-.applicant-stats {
+.hired-info-box {
     display: flex;
     align-items: center;
-    gap: 5px;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    background: #f8f9fa;
+    padding: 10px;
+    border-radius: 15px;
 }
 
-.full-width {
-    width: 100%;
+.user-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
 }
 
-.action-buttons-row {
-display: flex;
+.full-width { width: 100%; }
+
+.btn-flex-container {
+    display: flex;
     gap: 10px;
     width: 100%;
 }
 
-/* --- 8. UNREAD NOTIFICATION SYSTEM (NEW) --- */
+.action-buttons-row {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+}
 
-/* 1. 按钮上的数字红点 - 这里的 z-index 设为 10 确保在按钮文字上方 */
+.status-badge {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+/* --- 12. UNREAD / RED DOT SYSTEM --- */
 .unread-badge {
     position: absolute;
     top: -8px;
@@ -565,7 +712,6 @@ display: flex;
     z-index: 10;
 }
 
-/* 2. 侧边栏和 Tab 的小圆点 (无数字)[cite: 1] */
 .dot-small {
     display: inline-block;
     width: 8px;
@@ -577,42 +723,21 @@ display: flex;
     border: 1px solid white;
 }
 
-/* 3. 统一按钮组布局 - 确保 100% 进度时两个按钮并排[cite: 1] */
-.btn-flex-container {
-    display: flex;
-    gap: 10px;
-    width: 100%;
-}
+/* --- 13. NOTIFICATION POPUP --- */
+.notification-container { position: relative; }
 
-.action-btn-centered {
-    flex: 1;
-    text-align: center;
-    padding: 10px;
-}
-
-.status-badge {
-    padding: 6px 14px;
-    border-radius: 20px;
-    font-size: 13px;
-    font-weight: bold;
-}
-
-/* --- NOTIFICATION POPUP --- */
-/* --- ENHANCED NOTIFICATION POPUP --- */
 .notification-popup {
     display: none;
     position: absolute;
-    top: 60px; /* Spacing from top bar */
+    top: 60px;
     right: 0;
     width: 360px;
     background: #ffffff;
     border-radius: 16px;
-    /* Soft, modern shadow */
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
     z-index: 5000;
     border: 1px solid #f0f0f0;
     overflow: hidden;
-    /* Entrance animation */
     animation: fadeInDown 0.2s ease-out;
 }
 
@@ -636,7 +761,6 @@ display: flex;
     overflow-y: auto;
 }
 
-/* Individual Notification Item */
 .notification-item {
     display: flex;
     flex-direction: column;
@@ -647,13 +771,10 @@ display: flex;
     background: #ffffff;
 }
 
-.notification-item:hover {
-    background: #f9f7ff; /* Very light purple tint */
-}
+.notification-item:hover { background: #f9f7ff; }
 
-/* Font styles for the message parts */
 .notification-item .note-title {
-    color: #5a32a8; /* MMU Purple */
+    color: #5a32a8;
     font-size: 14px;
     font-weight: 700;
     margin-bottom: 4px;
@@ -677,31 +798,11 @@ display: flex;
     text-transform: uppercase;
 }
 
-/* Empty State */
-/* --- YOUR CODE (Notifications) --- */
-
 .empty-notif {
     padding: 40px 20px;
     text-align: center;
     color: #999;
     font-size: 13px;
-} /* <--- MAKE SURE THIS BRACKET IS HERE! */
-
-/* --- FRIEND'S CODE (Buttons) --- */
-
-/* 4. Rating Button */
-.btn-rate {
-    flex: 1;
-    text-align: center;
-    background-color: #ff9800; 
-    color: white;
-    border: none;
-    font-size: 12px;
-    padding: 10px;
-    border-radius: 8px;
-    text-decoration: none;
-    font-weight: bold;
-    transition: 0.2s;
 }
 
 .btn-rate:hover {
@@ -724,54 +825,64 @@ display: flex;
 
 /* --- 9. EDIT TASK & FORM EXTENSIONS --- */
 
-/* Specific container for the Edit page to match your padding logic */
 .edit-container {
     padding: 20px;
     width: 100%;
 }
 
-/* Subtitle for the form */
-.form-subtitle {
-    color: #666;
-    margin-bottom: 25px;
-    font-size: 14px;
+.form-card h2 {
+    font-family: 'Segoe UI', Roboto, sans-serif;
+    font-weight: 800;             /* Extra bold clean look */
+    letter-spacing: -0.5px;
+    color: #1e1233;               /* Deep rich custom dark slate */
+    margin-bottom: 5px;
 }
 
-/* Form Grouping for spacing */
+.form-subtitle {
+    color: #7b728c;               /* Muted slate-purple text */
+    margin-bottom: 25px;
+}
+
 .form-group {
     margin-bottom: 20px;
-    text-align: left; /* Ensures labels stay left even in centered cards */
+    text-align: left;
 }
 
+/* Updated Form Labels */
 .form-group label {
     display: block;
     margin-bottom: 8px;
-    font-weight: 600;
-    font-size: 14px;
-    color: #444;
+    font-weight: 700;             /* Clean bold tracking */
+    font-size: 13px;              /* Slightly smaller for modern form aesthetic */
+    text-transform: uppercase;    /* Looks incredibly neat above text fields */
+    letter-spacing: 0.5px;
+    color: #5a32a8;               /* Theme Purple Labels */
 }
 
-/* Styling inputs to match your 'MMU Purple' theme */
+/* Modern Input Box Styling */
 .form-group input[type="text"],
 .form-group input[type="number"],
 .form-group input[type="date"],
 .form-group select {
     width: 100%;
-    padding: 12px 15px;
-    border: 1px solid #ddd;
-    border-radius: 12px;
+    padding: 14px 16px;
+    border: 1px solid #eae6f0;    /* Changed from harsh #ddd to soft purple-tint border */
+    border-radius: 14px;
     font-size: 15px;
-    background-color: #fff;
+    font-family: inherit;
+    color: #2d263b;               /* Matching deep plum text */
+    background-color: #fdfcff;    /* Ultra-clean tinted paper background */
     outline: none;
-    transition: border-color 0.3s;
+    transition: all 0.3s ease;
 }
 
 .form-group input:focus, 
 .form-group select:focus {
     border-color: #5a32a8;
+    background-color: #ffffff;
+    box-shadow: 0 0 0 3px rgba(90, 50, 168, 0.1); /* Soft purple input glow focus */
 }
 
-/* For side-by-side inputs (Budget & Capacity) */
 .form-row {
     display: flex;
     gap: 15px;
@@ -781,20 +892,49 @@ display: flex;
     flex: 1;
 }
 
-/* Specific styling for the description area */
+.form-group input:disabled, 
+.form-group select:disabled {
+    background-color: #f5f4f8 !important;
+    color: #8c8599 !important;
+    border-color: #e1dde6 !important;
+    cursor: not-allowed;
+}
+
+.lock-notice {
+    font-size: 12px;
+    color: #c62828;
+    font-weight: 600;
+    margin-top: 6px;
+    display: block;
+}
+
+/* Beautifulized Description Box */
 .edit-textarea {
     width: 100%;
     height: 140px;
-    padding: 12px 15px;
-    border-radius: 12px;
-    border: 1px solid #ddd;
+    padding: 14px 16px;
+    border-radius: 14px;
+    border: 1px solid #eae6f0;
     font-family: inherit;
     font-size: 15px;
+    line-height: 1.6;
+    
+    /* THE COLOR FIXES: */
+    background-color: #fcfbfe;    /* Softer paper contrast */
+    color: #4a4257;               /* Balanced slate-purple body text (less harsh than pure black) */
+    
     resize: vertical;
     outline: none;
+    transition: all 0.3s ease;
 }
 
-/* Checkbox alignment */
+.edit-textarea:focus {
+    border-color: #5a32a8;
+    background-color: #ffffff;
+    color: #2d263b;               /* Contrast deepens when actively editing */
+    box-shadow: 0 0 0 3px rgba(90, 50, 168, 0.1);
+}
+
 .checkbox-group {
     display: flex;
     align-items: center;
@@ -802,49 +942,58 @@ display: flex;
     margin-top: 10px;
 }
 
+.checkbox-group label {
+    text-transform: none;         /* Keep check string natural casing */
+    font-weight: 500;
+    color: #2d263b;
+    font-size: 14px;
+    letter-spacing: normal;
+}
+
 .checkbox-group input[type="checkbox"] {
     width: 18px;
     height: 18px;
     cursor: pointer;
+    accent-color: #5a32a8;        /* System level purple checkbox tint mapping */
 }
 
-/* Footer actions for the form */
 .form-actions {
     margin-top: 35px;
     display: flex;
     gap: 15px;
 }
 
-/* Making the Save button more prominent */
 .form-actions .btn-primary {
-    margin-top: 0; /* Removing the default top margin from your global class */
+    margin-top: 0;
     flex: 2;
+    border-radius: 14px;
+    padding: 14px;
 }
 
-/* Neutral Cancel Button */
 .btn-cancel {
     flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: #f8f9fa;
-    color: #666;
-    border: 1px solid #ddd;
-    padding: 16px;
-    border-radius: 15px;
+    background-color: #ffffff;
+    color: #7b728c;
+    border: 1px solid #eae6f0;
+    padding: 14px;
+    border-radius: 14px;
     text-decoration: none;
-    font-weight: bold;
-    transition: 0.2s;
+    font-weight: 700;
+    transition: all 0.2s ease;
 }
 
 .btn-cancel:hover {
-    background-color: #eee;
-    color: #333;
+    background-color: #fff1f0;    /* Soft warm warning tint on cancel hover */
+    color: #d32f2f;
+    border-color: #ffcdcf;
 }
 
 /* Styling for the Dashboard/Marketplace alerts */
 .flash-alert {
-    background-color: #e8f5e9; /* Light green for success */
+    background-color: #e8f5e9;
     color: #2e7d32;
     padding: 12px 20px;
     border-radius: 12px;
@@ -854,14 +1003,10 @@ display: flex;
     text-align: center;
 }
 
-/* Styling specifically for the Login page errors */
-.login-flash-container {
-    width: 100%;
-    margin-bottom: 15px;
-}
+.login-flash-container { width: 100%; margin-bottom: 15px; }
 
 .login-error-msg {
-    background-color: #ffebee; /* Light red */
+    background-color: #ffebee;
     color: #d32f2f;
     padding: 10px;
     border-radius: 8px;
@@ -871,7 +1016,7 @@ display: flex;
     border: 1px solid #ffcdd2;
 }
 
-/* --- 3-Dot Options Menu --- */
+/* --- 17. 3-DOT OPTIONS MENU --- */
 .card-options {
     position: absolute;
     top: 15px;
@@ -891,13 +1036,10 @@ display: flex;
     line-height: 1;
 }
 
-.options-trigger:hover {
-    background: #f0f0f0;
-    color: #5a32a8; /* MMU Purple */
-}
+.options-trigger:hover { background: #f0f0f0; color: #5a32a8; }
 
 .options-dropdown {
-    display: none; /* Hidden by default */
+    display: none;
     position: absolute;
     right: 0;
     top: 40px;
@@ -919,31 +1061,20 @@ display: flex;
     transition: background 0.2s;
 }
 
-.options-dropdown a:hover {
-    background: #f8f7ff;
-    color: #5a32a8;
-}
+.options-dropdown a:hover { background: #f8f7ff; color: #5a32a8; }
+.options-dropdown .delete-option { color: #d32f2f; border-top: 1px solid #f5f5f5; }
+.options-dropdown .delete-option:hover { background: #ffebee; color: #c62828; }
 
-.options-dropdown .delete-option {
-    color: #d32f2f;
-    border-top: 1px solid #f5f5f5;
-}
-
-.options-dropdown .delete-option:hover {
-    background: #ffebee;
-    color: #c62828;
-}
-
-/* --- Custom Delete Modal Styles --- */
+/* --- 18. DELETE MODAL --- */
 .modal-overlay {
-    display: none; /* Hidden by default */
+    display: none;
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
-    z-index: 9999; /* Higher than sidebar/top-nav */
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
     justify-content: center;
     align-items: center;
 }
@@ -964,27 +1095,10 @@ display: flex;
     to { transform: scale(1); opacity: 1; }
 }
 
-.modal-icon {
-    font-size: 50px;
-    margin-bottom: 15px;
-}
-
-.modal-content h3 {
-    font-size: 22px;
-    margin-bottom: 10px;
-    color: #333;
-}
-
-.modal-content p {
-    color: #666;
-    margin-bottom: 25px;
-    line-height: 1.5;
-}
-
-.modal-actions {
-    display: flex;
-    gap: 15px;
-}
+.modal-icon { font-size: 50px; margin-bottom: 15px; }
+.modal-content h3 { font-size: 22px; margin-bottom: 10px; color: #333; }
+.modal-content p { color: #666; margin-bottom: 25px; line-height: 1.5; }
+.modal-actions { display: flex; gap: 15px; }
 
 .btn-cancel-modal {
     flex: 1;
@@ -1012,4 +1126,358 @@ display: flex;
 
 .btn-confirm-delete:hover {
     background: #b71c1c;
+}
+
+/* --- 10. PREMIUM DETAIL PAGE EXTENSIONS --- */
+.detail-grid-container {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 30px;
+    margin-top: 20px;
+    align-items: stretch; /* 💡 This forces both columns to be exactly the same height! */
+}
+
+.main-detail-panel {
+    background: #ffffff;
+    padding: 40px;
+    border-radius: 24px;
+    border: 1px solid #eae6f0;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.02);
+    display: flex;
+    flex-direction: column;
+}
+
+.detail-header-meta {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    align-items: center;
+}
+
+.detail-title {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 30px;
+    font-weight: 700;
+    color: #1e1233;
+    line-height: 1.25;
+    letter-spacing: -0.4px;
+}
+
+.detail-subtitle-row {
+    font-size: 14px;
+    color: #7b728c;
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #f1ecf7;
+}
+
+.detail-desc-box {
+    background: #fdfcff;
+    padding: 25px;
+    border-radius: 16px;
+    border: 1px solid #f5f2f9;
+    margin-top: 20px;
+}
+
+.detail-desc-box h3 {
+    font-size: 16px;
+    color: #5a32a8;
+    margin-bottom: 12px;
+    font-weight: 700;
+}
+
+.detail-desc-box p {
+    line-height: 1.7;
+    color: #4a4257;
+    font-size: 15px;
+}
+.detail-sidebar-column {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    justify-content: flex-start;
+}
+
+/* Premium Side Cards */
+.premium-side-card {
+    background: #ffffff;
+    padding: 30px;
+    border-radius: 24px;
+    border: 1px solid #eae6f0;
+    box-shadow: 0 10px 30px rgba(90, 50, 168, 0.02);
+    text-align: center;
+    margin-bottom: 20px; /* Uniform spacing */
+}
+
+.premium-side-card:last-child {
+    margin-bottom: 0;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.premium-side-card .label-text {
+    font-size: 13px;
+    color: #7b728c;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 1px;
+    margin-bottom: 5px;
+}
+
+.premium-side-card .price-display {
+    font-family: 'Segoe UI', Roboto, sans-serif;
+    font-size: 34px;            /* Scaled comfortably down from giant 42px */
+    font-weight: 700;           /* Clean bold style to catch attention naturally */
+    color: #2e7d32;             /* Custom dashboard green */
+    margin-bottom: 20px;
+    letter-spacing: -0.5px;
+}
+
+.author-profile-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.author-avatar {
+    width: 70px;
+    height: 70px;
+    background: linear-gradient(135deg, #5a32a8, #8c6cd4);
+    border-radius: 50%;
+    margin-bottom: 12px;
+    box-shadow: 0 4px 15px rgba(90, 50, 168, 0.2);
+}
+
+/* --- REPORT MODAL LAYOUT STYLES --- */
+.report-modal-overlay {
+    display: none; /* Hidden by default */
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 6000; /* Above top-nav components */
+    justify-content: center;
+    align-items: center;
+}
+
+.report-modal-content {
+    background: white;
+    padding: 35px;
+    border-radius: 25px;
+    width: 90%;
+    max-width: 480px;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+    animation: modalPop 0.3s ease-out;
+}
+
+.report-modal-content h3 {
+    font-size: 22px;
+    margin-bottom: 5px;
+    color: #1e1233;
+}
+
+.report-modal-content p {
+    font-size: 14px;
+    color: #7b728c;
+    margin-bottom: 20px;
+}
+
+.report-form-group {
+    margin-bottom: 15px;
+    text-align: left;
+}
+
+.report-form-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #5a32a8;
+    margin-bottom: 6px;
+    letter-spacing: 0.5px;
+}
+
+.report-form-group select,
+.report-form-group textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #eae6f0;
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 14px;
+    background-color: #fdfcff;
+    outline: none;
+}
+
+.report-form-group textarea {
+    height: 100px;
+    resize: vertical;
+}
+
+.report-modal-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 25px;
+}
+
+.btn-report-submit {
+    flex: 2;
+    padding: 12px;
+    border-radius: 12px;
+    background: #d32f2f;
+    color: white;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.btn-report-cancel {
+    flex: 1;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid #eae6f0;
+    background: #ffffff;
+    color: #7b728c;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+/* --- 11. PREMIUM APPLICANT REVIEW SYSTEM --- */
+.applicant-review-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px 0;
+}
+
+.review-header-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1e1233;
+    letter-spacing: -0.5px;
+    margin-top: 15px;
+}
+
+.review-subtitle-meta {
+    color: #7b728c;
+    font-size: 15px;
+    margin-bottom: 30px;
+}
+
+/* Enhanced Applicant Card Layout */
+.applicant-card {
+    background: #ffffff;
+    border-radius: 24px;
+    padding: 30px;
+    border: 1px solid #eae6f0;
+    box-shadow: 0 8px 30px rgba(90, 50, 168, 0.02);
+    min-height: unset !important; /* Overrides global card constraints */
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.applicant-profile-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #fcfbfe;
+}
+
+.applicant-meta-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.applicant-avatar-sphere {
+    background: linear-gradient(135deg, #5a32a8, #8c6cd4);
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    box-shadow: 0 4px 12px rgba(90, 50, 168, 0.15);
+}
+
+.applicant-title-info h3 {
+    font-family: system-ui, -apple-system, sans-serif !important;
+    font-size: 18px !important;
+    font-weight: 700 !important;
+    color: #1e1233 !important;
+    margin-bottom: 3px;
+}
+
+/* Formal Status Tags */
+.status-pill {
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    padding: 5px 12px;
+    border-radius: 6px;
+    letter-spacing: 0.5px;
+}
+.status-pending { background: #fff3e0; color: #ef6c00; border: 1px solid #ffe0b2; }
+.status-hired { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+.status-rejected { background: #ffebee; color: #c62828; border: 1px solid #ffcdcf; }
+
+/* Structural Content Fields */
+.response-block {
+    background: #fdfcff;
+    padding: 20px;
+    border-radius: 16px;
+    border: 1px solid #f5f2f9;
+}
+
+.response-block strong {
+    display: block;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #5a32a8;
+    margin-bottom: 8px;
+}
+
+.response-block p {
+    font-size: 14px;
+    color: #4a4257;
+    line-height: 1.6;
+}
+
+/* Unified Footer Action Alignment */
+.applicant-actions-wrapper {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 5px;
+}
+
+/* --- PREMIUM MESSAGE ACTION BUTTON --- */
+.btn-message-pm {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background-color: #f3f0fa;      /* Soft light-lavender tint background */
+    color: #5a32a8;                 /* MMU Theme Purple font */
+    padding: 10px 18px;
+    border-radius: 12px;            /* Modern curved corners */
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none !important; /* Strips away the ugly link underline */
+    border: 1px solid #e3d2f0;      /* Delicate lavender border line */
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.btn-message-pm:hover {
+    background-color: #5a32a8 !important;   /* Flips to solid purple on hover */
+    color: #ffffff !important;              /* FORCES text to become perfectly white */
+    border-color: #5a32a8 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(90, 50, 168, 0.15);
 }

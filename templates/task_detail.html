@@ -8,39 +8,117 @@
 
         {% block content %}
             <a href="{{ url_for('marketplace') }}" class="back-link">← Back to Marketplace</a>
-            <div style="display: flex; gap: 30px;">
-                <div style="flex: 2; background: #ced2f4; padding: 40px; border-radius: 30px;">
-                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                        <span class="tag available-tag">{{ task.status }}</span>
-                        <span class="tag" style="background: white;">{{ task.category }}</span>
-                        {% if task.urgent %}<span class="tag urgent-tag">URGENT</span>{% endif %}
+            
+            <div class="detail-grid-container">
+                <div class="main-detail-panel">
+                    <div class="detail-header-meta">
+                        <span class="tag available-tag" style="background: #e8f5e9; color: #2e7d32;">{{ task.status }}</span>
+                        <span class="tag">{{ task.category }}</span>
+                        {% if task.urgent %}
+                            <span class="tag urgent-tag" style="background: #ffebee; color: #c62828;">URGENT</span>
+                        {% endif %}
                     </div>
-                    <h1 style="font-size: 45px; margin: 0;">{{ task.title }}</h1>
-                    <p>🕒 Deadline: {{ task.deadline }} | 👥 Spots: {{ task.capacity }}</p>
-                    <div style="background: white; padding: 25px; border-radius: 20px; margin-top: 20px; min-height: 150px;">
+                    
+                    <h1 class="detail-title">{{ task.title }}</h1>
+                    
+                    <div class="detail-subtitle-row">
+                        <span>🕒 <strong>Deadline:</strong> {{ task.deadline if task.deadline else 'No deadline specified' }}</span>
+                        <span>•</span>
+                        <span>👥 <strong>Spots:</strong> {{ task.capacity }} open slots</span>
+                    </div>
+                    
+                    <div class="detail-desc-box">
                         <h3>Description</h3>
                         <p>{{ task.description }}</p>
                     </div>
                 </div>
 
-                <div style="flex: 1;">
-                    <p style="text-align: right; color: #d32f2f; font-weight: bold; cursor: pointer; margin-bottom: 10px;">⚠️ Report task</p>
+                <div class="detail-sidebar-column">
+                    <p style="text-align: right; color: #b71c1c; font-weight: 700; font-size: 13px; cursor: pointer; margin-bottom: 15px; transition: 0.2s;" onclick="openReportModal()">⚠️ Report Task</p>
                     
-                    <div class="side-card">
-                        <p style="margin: 0; color: #555;">Budget</p>
-                        <h2 style="font-size: 36px;">RM {{ task.price }}</h2>
+                    <!-- Compensation Box -->
+                    <div class="premium-side-card">
+                        <p class="label-text">Compensation</p>
+                        <h2 class="price-display" style="margin-bottom: 5px;">RM {{ task.price }}</h2>
                         
-                        <a href="{{ url_for('apply', task_id=task.id) }}" class="btn-primary" style="background: #6168a8;">Apply Now</a>
+                        <!-- This checks if the task was marked negotiable on creation -->
+                        {% if task.is_negotiable %}
+                            <div style="background-color: #f3f0fa; border: 1px dashed #5a32a8; border-radius: 12px; padding: 12px; margin: 15px 0; text-align: left;">
+                                <p style="color: #5a32a8; font-size: 13px; font-weight: 700; margin: 0 0 4px 0; text-transform: uppercase; letter-spacing: 0.3px;">💬 Rate Negotiable</p>
+                                <p style="color: #4a4257; font-size: 12px; margin: 0; line-height: 1.4;">Feel free to apply and text the client directly via chat to discuss the final payment details!</p>
+                            </div>
+                        {% else %}
+                            <div style="margin-bottom: 15px;"></div>
+                        {% endif %}
+                        
+                        <a href="{{ url_for('apply', task_id=task.id) }}" class="btn-primary" style="margin-top: 0; background: #5a32a8; border-radius: 12px;">Apply Now</a>
                     </div>
 
-                    <div style="text-align: center; margin-top: 20px; background: white; padding: 25px; border-radius: 25px; border: 1px solid #eee;">
-                        <div style="width: 60px; height: 60px; background: #3c1a75; border-radius: 50%; margin: 0 auto 10px;"></div>
-                        <p style="margin: 0;"><strong>{{ task.user }}</strong></p>
-                        <p style="margin: 5px 0;">⭐ {{ task.rating }}</p>
+                    <div class="premium-side-card">
+                        <div class="author-profile-box" style="display: flex; flex-direction: column; align-items: center; width: 100%;">
+                            <div class="author-avatar"></div>
+                            <p class="label-text" style="margin-bottom: 2px;">Posted By</p>
+                            <p style="font-size: 18px; font-weight: 700; color: #1e1233;">{{ task.user }}</p>
+                            <p style="margin-top: 5px; font-size: 14px; color: #ff9800; font-weight: 600;">⭐ {{ task.rating if task.rating else '5.0' }}</p>
+                            
+                            <!-- FIXED: Removed the faulty 'if user' checker so the button always displays correctly for other users -->
+                            {% if session.get('user_id') and task.user != session.get('username') %}
+                                <a href="{{ url_for('private_chat', username=task.user) }}" class="btn-message-pm" 
+                                style="margin-top: 15px; width: 100%; justify-content: center; box-sizing: border-box;">
+                                ✉️ Private Message Client
+                                </a>
+                            {% endif %}
+                        </div>
                     </div>
-                </div>
+                </div> 
+            </div>
+
+            <div id="reportModal" class="report-modal-overlay">
+                <div class="report-modal-content">
+                    <h3>Report This Post</h3>
+                    <p>Help us keep our community safe. Tell us what's wrong with this task listing.</p>
+                    
+                    <form action="{{ url_for('report_task', task_id=task.id) }}" method="POST">
+                        <div class="report-form-group">
+                            <label>Reason for Report</label>
+                            <select name="reason" required>
+                                <option value="" disabled selected>Select an issue...</option>
+                                <option value="Inappropriate Content">Inappropriate Content / Language</option>
+                                <option value="Scam or Fraud">Scam or Fraudulent Offer</option>
+                                <option value="Miscategorized">Mismatched or Fake Category</option>
+                                <option value="Underpaid / Exploitative">Unreasonable Payment Terms</option>
+                                <option value="Other Issue">Other (Specify Below)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="report-form-group">
+                            <label>Details / Description</label>
+                            <textarea name="description" placeholder="Provide details about why this post violates guidelines..." required></textarea>
+                        </div>
+                        
+                        <div class="report-modal-actions">
+                            <button type="button" class="btn-report-cancel" onclick="closeReportModal()">Cancel</button>
+                            <button type="submit" class="btn-report-submit">Submit Report</button>
+                        </div>
+                    </form>
                 </div>
             </div>
+
+            <script>
+                function openReportModal() {
+                    document.getElementById('reportModal').style.display = 'flex';
+                }
+                function closeReportModal() {
+                    document.getElementById('reportModal').style.display = 'none';
+                }
+                // Close modal if user clicks outside content panel box background area
+                window.addEventListener('click', function(event) {
+                    const modal = document.getElementById('reportModal');
+                    if (event.target === modal) {
+                        closeReportModal();
+                    }
+                });
+            </script>
         {% endblock %}
 </body>
 </html>

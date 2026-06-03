@@ -1,48 +1,74 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>SideHustle</title>
 </head>
 <body>
     <div class="main-layout">
-        <!-- 1. SIDEBAR (STAYS THE SAME) -->
         <div class="sidebar">
             <div class="sidebar-top">
                 <h2>SideHustle</h2>
                 <div class="sidebar-menu">
                     <a href="{{ url_for('marketplace') }}">🏠 Marketplace</a>
                     <a href="{{ url_for('dashboard') }}">📊 Dashboard</a>
-                    <a href="{{ url_for('my_task') }}">📋 My Task</a>
+                    <a href="{{ url_for('my_task') }}" style="position: relative;">
+                        📋 My Task 
+                        <span id="global-nav-dot" class="dot-small" style="display: none;"></span>
+                    </a>
+                    
                     <a href="{{ url_for('profile') }}">👤 Profile</a>
                 </div>
             </div>
+            <div class="sidebar-bottom">
+                <a href="#" class="menu-item">❓ Help</a>
+            </div>
         </div>
 
-        <!-- 2. TOP NAV (WITH BELL POPUP) -->
         <div class="top-nav">
-            <div class="nav-icons">
-                <div class="notification-container" style="position: relative;">
+            <div class="nav-icons" style="display: flex; align-items: center; gap: 25px;">
+                
+                <a href="{{ url_for('private_inbox') }}" class="msg-nav-link" style="text-decoration: none; color: white; position: relative; font-size: 20px; display: inline-flex; align-items: center;">
+                    💬
+                </a> 
+                <div class="notification-container" style="position: relative; display: inline-flex; align-items: center;">
                     <span id="bell-icon" style="cursor: pointer; font-size: 22px;">🔔</span>
+                    
                     <div id="notification-popup" class="notification-popup">
                         <div class="popup-header">Notifications</div>
-                            <div class="popup-body">
-                                {% if notifications %}
-                                    {% for note in notifications %}
+                        <div class="popup-body">
+                            {% if notifications %}
+                                {% for note in notifications %}
+                                    {% if note.task_id %}
                                         <a href="{{ url_for('task_detail', task_id=note.task_id) }}" class="notification-item">
-                                            <span class="note-title">
-                                                <span>✨</span> Job Update
-                                            </span>
+                                            <span class="note-title"><span>✨</span> Job Update</span>
                                             <span class="note-msg">{{ note.message }}</span>
                                             <span class="note-time">Just Now</span>
                                         </a>
-                                    {% endfor %}
-                                {% else %}
-                                    <div class="empty-notif">
-                                        <p>😴 All caught up!</p>
-                                    </div>
-                                {% endif %}
-                            </div>
+                                    {% else %}
+                                        <div class="notification-item" style="cursor: default;">
+                                            <span class="note-title" style="color: #d32f2f;"><span>⚠️</span> System Alert</span>
+                                            <span class="note-msg">{{ note.message }}</span>
+                                            <span class="note-time">Notification</span>
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                <div class="empty-notif">
+                                    <p>😴 All caught up!</p>
+                                </div>
+                            {% endif %}
+                        </div>
                     </div>
+                </div> <div class="profile-circle"></div>
+                
+            </div> </div> <div class="content">
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                <div class="flash-alert">
+                    {{ message }}
                 </div>
                 <div class="profile-circle">
                     {% if user and user.avatar %}
@@ -51,32 +77,71 @@
                         <i class="fi fi-rr-user default-view-icon"></i>
                     {% endif %}
                 </div>
+                {% endfor %}
+            {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
             </div>
         </div>
 
-            <div class="content">
-                {% with messages = get_flashed_messages() %}
-                {% if messages %}
-                    {% for message in messages %}
-                    <div class="flash-alert">
-                        {{ message }}
-                    </div>
-                    {% endfor %}
-                {% endif %}
-                {% endwith %}
+        <div class="content">
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                <div class="flash-alert">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+            {% endwith %}
 
-                {% block content %}{% endblock %}
-            </div>
+            {% block content %}{% endblock %}
+        </div>
 
-    <!-- 4. JAVASCRIPT (WORKS ON EVERY PAGE) -->
+    </div>
+
+    <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
     <script>
         const bell = document.getElementById('bell-icon');
         const popup = document.getElementById('notification-popup');
+
         bell.addEventListener('click', (e) => {
             e.stopPropagation();
-            popup.style.display = popup.style.display === 'block' ? 'none' : 'block';
+            popup.style.display = (popup.style.display === 'block') ? 'none' : 'block';
         });
-        window.onclick = () => popup.style.display = 'none';
+
+        document.addEventListener('click', (e) => {
+            if (popup && !popup.contains(e.target) && e.target !== bell) {
+                popup.style.display = 'none';
+            }
+        });
+
+        const globalSocket = io();
+        globalSocket.on('new_unread', function(data) {
+            const navDot = document.getElementById('global-nav-dot');
+            if (navDot) navDot.style.display = 'inline-block';
+
+            const createdDot = document.getElementById('created-unread-dot');
+            const appliedDot = document.getElementById('applied-unread-dot');
+            if (data.role === 'created' && createdDot) createdDot.style.display = 'inline-block';
+            else if (data.role === 'applied' && appliedDot) appliedDot.style.display = 'inline-block';
+
+            const chatBtn = document.querySelector(`a[href*="chat/${data.task_id}"], a[href*="group_chat/${data.task_id}"]`);
+            if (chatBtn) {
+                let badge = chatBtn.querySelector('.unread-badge');
+                if (!badge) {
+                    badge = document.createElement('span');
+                    badge.className = 'unread-badge';
+                    badge.innerText = '1';
+                    chatBtn.appendChild(badge);
+                } else {
+                    badge.innerText = parseInt(badge.innerText) + 1;
+                }
+            }
+        });
+        
+        window.onclick = () => {
+            popup.style.display = 'none';
+        };
     </script>
 </body>
 </html>
