@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <title>SideHustle</title>
+    <title>{% block title %}SideHustle{% endblock %}</title>
+    {% block extra_head %}{% endblock %}
 </head>
 <body>
     <div class="main-layout">
@@ -77,18 +78,7 @@
             {% block content %}{% endblock %}
         </div>
 
-        <div class="content">
-            {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                {% for message in messages %}
-                <div class="flash-alert">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-            {% endwith %}
-
-            {% block content %}{% endblock %}
-        </div>
-
+        <!-- Removed duplicate content block to avoid TemplateAssertionError -->
     </div>
 
     <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
