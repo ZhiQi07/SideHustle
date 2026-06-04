@@ -1000,11 +1000,21 @@ def handle_message(data):
     if not task or not user_can_access_task_chat(task, current_user):
         return
 
+    # 💡 核心修复：安全清洗回复 ID
+    reply_id = data.get('reply_to_id')
+    if not reply_id or reply_id == "null" or reply_id == "":
+        reply_id = None
+    else:
+        try:
+            reply_id = int(reply_id)
+        except (ValueError, TypeError):
+            reply_id = None
+
     message = Message(
         task_id=int(room),
         sender=current_user.username,
         content=data['message'],
-        reply_to_id=data.get('reply_to_id')
+        reply_to_id=reply_id
     )
     db.session.add(message)
     db.session.commit()
