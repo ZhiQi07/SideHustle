@@ -61,15 +61,7 @@
                             {% endif %}
                         </div>
                     </div>
-                </div> <div class="profile-circle"></div>
-                
-            </div> </div> <div class="content">
-            {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                {% for message in messages %}
-                <div class="flash-alert">
-                    {{ message }}
-                </div>
+                </div> 
                 <div class="profile-circle">
                     {% if user and user.avatar %}
                         <img src="{{ url_for('static', filename='uploads/' + user.avatar) }}" alt="Profile Picture">
@@ -77,27 +69,23 @@
                         <i class="fi fi-rr-user default-view-icon"></i>
                     {% endif %}
                 </div>
-                {% endfor %}
-            {% endif %}
-            {% endwith %}
-
-            {% block content %}{% endblock %}
             </div>
         </div>
-
         <div class="content">
             {% with messages = get_flashed_messages() %}
             {% if messages %}
                 {% for message in messages %}
-                <div class="flash-alert">{{ message }}</div>
+                <div class="flash-alert">
+                    {{ message }}
+                </div>
                 {% endfor %}
             {% endif %}
             {% endwith %}
 
             {% block content %}{% endblock %}
         </div>
-
     </div>
+    
 
     <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
     <script>

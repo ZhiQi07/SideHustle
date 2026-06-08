@@ -276,6 +276,17 @@
     background: #a389c7;
 }
 
+.security-footer-actions {
+    margin-top: 120px !important; 
+    flex-direction: column-reverse !important; 
+    width: 100%;
+    align-items: center;
+}
+
+#panel-security .detail-row {
+    border-bottom: 2px solid #5a6794; /* Dark structural accent lines matched to layout specs */
+}
+
 .log-out-delete {
     margin-top: 40px;
     display: flex;
