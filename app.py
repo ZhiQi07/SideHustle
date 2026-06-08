@@ -265,6 +265,15 @@ def cleanup_expired_tasks():
             db.session.delete(task)
     db.session.commit()
 
+@app.route('/clear_notifications', methods=['POST'])
+def clear_notifications():
+    if 'user_id' not in session:
+        return {"status": "unauthorized"}, 401
+        
+    # Delete or change status of notifications belonging to this user
+    Notification.query.filter_by(user_id=session['user_id']).delete()
+    db.session.commit()
+    return {"status": "success"}, 200
 
 @app.route('/')
 def index():
@@ -440,6 +449,15 @@ def marketplace():
         )
     if category:
         tasks_filter = tasks_filter.filter(Task.category == category)
+
+    if min_price and min_price.strip():
+        tasks_filter = tasks_filter.filter(Task.price >= float(min_price))
+    if max_price and max_price.strip():
+        tasks_filter = tasks_filter.filter(Task.price <= float(max_price))
+        
+    all_tasks = tasks_filter.all()
+    current_user = None
+
     all_tasks = tasks_filter.all()
     current_user = None
     if 'user_id' in session:
@@ -478,6 +496,14 @@ def update_progress(task_id):
         return redirect(url_for('my_task'))
     if new_progress == 100 and task.status != 'Completed':
         task.status = 'Completed'
+        owner = User.query.filter_by(username=task.user).first()
+        if owner:
+            db.session.add(Notification(
+                user_id=owner.id,
+                task_id=task.id,
+                message=f"Milestone Alert: @{user.username} marked your task '{task.title}' as 100% complete!"
+            ))
+        socketio.emit('new_unread', {'task_id': task.id, 'role': 'created'}, room=str(owner.id))
         for app_record in Application.query.filter_by(task_id=task.id, status='Hired').all():
             worker = User.query.filter_by(username=app_record.applicant_username).first()
             if worker:
@@ -691,6 +717,14 @@ def apply(task_id):
             intro=request.form.get('intro'),
             reason=request.form.get('reason')
         ))
+        owner = User.query.filter_by(username=task.user).first()
+        if owner:
+            db.session.add(Notification(
+                user_id=owner.id,
+                task_id=task.id,
+                message=f"New Applicant: @{current_user.username} applied for your task: {task.title}!"
+            ))
+            socketio.emit('new_unread', {'task_id': task.id, 'role': 'created'}, room=str(owner.id))
         db.session.commit()
         flash("Application submitted successfully!")
         return redirect(url_for('marketplace'))
@@ -794,6 +828,27 @@ def hire_applicant(app_id):
                 message=f"You have been HIRED for the task: {task.title}!"
             ))
         
+        if task.get_hired_count() >= task.capacity:
+            # 1. Find all other pending applications for this task
+            excess_applications = Application.query.filter_by(task_id=task.id, status='Pending').all()
+            
+            for excess_app in excess_applications:
+                # 2. Change their status to Rejected
+                excess_app.status = 'Rejected'
+                
+                # 3. Send a system notification to each rejected applicant
+                excess_user = User.query.filter_by(username=excess_app.applicant_username).first()
+                if excess_user:
+                    db.session.add(Notification(
+                        user_id=excess_user.id,
+                        task_id=task.id,
+                        message=f"The task '{task.title}' has reached full capacity, and your application was automatically released."
+                    ))
+                    
+                    # 4. Optional: Send a live socket alert so their browser updates instantly
+                    socketio.emit('new_unread', {'task_id': task.id, 'role': 'applied'}, room=str(excess_user.id))
+
+        # --- Existing Commit & Flash ---
         db.session.commit()
         flash(f"You have hired {application.applicant_username}!")
     else:
@@ -817,6 +872,30 @@ def reject_applicant(app_id):
     flash("Applicant has been rejected.")
     return redirect(url_for('view_applicants', task_id=application.task_id))
 
+@app.route('/withdraw_application/<int:app_id>')
+def withdraw_application(app_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+        
+    user = db.session.get(User, session['user_id'])
+    application = Application.query.get_or_404(app_id)
+    
+    # Security check: Make sure this application actually belongs to the logged-in user
+    if application.applicant_username != user.username:
+        flash("Unauthorized action!")
+        return redirect(url_for('my_task', view='applied'))
+        
+    # Security check: They can only cancel if it hasn't been processed yet
+    if application.status != 'Pending':
+        flash("Cannot withdraw an application that has already been hired or rejected!")
+        return redirect(url_for('my_task', view='applied'))
+        
+    # Run the database removal sweep
+    db.session.delete(application)
+    db.session.commit()
+    
+    flash("Your application has been successfully withdrawn.")
+    return redirect(url_for('my_task', view='applied'))
 
 @app.route('/chat/<int:task_id>')
 def chat(task_id):
@@ -1115,11 +1194,17 @@ def private_chat(username):
             db.session.add(new_dm)
             db.session.commit()
             
-            # Emit socket event for real-time updates (matches your teammate's setup)
+            # 1. 💬 Keep your original room update event working here for active chatters
             socketio.emit('receive_private_message', {
                 'sender': current_user.username,
                 'message': msg_content
             }, room=f"private_{min(current_user.username, target_user.username)}_{max(current_user.username, target_user.username)}")
+            
+            # 2. 🚀 ✅ ADDED: Reach them globally across other app hooks to trigger real-time toasts
+            socketio.emit('receive_private_message', {
+                'sender': current_user.username,
+                'message': msg_content
+            }, room=str(target_user.id))
             
         return redirect(url_for('private_chat', username=username))
         
@@ -1130,22 +1215,6 @@ def private_chat(username):
     ).order_by(DirectMessage.timestamp.asc()).all()
     
     return render_template('private_chat.html', target_user=target_user, user=current_user, history=history)
-
-@app.context_processor
-def inject_notifications():
-    if 'user_id' in session:
-        # 1. Try to find the user in the database
-        current_user = User.query.get(session['user_id'])
-        
-        # 2. Check if the user ACTUALLY exists (is not None)
-        if current_user:
-            user_notifications = Notification.query.filter_by(user_id=current_user.id).order_by(Notification.id.desc()).limit(5).all()
-            return dict(notifications=user_notifications)
-        else:
-            # 3. If the user doesn't exist (DB deleted), clear the ghost session
-            session.pop('user_id', None)
-            
-    return dict(notifications=[])
 
 if __name__ == '__main__':
     with app.app_context():

@@ -228,7 +228,16 @@
                 {% elif application.status == 'Rejected' %}
                     <p style="color: #d32f2f; font-size: 13px; margin-top: 15px;">Sorry, the client has chosen another tasker for this job.</p>
                 {% else %}
-                    <p style="color: #666; font-size: 13px; margin-top: 15px;">Your application is being reviewed. Check back soon!</p>
+                    <div style="margin-top: 15px; display: flex; flex-direction: column; gap: 10px;">
+                        <p style="color: #ef6c00; font-size: 13px; margin: 0; font-weight: 500;">⏳ Your application is being reviewed. Check back soon!</p>
+                        
+                        <a href="{{ url_for('withdraw_application', app_id=application.id) }}" 
+                           class="btn-reject" 
+                           style="display: inline-block; width: fit-content; padding: 6px 15px; font-size: 12px; text-align: center; text-decoration: none;"
+                           onclick="return confirm('Are you sure you want to withdraw your application? This cannot be undone.');">
+                           ❌ Withdraw Application
+                        </a>
+                    </div>
                 {% endif %}
             </div>
             {% endif %}

@@ -10,6 +10,13 @@
             <input type="text" name="q" placeholder="Search for anything..." value="{{ request.args.get('q', '') }}">
         </div>
         
+        <div style="display: flex; align-items: center; gap: 5px; padding: 0 10px; border-left: 1px solid #eee;">
+            <span style="font-size: 14px; color: #666; font-weight: 600;">RM</span>
+            <input type="number" name="min_p" placeholder="Min" value="{{ request.args.get('min_p', '') }}" style="width: 70px; padding: 8px; border: 1px solid #eee; border-radius: 20px; font-size: 14px; text-align: center;">
+            <span style="color: #999;">-</span>
+            <input type="number" name="max_p" placeholder="Max" value="{{ request.args.get('max_p', '') }}" style="width: 70px; padding: 8px; border: 1px solid #eee; border-radius: 20px; font-size: 14px; text-align: center;">
+        </div>
+        
         <select name="cat" class="nav-select">
             <option value="">All Categories</option>
             <option value="Moving & Lifting" {% if request.args.get('cat') == 'Moving & Lifting' %}selected{% endif %}>Moving & Lifting</option>

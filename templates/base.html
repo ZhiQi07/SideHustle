@@ -6,6 +6,8 @@
     <title>SideHustle</title>
 </head>
 <body>
+    <div id="toast-container" class="toast-notification-container"></div>
+
     <div class="main-layout">
         <div class="sidebar">
             <div class="sidebar-top">
@@ -34,7 +36,11 @@
                     <span id="bell-icon" style="cursor: pointer; font-size: 22px; color: white;">🔔</span>
                     
                     <div id="notification-popup" class="notification-popup">
-                        <div class="popup-header">Notifications</div>
+                        <div class="popup-header" style="display: flex; justify-content: space-between; align-items: center;">
+                            <span>Notifications</span>
+                            <span id="clear-all-notes" style="font-size: 11px; color: #5a32a8; cursor: pointer; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px;">Clear All</span>
+                        </div>
+                        
                         <div class="popup-body">
                             {% if notifications %}
                                 {% for note in notifications %}
@@ -77,7 +83,6 @@
 
             {% block content %}{% endblock %}
         </div>
-
     </div> 
 
 <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
@@ -98,7 +103,43 @@
         });
     }
 
+    document.getElementById('clear-all-notes')?.addEventListener('click', function(e) {
+        e.stopPropagation();
+        fetch('/clear_notifications', { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    const body = document.querySelector('.popup-body');
+                    if(body) body.innerHTML = '<div class="empty-notif"><p>😴 All caught up!</p></div>';
+                    
+                    const navDot = document.getElementById('global-nav-dot');
+                    if (navDot) navDot.style.display = 'none';
+                }
+            });
+    });
+
+    // ✅ ADDED: Toast Generator Script Function Engine
+     Bark
+    function launchToastAlert(messageText) {
+        const container = document.getElementById('toast-container');
+        if (!container) return;
+        
+        const toast = document.createElement('div');
+        toast.className = 'toast-alert-box';
+        toast.innerHTML = `<span>✨</span> <div>${messageText}</div>`;
+        
+        container.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 400);
+        }, 4000);
+    }
+
+    // Initialize Socket Connection
     const globalSocket = io();
+
+    // ✅ FIXED: Merged everything into your clean tracking listener
     globalSocket.on('new_unread', function(data) {
         const navDot = document.getElementById('global-nav-dot');
         if (navDot) navDot.style.display = 'inline-block';
@@ -120,7 +161,20 @@
                 badge.innerText = parseInt(badge.innerText) + 1;
             }
         }
+
+        // 🚀 Triggers the real-time toast banner!
+        launchToastAlert(`New unread team discussion message waiting inside Task #${data.task_id}!`);
     });
+
+globalSocket.on('receive_private_message', function(data) {
+    // Only pop up the toast alert box if we aren't currently inside the chat room with them!
+    if (typeof targetUsername !== 'undefined' && data.sender === targetUsername) {
+        return; // Ignore popup since the message is already rendering inside their chat box window panel!
+    }
+
+    // Trigger the slide-in notification toast
+    launchToastAlert(`New Direct Message from @${data.sender}: "${data.message.substring(0, 30)}..."`);
+});
 </script>
 </body>
 </html>
