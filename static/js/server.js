@@ -51,3 +51,14 @@ socket.on('receive_message', (data) => {
     // 自动滚动到底部
     chatBox.scrollTop = chatBox.scrollHeight;
 });
+
+// 在你的发送消息逻辑里，除了发给聊天室，追加一个全局未读通知广播
+// 假设这是你的 Socket 发送逻辑：
+socket.to(room_name).emit('receive_private_message', data);
+
+// 💡 【新增】：广播一个全局未读通知事件，把接收者和发送者带上
+// 这样全站任何页面都能通过接收者（receiver）判定自己需不需要亮红点
+socket.broadcast.emit('new_private_notification', {
+    sender: data.sender,
+    receiver: target_username // 接收这条消息的人的用户名
+});

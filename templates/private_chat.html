@@ -1,92 +1,263 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container" style="max-width: 600px; margin: 0 auto; padding: 20px 0;">
-    <a href="{{ url_for('private_inbox') }}" class="back-link">← Back to Inbox</a>
+<div class="container" style="max-width: 850px; margin: 0 auto; padding: 20px 0;">
+    <a href="{{ url_for('private_inbox') }}" class="back-link" style="text-decoration: none; color: #0e0e0f; font-weight: bold;">← Back to Inbox</a>
     
-    <div class="card" style="margin-top: 20px; min-height: 450px; background: white; border-radius: 25px; border: 1px solid #eae6f0; padding: 25px; display: flex; flex-direction: column;">
-        <div style="display: flex; align-items: center; gap: 12px; padding-bottom: 15px; border-bottom: 1px solid #f1ecf7; margin-bottom: 20px;">
-            <div style="width: 35px; height: 35px; background: linear-gradient(135deg, #5a32a8, #8c6cd4); border-radius: 50%;"></div>
-            <h2 style="font-size: 18px; color: #1e1233; margin: 0;">{{ target_user.username }}</h2>
+    <div class="card" style="margin-top: 20px; min-height: 600px; background: white; border-radius: 25px; border: 1px solid #eae6f0; padding: 30px; display: flex; flex-direction: column;">
+        
+        <div style="display: flex; align-items: center; gap: 14px; padding-bottom: 18px; border-bottom: 1px solid #f1ecf7; margin-bottom: 20px;">
+            <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #5a32a8, #8c6cd4); border-radius: 50%;"></div>
+            <h2 style="font-size: 19px; color: #1e1233; margin: 0; font-weight: 600;">{{ target_user.username }}</h2>
         </div>
         
-        <!-- Chat History Window Panel -->
-        <div id="private-msg-box" style="flex-grow: 1; overflow-y: auto; max-height: 300px; display: flex; flex-direction: column; gap: 12px; padding-right: 5px; margin-bottom: 20px;">
+        <div id="private-msg-box" style="flex-grow: 1; overflow-y: auto; max-height: 450px; display: flex; flex-direction: column; gap: 14px; padding-right: 8px; margin-bottom: 20px;">
             {% for msg in history %}
-                <div style="max-width: 75%; padding: 12px 16px; border-radius: 16px; font-size: 14px; line-height: 1.4;
-                    {% if msg.sender_username == user.username %}
-                        background-color: #5a32a8; color: white; align-self: flex-end; border-bottom-right-radius: 4px;
+                <div class="msg-bubble-container" data-container-msg-id="{{ msg.id }}" data-is-deleted="{% if msg.content.startswith('[DELETED_PRIVATE_MSG]') %}true{% else %}false{% endif %}" data-raw-text="{{ msg.content }}"
+                     oncontextmenu="{% if not msg.content.startswith('[DELETED_PRIVATE_MSG]') %}openMenu(event,'{{ msg.id }}','{{ msg.sender_username }}'){% endif %}"
+                     style="position: relative; max-width: 75%; padding: 12px 18px; border-radius: 16px; font-size: 14px; line-height: 1.4; word-break: break-word; cursor: {% if not msg.content.startswith('[DELETED_PRIVATE_MSG]') %}pointer{% else %}default{% endif %};
+                    {% if msg.content.startswith('[DELETED_PRIVATE_MSG]') %}
+                        background-color: #f0f0f0; color: #8696a0; font-style: italic; align-self: {% if msg.sender_username == user.username %}flex-end{% else %}flex-start{% endif %}; border-bottom-{% if msg.sender_username == user.username %}right{% else %}left{% endif %}-radius: 4px;
+                    {% elif msg.sender_username == user.username %}
+                        background-color: #e4e2fd; color: black; align-self: flex-end; border-bottom-right-radius: 4px;
                     {% else %}
                         background-color: #f1ecf7; color: #2d263b; align-self: flex-start; border-bottom-left-radius: 4px;
                     {% endif %}">
-                    {{ msg.content }}
+
+                    {% if msg.sender_username != user.username and not msg.content.startswith('[DELETED_PRIVATE_MSG]') %}
+                        <div style="font-size: 11px; color: #5a32a8; font-weight: bold; margin-bottom: 4px;">@{{ msg.sender_username }}</div>
+                    {% endif %}
+
+                    {% if msg.content.startswith('[DELETED_PRIVATE_MSG]') %}
+                        This message was deleted
+                    {% else %}
+                        <div class="msg-body-wrapper" data-msg-id="{{ msg.id }}" data-raw-content="{{ msg.content }}">
+                            <span id="body-{{ msg.id }}" data-raw="{{ msg.content }}">{{ msg.content }}</span>
+                        </div>
+                    {% endif %}
                 </div>
             {% endfor %}
         </div>
+
+        <div id="reply-bar" style="display:none; background:#f0f0f0; border-radius:8px; padding:8px 14px; margin-bottom:8px; font-size:13px; color:#555; align-items:center; justify-content:space-between;">
+            <span id="reply-text"></span>
+            <span onclick="cancelReply()" style="cursor:pointer; font-weight:bold; font-size:18px; margin-left:10px;">×</span>
+        </div>
         
-        <!-- Messaging Submission Input Form Section -->
-        <form method="POST" style="display: flex; gap: 10px; margin-top: auto;">
-            <input type="text" name="content" placeholder="Type a private message..." autocomplete="off" required
+        <div style="display: flex; gap: 12px; margin-top: auto;">
+            <input id="msg-input" type="text" placeholder="Type a private message..." autocomplete="off" required
                    style="flex-grow: 1; padding: 14px; border: 1px solid #eae6f0; border-radius: 12px; outline: none; background-color: #fdfcff; font-size: 14px;">
-            <button type="submit" class="btn-primary" style="margin-top: 0; width: auto; padding: 0 25px; border-radius: 12px; background-color: #5a32a8;">Send</button>
-        </form>
+            <button id="send-btn" class="btn-primary" style="margin-top: 0; width: auto; padding: 0 30px; border-radius: 12px; background-color: #440fae; color: white; border: none; cursor: pointer; font-weight: bold;">Send</button>
+        </div>
     </div>
 </div>
 
+<div id="global-context-menu" style="display:none; position:absolute; z-index:99999; background:white; border:1px solid #ddd; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.15); padding:4px; min-width:110px;">
+    <button id="menu-reply-btn" style="display:block; width:100%; border:0; background:transparent; color:#333; cursor:pointer; font-size:13px; text-align:left; padding:8px 12px; border-radius:6px;">↩ Reply</button>
+    <button id="menu-delete-btn" style="display:none; width:100%; border:0; background:transparent; color:#d92d20; cursor:pointer; font-size:13px; text-align:left; padding:8px 12px; border-radius:6px;">Delete</button>
+</div>
 
-    <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
-    <script>
-        const msgBox = document.getElementById('private-msg-box');
-        
-        // 1. Keep chat window auto-scrolled to the newest messages
-        msgBox.scrollTop = msgBox.scrollHeight;
+<script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
+<script>
+    const msgBox = document.getElementById('private-msg-box');
+    msgBox.scrollTop = msgBox.scrollHeight;
 
-        // 2. Initialize the real-time WebSocket connection
-        const socket = io();
-        const currentUsername = "{{ user.username }}";
-        const targetUsername = "{{ target_user.username }}";
+    // 💡 锁定当前会话的独立安全 Socket 通道
+    if (typeof socket === 'undefined') {
+        window.socket = io();
+    }
+    
+    const currentUsername = "{{ user.username }}";
+    const targetUsername = "{{ target_user.username }}";
+    const usernames = [currentUsername, targetUsername].sort();
+    const roomName = `private_${usernames[0]}_${usernames[1]}`;
 
-        // Create a unique, alphabetically sorted room string matching your backend logic
-        const usernames = [currentUsername, targetUsername].sort();
-        const roomName = `private_${usernames[0]}_${usernames[1]}`;
+    let currentReplyId = null;
+    let replyQuoteText = "";
 
-        // 3. Join the specific private messaging room upon page connect
-        socket.on('connect', () => {
-            socket.emit('join', { room: roomName, username: currentUsername });
-        });
+    socket.on('connect', () => {
+        socket.emit('join', { room: roomName, username: currentUsername });
+    });
 
-        // 4. LISTEN FOR REAL-TIME INCOMING MESSAGES!
-        socket.on('receive_private_message', function(data) {
-            // Create a brand new message bubble container dynamically
-            const newBubble = document.createElement('div');
+    // 💡 核心免刷新监听：当房间内收到别人发来的私聊时，直接无刷新追加 DOM 节点
+    socket.on('receive_private_message', function(data) {
+        if (data.sender !== currentUsername) {
+            const newMsgDiv = document.createElement('div');
+            newMsgDiv.className = "msg-bubble-container";
+            newMsgDiv.style.cssText = "position: relative; max-width: 75%; padding: 12px 18px; border-radius: 16px; font-size: 14px; line-height: 1.4; word-break: break-word; background-color: #f1ecf7; color: #2d263b; align-self: flex-start; border-bottom-left-radius: 4px; margin-bottom: 4px;";
             
-            // Set basic structure matching your current theme proportions
-            newBubble.style.maxWidth = "75%";
-            newBubble.style.padding = "12px 16px";
-            newBubble.style.borderRadius = "16px";
-            newBubble.style.fontSize = "14px";
-            newBubble.style.lineHeight = "1.4";
-            newBubble.innerText = data.message;
-
-            // Apply different accent colors depending on who sent the message
-            if (data.sender === currentUsername) {
-                newBubble.style.backgroundColor = "#5a32a8";
-                newBubble.style.color = "white";
-                newBubble.style.alignSelf = "flex-end";
-                newBubble.style.borderBottomRightRadius = "4px";
-            } else {
-                newBubble.style.backgroundColor = "#f1ecf7";
-                newBubble.style.color = "#2d263b";
-                newBubble.style.alignSelf = "flex-start";
-                newBubble.style.borderBottomLeftRadius = "4px";
-            }
-
-            // Push the new message into the scroll container box
-            msgBox.appendChild(newBubble);
+            // 拼接对方的 @人名 标签
+            let nameTag = `<div style="font-size: 11px; color: #5a32a8; font-weight: bold; margin-bottom: 4px;">@${data.sender}</div>`;
+            newMsgDiv.innerHTML = `${nameTag}<div class="msg-body-wrapper" data-raw-content="${data.message}">${data.message}</div>`;
             
-            // Instantly smooth scroll down to show the newly arrived bubble frame
+            msgBox.appendChild(newMsgDiv);
+            formatReplies(); // 重新清洗引文格式
             msgBox.scrollTop = msgBox.scrollHeight;
-        });
-    </script>
-{% endblock %}
+        }
+    });
 
+    // --- 右键上下文菜单控制 ---
+    function openMenu(event, id, sender) {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        const menu = document.getElementById('global-context-menu');
+        const replyBtn = document.getElementById('menu-reply-btn');
+        const deleteBtn = document.getElementById('menu-delete-btn');
+        
+        replyBtn.onclick = function() { triggerReply(id, sender); };
+        
+        if (sender === currentUsername) {
+            deleteBtn.style.display = 'block';
+            deleteBtn.onclick = function() { deleteMsg(id); };
+        } else {
+            deleteBtn.style.display = 'none';
+        }
+        
+        menu.style.display = 'block';
+        menu.style.left = event.pageX + 'px';
+        menu.style.top = event.pageY + 'px';
+    }
+
+    function closeAllMenus() {
+        document.getElementById('global-context-menu').style.display = 'none';
+    }
+    document.addEventListener('click', closeAllMenus);
+
+    // --- 回复功能触发 ---
+    function triggerReply(id, sender) {
+        closeAllMenus();
+        currentReplyId = id;
+        
+        let rawText = document.getElementById('body-' + id)?.getAttribute('data-raw') || "";
+        rawText = rawText.replace(/^\[REPLY_TO:.*?\]\n?/g, "");
+        rawText = rawText.replace(/^@[a-zA-Z0-9_\u4e00-\u9fa5]+:\s*/, "");
+        
+        const short = rawText.length > 20 ? rawText.substring(0, 20) + "..." : rawText;
+        replyQuoteText = `@${sender}: ${short}`;
+        document.getElementById('reply-text').innerHTML = `Replying to <b>${sender}</b>: "${short}"`;
+        document.getElementById('reply-bar').style.display = 'flex';
+    }
+
+    function cancelReply() {
+        currentReplyId = null;
+        replyQuoteText = "";
+        document.getElementById('reply-bar').style.display = 'none';
+    }
+
+    // --- 远程删除消息 ---
+    function deleteMsg(id) {
+        closeAllMenus();
+        if (confirm("Delete this message?")) {
+            socket.emit('edit_message', { message_id: id, new_content: '[DELETED_PRIVATE_MSG]', room: roomName });
+        }
+    }
+
+    // 💡【核心改动点】：纯异步不刷新的高级流式发送函数
+    function doSend() {
+        let msg = document.getElementById('msg-input').value.trim();
+        if (!msg) return;
+
+        let originalMsg = msg; // 暂存未拼装的原始文本以便本地渲染
+        if (currentReplyId && replyQuoteText) {
+            msg = `[REPLY_TO:${replyQuoteText}]\n` + msg;
+        }
+
+        // 1. 发射聊天数据给当前会话房间
+        socket.emit('send_message', { 
+            room: roomName, 
+            username: currentUsername, 
+            message: msg, 
+            reply_to_id: currentReplyId 
+        });
+
+        // 2. 💡【免刷新红点发射桩】：通过 Socket 直接全站发射实时通知，绕过 POST 刷新！
+        socket.emit('new_private_notification', {
+            'sender': currentUsername,
+            'receiver': targetUsername
+        });
+
+        // 3. 将自己发的消息无刷新直接推入本地 DOM 节点
+        const newMsgDiv = document.createElement('div');
+        newMsgDiv.className = "msg-bubble-container";
+        // 我的消息（右手边）本地渲染：浅紫色背景，黑字
+        newMsgDiv.style.cssText = "position: relative; max-width: 75%; padding: 12px 18px; border-radius: 16px; font-size: 14px; line-height: 1.4; word-break: break-word; background-color: #e4e2fd; color: black; align-self: flex-end; border-bottom-right-radius: 4px; margin-bottom: 4px;";
+        newMsgDiv.innerHTML = `<div class="msg-body-wrapper" data-raw-content="${msg}"><span>${originalMsg}</span></div>`;
+        
+        msgBox.appendChild(newMsgDiv);
+        formatReplies(); // 重新格式化引文
+        
+        document.getElementById('msg-input').value = "";
+        cancelReply();
+        document.getElementById('msg-input').focus();
+        msgBox.scrollTop = msgBox.scrollHeight;
+    }
+
+    document.getElementById('send-btn').onclick = doSend;
+    document.getElementById('msg-input').addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); doSend(); }
+    });
+
+    // 监听状态变动自动刷屏机制
+    ['message_edited', 'message_deleted'].forEach(evt => {
+        socket.on(evt, () => { location.reload(); });
+    });
+
+    // --- 高级历史引文清洗与防污逻辑 ---
+    function formatReplies() {
+        document.querySelectorAll('.msg-body-wrapper').forEach(wrapper => {
+            const msgId = wrapper.getAttribute('data-msg-id');
+            let content = wrapper.getAttribute('data-raw-content') || "";
+            
+            const match = content.match(/^\[REPLY_TO:(.*?)\]\n([\s\S]*)$/);
+            if (match) {
+                let quoteText = match[1];
+                let actualMsg = match[2];
+
+                const isOwnMsg = wrapper.parentElement.style.backgroundColor.includes('e4e2fd'); // 检查是否是我的浅紫色消息气泡
+                const quoteBg = isOwnMsg ? 'rgba(0, 0, 0, 0.05)' : 'rgba(90, 50, 168, 0.08)'; // 我的引用框背景略暗一点以区别
+                const quoteColor = isOwnMsg ? 'black' : '#5a32a8';
+                const barColor = isOwnMsg ? '#5a32a8' : '#5a32a8'; // 引用条颜色保持一致
+
+                let pureQuoteText = quoteText.replace(/^@[a-zA-Z0-9_\u4e00-\u9fa5]+:\s*/, "");
+                if (pureQuoteText.endsWith('...')) {
+                    pureQuoteText = pureQuoteText.substring(0, pureQuoteText.length - 3);
+                }
+
+                let isTargetDeletedOnPage = false;
+                document.querySelectorAll('.msg-bubble-container[data-is-deleted="true"]').forEach(deletedContainer => {
+                    const deletedRawText = deletedContainer.getAttribute('data-raw-text') || "";
+                    if (deletedRawText.includes(pureQuoteText) || pureQuoteText.includes(deletedRawText)) {
+                        isTargetDeletedOnPage = true;
+                    }
+                });
+
+                if (isTargetDeletedOnPage || content.includes('[DELETED_PRIVATE_MSG]') || pureQuoteText.includes('deleted')) {
+                    wrapper.innerHTML = `
+                        <div style="background: ${quoteBg}; border-left: 3px solid #8696a0; padding: 6px 10px; border-radius: 6px; font-size: 12px; margin-bottom: 8px; max-width: 100%; word-break: break-word; opacity: 0.9;">
+                            <span style="font-style: italic; color: #8696a0;">This message was deleted</span>
+                        </div>
+                        <span id="body-${msgId || ''}" data-raw="${content}">${actualMsg}</span>
+                    `;
+                    return;
+                }
+
+                quoteText = quoteText.replace(/^@[a-zA-Z0-9_\u4e00-\u9fa5]+:\s*/, "");
+                if (quoteText.length > 40) { quoteText = quoteText.substring(0, 40) + "..."; }
+
+                wrapper.innerHTML = `
+                    <div style="background: ${quoteBg}; color: ${quoteColor}; border-left: 3px solid ${barColor}; padding: 6px 10px; border-radius: 6px; font-size: 12px; margin-bottom: 8px; max-width: 100%; word-break: break-word; opacity: 0.9;">
+                        ${quoteText}
+                    </div>
+                    <span id="body-${msgId || ''}" data-raw="${content}">${actualMsg}</span>
+                `;
+            }
+        });
+    }
+
+    window.addEventListener('load', () => {
+        formatReplies(); 
+        msgBox.scrollTop = msgBox.scrollHeight;
+    });
+</script>
+{% endblock %}

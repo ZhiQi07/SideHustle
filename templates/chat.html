@@ -5,23 +5,26 @@
     <title>Chat - {{ task.title }}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
-        body { font-family: sans-serif; margin: 0; background-color: #ededed !important; } 
+        body { font-family: sans-serif; margin: 0; background-color: white !important; } 
         .chat-header {
             padding: 12px 20px;
             display: flex;
             align-items: center;
             gap: 20px;
             background: white;
-            border-bottom: 1px solid #ddd;
+            border-bottom: 15px solid #ddd;
             position: sticky; top: 0; z-index: 100;
         }
+        
+        /* 💡 融合背景：高度拉长，底部白色死空全部变成灰色聊天背景的延伸 */
         #chat-box {
-            height: calc(100vh - 190px); 
+            height: calc(100vh - 135px); 
             overflow-y: auto;
-            padding: 15px 20px;
+            padding: 15px 20px 80px 20px; /* 给底部留 80px 填充，保证最后一条消息能安全滚到输入框上方 */
             display: flex !important;
             flex-direction: column !important;
             gap: 12px !important; 
+            background-color: #ededed !important; 
         }
         
         /* 💡 绝对锁定：阻断任何来自 style.css 的全局 width: 100% 污染 */
@@ -80,18 +83,16 @@
         .msg-action-menu {
             display: none !important;
             position: absolute !important;
-            top: calc(100% + 4px) !important;
-            z-index: 220 !important;
+            z-index: 9999 !important;
             min-width: 108px !important;
             padding: 4px !important;
             background: white !important;
             border: 1px solid #ddd !important;
             border-radius: 8px !important;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.16) !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
             box-sizing: border-box !important;
         }
-        .my-container .msg-action-menu { right: 0 !important; }
-        .others-container .msg-action-menu { left: 0 !important; }
+        
         .msg-action-menu.is-open {
             display: flex !important;
             flex-direction: column !important;
@@ -112,28 +113,52 @@
         .msg-action-menu button:hover { background: #f3f1f7 !important; color: #4a148c !important; }
         .msg-action-menu button.danger { color: #d92d20 !important; }
 
+        /* 【样式优化】：重构引用样式，使其与之前的半透明高级卡片质感一模一样 */
         .reply-quote {
-            background: rgba(0,0,0,0.05) !important;
-            border-left: 3px solid #00a884 !important; 
-            padding: 4px 8px !important;
-            margin-bottom: 5px !important;
+            padding: 6px 10px !important;
+            margin-bottom: 8px !important;
             font-size: 12px !important;
-            border-radius: 4px !important;
-            color: #555 !important;
-            white-space: pre-wrap !important; 
-            width: fit-content !important;      
-            max-width: 100% !important;         
+            border-radius: 6px !important;
+            word-break: break-word !important;
+            opacity: 0.9 !important;
+            display: block !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
         }
 
+        /* 💡 优化回复栏与编辑栏：定位在固定输入框的正上方 */
         #reply-preview-bar {
             display: none;
             padding: 8px 20px;
-            background: #f0f0f0;
-            border-top: 1px solid #ddd;
+            background: #e4e4e4;
+            border-top: 1px solid #ccc;
             font-size: 13px;
-            color: #555;
+            color: #333;
             justify-content: space-between;
             align-items: center;
+            position: fixed;
+            bottom: 58px; /* 刚好卡在输入框顶上 */
+            width: 100%;
+            box-sizing: border-box;
+            z-index: 999;
+        }
+
+        /* 编辑预览提示条样式 */
+        #edit-preview-bar {
+            display: none;
+            padding: 8px 20px;
+            background: #fff9c4;
+            border-top: 1px solid #fbc02d;
+            font-size: 13px;
+            color: #333;
+            justify-content: space-between;
+            align-items: center;
+            position: fixed;
+            bottom: 58px;
+            width: 100%;
+            box-sizing: border-box;
+            z-index: 999;
+            border-left: 4px solid #fbc02d;
         }
 
         .input-area {
@@ -146,6 +171,7 @@
             bottom: 0;
             width: 100%;
             box-sizing: border-box;
+            z-index: 1000; 
         }
         
         #message-input { 
@@ -161,10 +187,11 @@
             overflow-y: auto;
             line-height: 1.4;
             background: white;
+            transition: background-color 0.2s;
         }
         .btn-send { 
             padding: 0 22px; 
-            background: #00a884; 
+            background: #6500a8; 
             color: white; 
             border: none; 
             border-radius: 20px; 
@@ -208,28 +235,28 @@
                     <div class="sender-name-hint">@{{ m.sender }}</div>
                 {% endif %}
 
-                <div class="message {% if not m.is_deleted %}can-open-actions{% endif %} {% if m.sender == user.username %}my-msg{% else %}others-msg{% endif %}" {% if not m.is_deleted %}oncontextmenu="openMsgMenu(event, {{ m.id|tojson }})" title="Right-click for actions"{% endif %}>
+                <div class="message {% if not m.is_deleted %}can-open-actions{% endif %} {% if m.sender == user.username %}my-msg{% else %}others-msg{% endif %}" {% if not m.is_deleted %}oncontextmenu="openMsgMenu(event, '{{ m.id }}')" title="Right-click for actions"{% endif %}>
                     
                     {% if m.reply_to_id and not m.is_deleted %}
-                        <div class="reply-quote">
-                            {{ m.replied_message.content | truncate(40) }}
+                        <div class="reply-quote" data-quote-raw="{{ m.replied_message.content }}" data-is-origin-deleted="{% if m.replied_message.is_deleted or m.replied_message.content.startswith('[DELETED_PRIVATE_MSG]') %}true{% else %}false{% endif %}">
+                            {{ m.replied_message.content }}
                         </div>
                     {% endif %}
 
                     <div class="msg-content-text">
                         <span id="body-text-{{ m.id }}" class="text-body {% if m.is_deleted %}is-deleted{% endif %}" data-raw="{{ m.content }}">{% if m.is_deleted %}This message was deleted{% else %}{{ m.content }}{% endif %}</span>
                         {% if m.is_edited and not m.is_deleted %}
-                            <small style="color:#8696a0; font-size: 10px; margin-top: 2px; display: block; text-align: right;">(edited)</small>
+                            <small class="edited-label-hint" style="color:#8696a0; font-size: 10px; margin-top: 2px; display: block; text-align: right;">(edited)</small>
                         {% endif %}
                     </div>
                 </div>
 
                 {% if not m.is_deleted %}
                 <div id="ops-bar-{{ m.id }}" class="msg-action-menu" aria-hidden="true" onclick="event.stopPropagation()">
-                    <button type="button" onclick="triggerReply({{ m.id|tojson }}, {{ m.sender|tojson }}); closeMsgMenus();">Reply</button>
+                    <button type="button" class="btn-reply-trigger" data-id="{{ m.id }}" data-sender="{{ m.sender }}">Reply</button>
                     {% if m.sender == user.username %}
-                        <button type="button" onclick="triggerEdit({{ m.id|tojson }}); closeMsgMenus();">Edit</button>
-                        <button type="button" class="danger" onclick="deleteMsg({{ m.id|tojson }}); closeMsgMenus();">Delete</button>
+                        <button type="button" class="btn-edit-trigger" data-id="{{ m.id }}">Edit</button>
+                        <button type="button" class="btn-delete-trigger danger" data-id="{{ m.id }}">Delete</button>
                     {% endif %}
                 </div>
                 {% endif %}
@@ -240,6 +267,11 @@
     <div id="reply-preview-bar">
         <span id="reply-text"></span>
         <span onclick="cancelReply()" style="cursor: pointer; font-weight: bold; font-size: 18px;">×</span>
+    </div>
+
+    <div id="edit-preview-bar">
+        <span id="edit-text">✏️ <b>Editing message...</b></span>
+        <span onclick="cancelEdit()" style="cursor: pointer; font-weight: bold; font-size: 18px; color: #757575;">×</span>
     </div>
 
     <div class="input-area">
@@ -258,6 +290,7 @@
         const sendBtn = document.getElementById('send-btn');
         const replyBar = document.getElementById('reply-preview-bar');
         const replyText = document.getElementById('reply-text');
+        const editBar = document.getElementById('edit-preview-bar');
 
         let currentReplyId = null;
         let currentEditId = null;
@@ -273,43 +306,114 @@
         }
 
         function openMsgMenu(event, id) {
-            event.preventDefault();
-            event.stopPropagation();
             closeMsgMenus();
-
             const menu = document.getElementById('ops-bar-' + id);
             if (!menu) return;
 
             menu.classList.add('is-open');
             menu.setAttribute('aria-hidden', 'false');
+
+            const container = document.getElementById('msg-wrapper-' + id);
+            
+            if (container && container.classList.contains('my-container')) {
+                menu.style.right = '0px';
+                menu.style.left = 'auto';
+            } else {
+                menu.style.left = '0px';
+                menu.style.right = 'auto';
+            }
+
+            if (container) {
+                const rect = container.getBoundingClientRect();
+                const bubbleCenterY = rect.top + (rect.height / 2);
+                const viewportHeight = window.innerHeight;
+
+                if (bubbleCenterY > viewportHeight / 2) {
+                    menu.style.bottom = '100%';
+                    menu.style.top = 'auto';
+                } else {
+                    menu.style.top = '100%';
+                    menu.style.bottom = 'auto';
+                }
+            }
         }
 
-        document.addEventListener('click', (event) => {
+        document.addEventListener('contextmenu', function(ev) {
+            let container = ev.target.closest('.msg-container');
+            if (!container) return; 
+
+            const msgId = container.id.replace('msg-wrapper-', '');
+            const menu = document.getElementById('ops-bar-' + msgId);
+            if (!menu) return;
+
+            ev.preventDefault();
+            ev.stopPropagation();
+            openMsgMenu(ev, msgId);
+        }, { passive: false });
+
+        function setupMenuButtons() {
+            document.querySelectorAll('.btn-reply-trigger').forEach(btn => {
+                btn.onclick = function(e) {
+                    e.preventDefault();
+                    e.stopPropagation(); 
+                    const mid = this.getAttribute('data-id');
+                    const sender = this.getAttribute('data-sender');
+                    triggerReply(mid, sender);
+                    closeMsgMenus();
+                };
+            });
+
+            document.querySelectorAll('.btn-edit-trigger').forEach(btn => {
+                btn.onclick = function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const mid = this.getAttribute('data-id');
+                    triggerEdit(mid);
+                    closeMsgMenus();
+                };
+            });
+
+            document.querySelectorAll('.btn-delete-trigger').forEach(btn => {
+                btn.onclick = function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const mid = this.getAttribute('data-id');
+                    deleteMsg(mid);
+                    closeMsgMenus();
+                };
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', setupMenuButtons);
+        setupMenuButtons(); 
+
+        document.addEventListener('click', function(event) {
             if (!event.target.closest('.msg-action-menu')) {
                 closeMsgMenus();
             }
         });
 
         document.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape') {
-                closeMsgMenus();
-            }
+            if (event.key === 'Escape') closeMsgMenus();
         });
 
         chatBox.addEventListener('scroll', closeMsgMenus);
 
         function autoResizeInput() {
             messageInput.style.height = 'auto';
-            const nextHeight = Math.min(messageInput.scrollHeight, 100);
-            messageInput.style.height = nextHeight + 'px';
+            messageInput.style.height = Math.min(messageInput.scrollHeight, 100) + 'px';
         }
         messageInput.addEventListener('input', autoResizeInput);
 
         function triggerReply(id, sender) {
+            cancelEdit(); 
             currentReplyId = id;
             currentEditId = null; 
             
-            const rawText = document.getElementById('body-text-' + id).getAttribute('data-raw') || "";
+            const bodyTextNode = document.getElementById('body-text-' + id);
+            let rawText = bodyTextNode ? (bodyTextNode.getAttribute('data-raw') || "") : "";
+            
+            rawText = rawText.replace(/^\[REPLY_TO:.*?\]\n?/g, "");
             const shortText = rawText.length > 20 ? rawText.substring(0, 20) + "..." : rawText;
             
             replyText.innerHTML = `Replying to <b>${sender}</b>: "${shortText}"`;
@@ -323,17 +427,27 @@
         }
 
         function triggerEdit(id) {
+            cancelReply(); 
             currentEditId = id;
             currentReplyId = null; 
-            cancelReply();
             
             const textNode = document.getElementById('body-text-' + id);
-            const rawText = textNode.getAttribute('data-raw') || textNode.innerText;
+            if (!textNode) return;
+            let rawText = textNode.getAttribute('data-raw') || textNode.innerText;
             
             messageInput.value = rawText; 
             messageInput.style.background = "#fff9c4"; 
+            editBar.style.display = 'flex'; 
             autoResizeInput(); 
             messageInput.focus();
+        }
+
+        function cancelEdit() {
+            currentEditId = null;
+            messageInput.value = "";
+            messageInput.style.background = "white";
+            editBar.style.display = 'none';
+            autoResizeInput();
         }
 
         function deleteMsg(id) {
@@ -347,60 +461,89 @@
             if (msg === "") return;
 
             if (currentEditId) {
-                socket.emit('edit_message', {
-                    message_id: currentEditId,
-                    new_content: msg,
-                    room: ROOM_ID
-                });
-                currentEditId = null;
-                messageInput.style.background = "white";
+                socket.emit('edit_message', { message_id: currentEditId, new_content: msg, room: ROOM_ID });
+                cancelEdit(); 
             } else {
-                socket.emit('send_message', {
-                    room: ROOM_ID,
-                    username: USERNAME,
-                    message: msg,
-                    reply_to_id: currentReplyId
-                });
+                socket.emit('send_message', { room: ROOM_ID, username: USERNAME, message: msg, reply_to_id: currentReplyId });
+                cancelReply();
             }
             
             messageInput.value = "";
             messageInput.style.height = 'auto'; 
-            cancelReply();
             messageInput.focus(); 
         }
 
         sendBtn.onclick = doSend;
 
         messageInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                if (!e.shiftKey) {
-                    e.preventDefault();
-                    doSend();
-                } else {
-                    setTimeout(autoResizeInput, 10);
-                }
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                doSend();
             }
         });
 
-        // 💡 修复：这里由于动态刷新页面的逻辑可能在各端不同步，我们直接用全字段渲染追加。
-        // 为了防止页面消息 ID 获取断流，当自发的 receive_message 触发时，直接重载一次或者安全渲染：
         socket.on('receive_message', (data) => {
-            // 最稳定且保留焦点的方案：如果收到了新消息，我们直接局部刷新，这样既能拿到最新的后端数据库自增 Message.id，又能拿到全量的功能按钮。
-            // 💡 技巧：我们在刷新前把焦点记下来，刷新后恢复焦点
             sessionStorage.setItem('chat_focus_ref', 'true');
             location.reload();
         });
 
-        // 页面重载后，自动检测并继续聚焦输入框！这就彻底解决了每次打完字失去焦点的问题
+        function formatChatReplies() {
+            document.querySelectorAll('.reply-quote').forEach(quoteBlock => {
+                const isOriginDeleted = quoteBlock.getAttribute('data-is-origin-deleted') === 'true';
+                let text = quoteBlock.getAttribute('data-quote-raw') || quoteBlock.innerText;
+                
+                if (isOriginDeleted || !text || text.trim() === "" || text.includes('[DELETED_PRIVATE_MSG]') || text.includes('This message was deleted')) {
+                    quoteBlock.innerHTML = `<span style="font-style: italic; color: #8696a0;">This message was deleted</span>`;
+                    applyQuoteStyles(quoteBlock);
+                    return;
+                }
+
+                const match = text.match(/^\[REPLY_TO:(.*?)\]\n([\s\S]*)$/);
+                if (match) {
+                    text = match[2]; 
+                }
+                
+                if (text.includes('[DELETED_PRIVATE_MSG]') || text.includes('This message was deleted')) {
+                    quoteBlock.innerHTML = `<span style="font-style: italic; color: #8696a0;">This message was deleted</span>`;
+                    applyQuoteStyles(quoteBlock);
+                    return;
+                }
+
+                text = text.replace(/^@[a-zA-Z0-9_\u4e00-\u9fa5]+:\s*/, "");
+                
+                if (text.length > 40) {
+                    text = text.substring(0, 40) + "...";
+                }
+
+                quoteBlock.innerText = text;
+                applyQuoteStyles(quoteBlock);
+            });
+        }
+
+        function applyQuoteStyles(quoteBlock) {
+            const isMyBubble = quoteBlock.parentElement.classList.contains('my-msg');
+            if (isMyBubble) {
+                quoteBlock.style.background = 'rgba(255, 255, 255, 0.25)';
+                if(!quoteBlock.querySelector('span')) quoteBlock.style.color = '#4a148c';
+                quoteBlock.style.borderLeft = '3px solid #6500a8';
+            } else {
+                quoteBlock.style.background = 'rgba(101, 0, 168, 0.06)';
+                if(!quoteBlock.querySelector('span')) quoteBlock.style.color = '#6500a8';
+                quoteBlock.style.borderLeft = '3px solid #6500a8';
+            }
+        }
+
         window.addEventListener('load', () => {
+            formatChatReplies(); 
             if (sessionStorage.getItem('chat_focus_ref') === 'true') {
                 sessionStorage.removeItem('chat_focus_ref');
                 messageInput.focus();
-                // 自动滑到底部
                 chatBox.scrollTop = chatBox.scrollHeight;
             }
+            setupMenuButtons(); 
         });
 
+        // 💡【核心优化点】：当收到别人或自己编辑消息成功的 socket 广播时，无刷新追加 (edited) 标签
         socket.on('message_edited', (data) => {
             const container = document.getElementById(`msg-wrapper-${data.message_id}`);
             if (container) {
@@ -408,41 +551,23 @@
                 if (textBody) {
                     textBody.innerText = data.new_content;
                     textBody.setAttribute('data-raw', data.new_content); 
-                    if (!container.querySelector('.edit-tag')) {
-                        const small = document.createElement('small');
-                        small.className = 'edit-tag';
-                        small.style.cssText = "color:#8696a0; font-size: 10px; margin-top: 2px; display: block; text-align: right;";
-                        small.innerText = "(edited)";
-                        textBody.parentNode.appendChild(small);
-                    }
+                }
+                
+                // 💡 检查当前消息块里是否已经挂了 (edited) 标签，如果没有，立刻塞一个进去
+                const contentTextDiv = container.querySelector('.msg-content-text');
+                if (contentTextDiv && !contentTextDiv.querySelector('.edited-label-hint')) {
+                    const smallTag = document.createElement('small');
+                    smallTag.className = 'edited-label-hint';
+                    smallTag.style.cssText = "color:#8696a0; font-size: 10px; margin-top: 2px; display: block; text-align: right;";
+                    smallTag.innerText = "(edited)";
+                    contentTextDiv.appendChild(smallTag);
                 }
             }
         });
 
         socket.on('message_deleted', (data) => {
-            const container = document.getElementById(`msg-wrapper-${data.message_id}`);
-            if (container) {
-                const textBody = container.querySelector('.text-body');
-                if (textBody) {
-                    textBody.innerHTML = 'This message was deleted';
-                    textBody.className = 'text-body is-deleted'; 
-                    textBody.removeAttribute('data-raw');
-                }
-                
-                const opsBar = document.getElementById(`ops-bar-${data.message_id}`);
-                if (opsBar) {
-                    opsBar.remove(); 
-                }
-                
-                const quote = container.querySelector('.reply-quote');
-                if (quote) {
-                    quote.remove();
-                }
-                const hint = container.querySelector('.sender-name-hint');
-                if (hint) {
-                    hint.style.display = 'none';
-                }
-            }
+            sessionStorage.setItem('chat_focus_ref', 'true');
+            location.reload();
         });
     </script>
 </body>
