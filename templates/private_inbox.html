@@ -1,27 +1,111 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container" style="max-width: 600px; margin: 0 auto; padding: 20px 0;">
-    <h1 style="color: #1e1233; font-weight: 800; margin-bottom: 25px;">Your Direct Messages</h1>
+<style>
+    /* 💡 终极拉长：把 max-width 从 600px 改为 900px，让你的聊天卡片格子在页面上显得更长、更大气 */
+    .pm-inbox-container {
+        max-width: 1000px; 
+        margin: 0 auto; 
+        padding: 10px 20px;
+    }
+    .pm-inbox-title {
+        font-size: 22px; 
+        color: #1e1233; 
+        margin-bottom: 25px; 
+        font-weight: bold;
+    }
+    .pm-inbox-list {
+        display: flex; 
+        flex-direction: column; 
+        gap: 14px;
+    }
+    .pm-inbox-card {
+        background: white !important; 
+        border-radius: 100px !important; 
+        border: 1px solid #eae6f0 !important; 
+        padding: 25px 24px !important; /* 适当增加了内边距，让卡片拉长后更舒展 */
+        display: flex !important; 
+        flex-direction: row !important; 
+        align-items: center !important; 
+        gap: 18px !important;
+        box-shadow: 0 4px 12px rgba(90, 50, 168, 0.01) !important;
+        transition: all 0.2s ease !important;
+        height: auto !important; 
+        min-height: 0px !important;
+    }
+    .pm-inbox-card:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 16px rgba(90, 50, 168, 0.04) !important;
+        border-color: #d1c7e3 !important;
+    }
+    .pm-avatar {
+        width: 44px; 
+        height: 44px; 
+        background: linear-gradient(135deg, #5a32a8, #8c6cd4); 
+        border-radius: 50%; 
+        flex-shrink: 0;
+    }
+    .pm-text-area {
+        flex-grow: 1; 
+        min-width: 0;
+        text-align: left;
+    }
+    .pm-username {
+        margin: 0; 
+        font-size: 16px; 
+        color: #1e1233; 
+        font-weight: 600;
+    }
+    .pm-subtitle {
+        margin: 5px 0 0 0; 
+        font-size: 13px; 
+        color: #8696a0;
+    }
+    .pm-badge-num {
+        background-color: #d92d20 !important; 
+        color: white !important;
+        font-size: 11px !important;
+        font-weight: bold !important;
+        min-width: 20px !important;
+        height: 20px !important;
+        padding: 0 6px !important;
+        border-radius: 10px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        line-height: 1 !important;
+        flex-shrink: 0 !important;
+        box-sizing: border-box !important;
+        box-shadow: 0 2px 5px rgba(217, 45, 32, 0.2) !important;
+    }
+</style>
+
+<div class="pm-inbox-container">
+    <h2 class="pm-inbox-title">Your Direct Messages</h2>
     
-    {% if not chat_partners %}
-        <div class="card" style="text-align: center; padding: 40px; background: white; border-radius: 20px; border: 1px solid #eae6f0;">
-            <p style="color: #7b728c;">No private chats found. You can message people directly through task profile links!</p>
-        </div>
-    {% else %}
-        <div style="display: flex; flex-direction: column; gap: 15px;">
-            {% for partner in chat_partners %}
-                <a href="{{ url_for('private_chat', username=partner) }}" style="text-decoration: none; color: inherit; display: block;">
-                    <div class="card" style="min-height: auto; padding: 20px; display: flex; align-items: center; gap: 15px; background: white; border-radius: 20px; border: 1px solid #eae6f0; transition: 0.2s;">
-                        <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #5a32a8, #8c6cd4); border-radius: 50%;"></div>
-                        <div>
-                            <h3 style="margin: 0; font-size: 16px; color: #1e1233;">{{ partner }}</h3>
-                            <p style="margin: 3px 0 0 0; font-size: 13px; color: #7b728c;">Click to open text history</p>
-                        </div>
+    <div class="pm-inbox-list">
+        {% for item in inbox_data %}
+            <a href="{{ url_for('private_chat', username=item.username) }}" style="text-decoration: none; color: inherit; display: block;">
+                <div class="pm-inbox-card">
+                    <div class="pm-avatar"></div>
+                    
+                    <div class="pm-text-area">
+                        <h3 class="pm-username">{{ item.username }}</h3>
+                        <p class="pm-subtitle">Click to open text history</p>
                     </div>
-                </a>
-            {% endfor %}
-        </div>
-    {% endif %}
+
+                    <div id="badge-partner-{{ item.username }}" class="pm-badge-num" style="{% if not item.unread_count or item.unread_count == 0 %}display: none !important;{% endif %}">
+                        {{ item.unread_count if item.unread_count else 0 }}
+                    </div>
+                </div>
+            </a>
+        {% else %}
+            <div style="text-align: center; padding: 40px 20px; color: #8696a0; font-size: 14px; background: #fdfcff; border-radius: 16px; border: 1px dashed #eae6f0;">
+                No direct messages yet.
+            </div>
+        {% endfor %}
+    </div>
 </div>
+
+
 {% endblock %}

@@ -1169,40 +1169,91 @@ def completed_tasks():
 # =========================
 @socketio.on('join')
 def on_join(data):
-    room_id = str(data['room'])
+    room_id = str(data.get('room', ''))
     user = db.session.get(User, session.get('user_id'))
     
-    if not user:
+    if not user or not room_id:
         return
 
-    # 💬 NEW: Handle real-time Private Messaging Room joins
+    # 💬 Handle real-time Private Messaging Room joins
     if room_id.startswith("private_"):
-        # Security: Only let the user join if their username is part of the room string title
-        if user.username in room_id:
+        # Security: Split room names to ensure exact username match (prevents username spoofing)
+        room_parts = room_id.replace("private_", "").split("_")
+        if user.username in room_parts:
             join_room(room_id)
             print(f"🔒 User {user.username} successfully entered private secure room: {room_id}")
-            
-    # 👥 Handle your teammate's existing Task Group Chat Room joins
-    else:
+        return
+
+    # 👥 Handle Task Group Chat Room joins
+    try:
         task = db.session.get(Task, int(room_id))
         if task and user_can_access_task_chat(task, user):
             join_room(room_id)
             print(f"👥 User {user.username} entered task group room: {room_id}")
+    except (ValueError, TypeError):
+        # Prevents crash if room_id is not a valid integer ID
+        pass
 
 
 @socketio.on('send_message')
-def handle_message(data):
-    room = data['room']
-    task = db.session.get(Task, int(room))
+def handle_combined_message(data):
+    room = str(data.get('room', ''))
+    msg_content = data.get('message') or data.get('content')
     current_user = db.session.get(User, session.get('user_id'))
+
+    if not room or not msg_content or not current_user:
+        return
+
+    # 🌟 通道 A：1对1 私信发送与实时广播
+    if "private_" in room:
+        room_parts = room.replace("private_", "").split("_")
+        if len(room_parts) < 2:
+            return
+        receiver_username = room_parts[1] if room_parts[0] == current_user.username else room_parts[0]
+
+        # 存入私信表 DirectMessage
+        new_dm = DirectMessage(
+            sender_username=current_user.username,
+            receiver_username=receiver_username,
+            content=msg_content
+        )
+        db.session.add(new_dm)
+        db.session.commit()
+
+        # 双通道并发广播，保证前端 100% 能够抓取到刷新信号
+        emit('receive_message', {
+            'room': room,
+            'username': current_user.username,
+            'sender': current_user.username,
+            'message': msg_content
+        }, room=room)
+        
+        emit('receive_private_message', {
+            'room': room,
+            'sender': current_user.username,
+            'message': msg_content
+        }, room=room)
+        return
+
+    # 🌟 通道 B：常规群聊
+    task = db.session.get(Task, int(room))
     if not task or not user_can_access_task_chat(task, current_user):
         return
+
+    reply_id = data.get('reply_to_id')
+    if not reply_id or reply_id == "null" or reply_id == "":
+        reply_id = None
+    else:
+        try:
+            reply_id = int(reply_id)
+        except (ValueError, TypeError):
+            reply_id = None
 
     message = Message(
         task_id=int(room),
         sender=current_user.username,
-        content=data['message'],
-        reply_to_id=data.get('reply_to_id')
+        content=msg_content,
+        reply_to_id=reply_id
     )
     db.session.add(message)
     db.session.commit()
@@ -1224,33 +1275,69 @@ def handle_message(data):
 
 @socketio.on('edit_message')
 def handle_edit(data):
-    # 1. 统一用 user_id 从数据库获取当前登录的完整用户对象
     current_user = db.session.get(User, session.get('user_id'))
-    msg = db.session.get(Message, data.get('message_id'))
-    
-    # 2. 修复核心：用 current_user.username 代替 session.get('user_username')
-    if msg and current_user and msg.sender == current_user.username:
-        msg.content = data.get('new_content')
+    msg_id = data.get('message_id')
+    new_content = data.get('new_content')
+    room_id = str(data.get('room', ''))
+
+    if not current_user or not msg_id or not new_content:
+        return
+
+    # 💡 强力修复：强制转换为整型以对齐数据库主键类型，清除类型判断误差
+    try:
+        msg_id = int(msg_id)
+    except (ValueError, TypeError):
+        return
+
+    # 🌟 通道 A：如果房间名带有 private_，去私信表修改
+    if "private_" in room_id:
+        dm_msg = db.session.get(DirectMessage, msg_id)
+        if dm_msg and dm_msg.sender_username == current_user.username:
+            dm_msg.content = new_content
+            db.session.commit()
+            emit('message_edited', {'message_id': msg_id, 'new_content': new_content}, room=room_id)
+            emit('private_message_edited', {'message_id': msg_id, 'new_content': new_content}, room=room_id)
+        return
+
+    # 🌟 通道 B：任务大群聊修改
+    msg = db.session.get(Message, msg_id)
+    if msg and msg.sender == current_user.username:
+        msg.content = new_content
         msg.is_edited = True
         db.session.commit()
-        
-        # 3. 广播给房间所有人
-        room_id = str(msg.task_id)
-        emit('message_edited', {
-            'message_id': msg.id, 
-            'new_content': msg.content
-        }, room=room_id)
-    else:
-        print("DEBUG: Edit failed. Check if user matches sender.")
+        emit('message_edited', {'message_id': msg.id, 'new_content': msg.content}, room=room_id)
+
 
 @socketio.on('delete_message')
 def handle_delete(data):
-    current_user = User.query.get(session.get('user_id'))
-    msg = db.session.get(Message, data.get('message_id'))
-    if msg and current_user and msg.sender == current_user.username:
+    current_user = db.session.get(User, session.get('user_id'))
+    msg_id = data.get('message_id')
+    room_id = str(data.get('room', ''))
+
+    if not current_user or not msg_id:
+        return
+
+    try:
+        msg_id = int(msg_id)
+    except (ValueError, TypeError):
+        return
+
+    # 🌟 通道 A：如果房间名带有 private_，去私信表抹除
+    if "private_" in room_id:
+        dm_msg = db.session.get(DirectMessage, msg_id)
+        if dm_msg and dm_msg.sender_username == current_user.username:
+            db.session.delete(dm_msg)
+            db.session.commit()
+            emit('message_deleted', {'message_id': msg_id}, room=room_id)
+            emit('private_message_deleted', {'message_id': msg_id}, room=room_id)
+        return
+
+    # 🌟 通道 B：群聊表软删除
+    msg = db.session.get(Message, msg_id)
+    if msg and msg.sender == current_user.username:
         msg.is_deleted = True
         db.session.commit()
-        emit('message_deleted', {'message_id': msg.id}, room=str(msg.task_id))
+        emit('message_deleted', {'message_id': msg.id}, room=room_id)
 
 
 @socketio.on('connect')
@@ -1260,6 +1347,11 @@ def handle_connect():
         print(f"User {session['user_id']} connected to their private room.")
 
 
+# =========================
+# HTTP ROUTES & APPS
+# =========================
+
+
 @app.route('/private_inbox')
 def private_inbox():
     if 'user_id' not in session:
@@ -1267,7 +1359,6 @@ def private_inbox():
     
     current_user = User.query.get(session['user_id'])
     
-    # Fetch all unique users that the current user has exchanged private messages with
     sent_msgs = DirectMessage.query.filter_by(sender_username=current_user.username).all()
     rcvd_msgs = DirectMessage.query.filter_by(receiver_username=current_user.username).all()
     
@@ -1277,7 +1368,27 @@ def private_inbox():
     for msg in rcvd_msgs:
         chat_partners.add(msg.sender_username)
         
-    return render_template('private_inbox.html', chat_partners=list(chat_partners), user=current_user)
+    inbox_data = []
+    for partner_username in chat_partners:
+        # 💡 查询这个人发给我、且我还没读的真实消息条数
+        unread_count = DirectMessage.query.filter_by(
+            sender_username=partner_username,
+            receiver_username=current_user.username,
+            is_read=False
+        ).count()
+        
+        inbox_data.append({
+            'username': partner_username,
+            'unread_count': unread_count  # 💡 传给前端具体数字
+        })
+        
+    # 用于顶部导航栏判断是否有未读
+    total_unread = DirectMessage.query.filter_by(
+        receiver_username=current_user.username,
+        is_read=False
+    ).count()
+        
+    return render_template('private_inbox.html', inbox_data=inbox_data, user=current_user, total_unread=total_unread)
 
 
 @app.route('/private_chat/<username>', methods=['GET', 'POST'])
@@ -1288,22 +1399,43 @@ def private_chat(username):
     current_user = User.query.get(session['user_id'])
     target_user = User.query.filter_by(username=username).first_or_404()
     
+    usernames = sorted([current_user.username, target_user.username])
+    room_name = f"private_{usernames[0]}_{usernames[1]}"
+    
+    # 进入聊天室，洗成已读
+    unread_msgs = DirectMessage.query.filter_by(
+        sender_username=target_user.username,
+        receiver_username=current_user.username,
+        is_read=False
+    ).all()
+    if unread_msgs:
+        for msg in unread_msgs:
+            msg.is_read = True
+        db.session.commit()
+    
     if request.method == 'POST':
         msg_content = request.form.get('content')
         if msg_content:
             new_dm = DirectMessage(
                 sender_username=current_user.username,
                 receiver_username=target_user.username,
-                content=msg_content
+                content=msg_content,
+                is_read=False
             )
             db.session.add(new_dm)
             db.session.commit()
             
-            # 1. 💬 Keep your original room update event working here for active chatters
             socketio.emit('receive_private_message', {
+                'room': room_name,
                 'sender': current_user.username,
                 'message': msg_content
-            }, room=f"private_{min(current_user.username, target_user.username)}_{max(current_user.username, target_user.username)}")
+            }, room=room_name)
+
+            # 💡 【核心修复点】：直接用全局 socketio.emit 发射全站实时未读通知通知！
+            socketio.emit('new_private_notification', {
+                'sender': current_user.username,
+                'receiver': target_user.username
+            })
             
             # 2. 🚀 ✅ ADDED: Reach them globally across other app hooks to trigger real-time toasts
             socketio.emit('receive_private_message', {
@@ -1313,18 +1445,45 @@ def private_chat(username):
             
         return redirect(url_for('private_chat', username=username))
         
-    # Fetch conversation history between these two specific users
     history = DirectMessage.query.filter(
         ((DirectMessage.sender_username == current_user.username) & (DirectMessage.receiver_username == target_user.username)) |
         ((DirectMessage.sender_username == target_user.username) & (DirectMessage.receiver_username == current_user.username))
     ).order_by(DirectMessage.timestamp.asc()).all()
     
     return render_template('private_chat.html', target_user=target_user, user=current_user, history=history)
+# 💡 核心：全局未读数注入锁。有了它，Marketplace、Dashboard、Profile 都能完美显示红点
+@app.context_processor
+def inject_global_private_unread_count():
+    if 'user_id' in session:
+        # 这里用 try-except 防止在还没跑完 DB 迁移或者未登录时挂掉
+        try:
+            current_user = User.query.get(session['user_id'])
+            if current_user:
+                # 统计所有发给当前用户的、还没读的私聊消息总数
+                count = DirectMessage.query.filter_by(
+                    receiver_username=current_user.username, 
+                    is_read=False
+                ).count()
+                return dict(total_unread=count)
+        except Exception:
+            pass
+    return dict(total_unread=0)
+
+# app.py 里的 Socket 监听区域追加：
+
+@socketio.on('new_private_notification')
+def handle_private_notification(data):
+    # 💡 收到前端发来的私聊通知信号后，立刻将其以全站广播形式砸向所有页面
+    socketio.emit('new_private_notification', {
+        'sender': data.get('sender'),
+        'receiver': data.get('receiver')
+    })
+
 
 if __name__ == '__main__':
     with app.app_context():
-        patch_database()  # Runs your columns update checks
-        db.create_all()   # Builds any completely brand-new tables from scratch
+        patch_database()  
+        db.create_all()   
         print("!!! Database has been patched and initialized with new columns !!!")
         
     socketio.run(app, debug=True, port=8000)

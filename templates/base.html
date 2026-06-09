@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <title>SideHustle</title>
+    <title>{% block title %}SideHustle{% endblock %}</title>
+    {% block extra_head %}{% endblock %}
 </head>
 <body>
     <div id="toast-container" class="toast-notification-container"></div>
@@ -28,10 +29,21 @@
         <div class="top-nav">
             <div class="nav-icons" style="display: flex; align-items: center; gap: 25px;">
                 
-                <a href="{{ url_for('private_inbox') }}" class="msg-nav-link" style="text-decoration: none; color: white; position: relative; font-size: 20px; display: inline-flex; align-items: center;">
-                    💬
-                </a> 
-                
+                <a href="{{ url_for('private_inbox') }}" style="position: relative; display: inline-block;">
+    <span>💬</span> 
+    <span id="global-nav-red-dot" style="
+        position: absolute; top: -2px; right: -2px; width: 10px; height: 10px; 
+        background-color: #d92d20; border-radius: 50%; border: 2px solid white;
+        {% if not total_unread or total_unread == 0 %} display: none; {% endif %}
+    "></span>
+</a>
+
+<script>
+    window.currentUsername = "{{ user.username if user else '' }}";
+</script>
+<script src="{{ url_for('static', filename='js/notification.js') }}"></script> 
+
+<script src="{{ url_for('static', filename='js/pm_notification.js') }}"></script>
                 <div class="notification-container" style="position: relative; display: inline-flex; align-items: center;">
                     <span id="bell-icon" style="cursor: pointer; font-size: 22px; color: white;">🔔</span>
                     
@@ -84,6 +96,8 @@
             {% block content %}{% endblock %}
         </div>
     </div> 
+
+</div>
 
 <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
 <script>
