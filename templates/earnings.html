@@ -1,137 +1,107 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SideHustle Earnings</title>
-   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+{% extends "base.html" %}
+
+{% block title %}SideHustle Earnings{% endblock %}
+
+{% block extra_head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
-    <style>
-        /* 针对 Earnings 页面内容的微调 */
-        .earnings-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 30px;
-        }
-        .earnings-summary-row {
-            display: flex;
-            gap: 20px;
-        }
-        .summary-card-small {
-            background: #ffffff;
-            border-radius: 20px;
-            padding: 20px 30px;
-            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.06);
-            min-width: 180px;
-            /* 👇 1. 给 Total Records 和 Total Credit 加上了精致的浅色边框 */
-            border: 1px solid #d8def8;
-        }
-        .history-card {
-            background: #faf9de;
-            border-radius: 25px;
-            padding: 30px;
-            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.05);
-        }
-        .history-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 20px;
-            background: #ffffff;
-            border-radius: 15px;
-            margin-bottom: 15px;
-            /* 👇 2. 给每个 Completed Task 卡片加上了精致的浅色边框 */
-            border: 1px solid #adb600;
-        }
-        .amount-text {
-            font-weight: bold;
-            color: #16765b;
-            font-size: 18px;
-        }
-    </style>
-</head>
+<style>
+    /* 针对 Earnings 页面内容的微调 */
+    .earnings-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 30px;
+    }
+    .earnings-summary-row {
+        display: flex;
+        gap: 20px;
+    }
+    .summary-card-small {
+        background: #ffffff;
+        border-radius: 20px;
+        padding: 20px 30px;
+        box-shadow: 0 4px 15px rgba(79, 70, 229, 0.06);
+        min-width: 180px;
+        /* 👇 1. 给 Total Records 和 Total Credit 加上了精致的浅色边框 */
+        border: 1px solid #d8def8;
+    }
+    .history-card {
+        background: #faf9de;
+        border-radius: 25px;
+        padding: 30px;
+        box-shadow: 0 4px 15px rgba(79, 70, 229, 0.05);
+    }
+    .history-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 20px;
+        background: #ffffff;
+        border-radius: 15px;
+        margin-bottom: 15px;
+        /* 👇 2. 给每个 Completed Task 卡片加上了精致的浅色边框 */
+        border: 1px solid #adb600;
+    }
+    .amount-text {
+        font-weight: bold;
+        color: #16765b;
+        font-size: 18px;
+    }
+</style>
+{% endblock %}
 
-<body>
-    <div class="main-layout">
-        <aside class="sidebar">
-            <div class="logo">SideHustle</div>
-            <div class="sidebar-menu">
-                <a href="{{ url_for('marketplace') }}">🏠 Marketplace</a>
-                <a href="{{ url_for('dashboard') }}">📊 Dashboard</a>
-                <a href="/my_task" style="position: relative;">
-                        📋 My Task
-                        {% if global_unread_count > 0 %}
-                            <span class="dot-small"></span>
-                        {% endif %}
-                    </a>
-                <a href="#">👤 Profile</a>
+{% block content %}
+<main class="main-content">
+    <div class="earnings-header">
+        <div class="title-section">
+            <h1 style="font-size: 32px; font-weight: 800; margin: 0 0 8px 0;">Earnings</h1>
+            <p style="color: #474646; margin: 0;">Track all your completed work payments in one place.</p>
+        </div>
+
+        <div class="earnings-summary-row">
+            <div class="summary-card-small">
+                <span style="color: #374151; font-size: 14px;">Total Records</span>
+                <h2 style="font-size: 28px; color: #16765b; margin: 8px 0 0 0;">{{ earnings_list|length }}</h2>
             </div>
-            <div class="help-link">❓ Help</div>
-        </aside>
-
-        <div class="content-wrapper">
-            <header class="top-nav">
-                <div class="nav-icons">
-                    <span class="bell-icon" style="color: white; font-size: 20px; margin-right: 10px;">🔔</span>
-                    <div class="profile-circle"></div>
-                </div>
-            </header>
-
-            <main class="main-content">
-                <div class="earnings-header">
-                    <div class="title-section">
-                        <h1 style="font-size: 32px; font-weight: 800;">Earnings</h1>
-                        <p style="color: #474646;">Track all your completed work payments in one place.</p>
-                    </div>
-
-                    <div class="earnings-summary-row">
-                        <div class="summary-card-small">
-                            <span style="color: #374151; font-size: 14px;">Total Records</span>
-                            <h2 style="font-size: 28px; color: #16765b;">{{ earnings_list|length }}</h2>
-                        </div>
-                        <div class="summary-card-small">
-                            <span style="color: #374151; font-size: 14px;">Total Credit</span>
-                            <h2 style="font-size: 28px; color:#16765b;">RM {{ total_credit|money_amount }}</h2>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="history-card">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
-                        <h2 style="font-size: 24px;">Earnings History</h2>
-                    </div>
-
-                    <div style="display: flex; justify-content: space-between; font-weight: bold; padding: 0 20px 10px; color: #374151;">
-                        <span>Activity</span>
-                        <span>Amount</span>
-                    </div>
-
-                    <div class="history-list">
-                        {% for earning in earnings_list %}
-                        <div class="history-item">
-                            <div>
-                                <div style="display: flex; align-items: center; gap: 10px;">
-                                    <div style="font-weight: 600;">{{ earning.activity }}</div>
-                                    
-                                    {% if earning.timestamp %}
-                                    <span style="font-size: 12px; color: #6b7280; font-weight: normal;">
-                                        • 📆 {{ earning.timestamp.strftime('%Y-%m-%d %H:%M') }}
-                                    </span>
-                                    {% endif %}
-                                </div>
-                                <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">Record ID: {{ earning.id }}</div>
-                            </div>
-                            <div class="amount-text">+RM {{ earning.amount|money_amount }}</div>
-                        </div>
-                        {% endfor %}
-                    </div>
-
-                    <div style="text-align: right; margin-top: 20px;">
-                        <a href="{{ url_for('dashboard') }}" style="text-decoration: none; color: #000000; font-weight: bold; border: 1px solid #bac400; padding: 10px 20px; border-radius: 10px;">Back to Dashboard</a>
-                    </div>
-                </div>
-            </main>
+            <div class="summary-card-small">
+                <span style="color: #374151; font-size: 14px;">Total Credit</span>
+                <h2 style="font-size: 28px; color:#16765b; margin: 8px 0 0 0;">RM {{ total_credit|money_amount }}</h2>
+            </div>
         </div>
     </div>
-</body>
-</html>
+
+    <div class="history-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+            <h2 style="font-size: 24px; margin: 0;">Earnings History</h2>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; font-weight: bold; padding: 0 20px 10px; color: #374151;">
+            <span>Activity</span>
+            <span>Amount</span>
+        </div>
+
+        <div class="history-list">
+            {% for earning in earnings_list %}
+            <div class="history-item">
+                <div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="font-weight: 600;">{{ earning.activity }}</div>
+                        
+                        {% if earning.timestamp %}
+                        <span style="font-size: 12px; color: #6b7280; font-weight: normal;">
+                            • 📆 {{ earning.timestamp.strftime('%Y-%m-%d %H:%M') }}
+                        </span>
+                        {% endif %}
+                    </div>
+                    <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">Record ID: {{ earning.id }}</div>
+                </div>
+                <div class="amount-text">+RM {{ earning.amount|money_amount }}</div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div style="text-align: right; margin-top: 20px;">
+            <a href="{{ url_for('dashboard') }}" style="text-decoration: none; color: #000000; font-weight: bold; border: 1px solid #bac400; padding: 10px 20px; border-radius: 10px; display: inline-block;">Back to Dashboard</a>
+        </div>
+    </div>
+</main>
+{% endblock %}
