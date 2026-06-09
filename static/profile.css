@@ -276,22 +276,32 @@
     background: #a389c7;
 }
 
+#panel-security {
+    display: none; 
+    width: 100%;
+    margin: 0 auto;
+    padding-left: 50px;
+    padding-right: 40px;
+    box-sizing: border-box;
+}
+
 .security-footer-actions {
-    margin-top: 120px !important; 
+    margin-top: 200px !important; 
     flex-direction: column-reverse !important; 
     width: 100%;
     align-items: center;
 }
 
 #panel-security .detail-row {
-    border-bottom: 2px solid #5a6794; /* Dark structural accent lines matched to layout specs */
+    border-bottom: 2px solid #5a6794;
+    margin-bottom: 45px;
 }
 
 .log-out-delete {
     margin-top: 40px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 16px;
     align-items: center;
 }
 
