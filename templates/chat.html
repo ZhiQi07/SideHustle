@@ -12,15 +12,15 @@
             align-items: center;
             gap: 20px;
             background: white;
-            border-bottom: 15px solid #ddd;
+            border-bottom: 1px solid #ddd;
             position: sticky; top: 0; z-index: 100;
         }
         
         /* 💡 融合背景：高度拉长，底部白色死空全部变成灰色聊天背景的延伸 */
         #chat-box {
-            height: calc(100vh - 135px); 
+            height: calc(100vh - 75px); 
             overflow-y: auto;
-            padding: 15px 20px 80px 20px; /* 给底部留 80px 填充，保证最后一条消息能安全滚到输入框上方 */
+            padding: 15px 20px 70px 20px; /* 给底部留 80px 填充，保证最后一条消息能安全滚到输入框上方 */
             display: flex !important;
             flex-direction: column !important;
             gap: 12px !important; 
@@ -83,6 +83,8 @@
         .msg-action-menu {
             display: none !important;
             position: absolute !important;
+            top: 0;                        /* 💡 归零，防止它在下方撑开隐形怪圈 */
+            left: 0;
             z-index: 9999 !important;
             min-width: 108px !important;
             padding: 4px !important;
@@ -270,7 +272,7 @@
     </div>
 
     <div id="edit-preview-bar">
-        <span id="edit-text">✏️ <b>Editing message...</b></span>
+        <span id="edit-text"><b>Editing message...</b></span>
         <span onclick="cancelEdit()" style="cursor: pointer; font-weight: bold; font-size: 18px; color: #757575;">×</span>
     </div>
 
