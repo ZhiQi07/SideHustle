@@ -8,16 +8,24 @@ from sqlalchemy import or_
 from datetime import timezone, timedelta
 my8 = timezone(timedelta(hours=8))
 import re
+# 🚀 Added for cloud support
+from dotenv import load_dotenv
 
 app = Flask(__name__)
 app.secret_key = "mmu_secret_key"
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-basedir = os.path.abspath(os.path.dirname(__file__))
-db_path = os.path.join(basedir, 'database.db')
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + db_path
+# 🚀 Safe environment variable checker config loop
+load_dotenv()
+database_url = os.getenv('DATABASE_URL')
+if database_url and database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql://", 1)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url or 'sqlite:///' + os.path.join(os.path.abspath(os.path.dirname(__file__)), 'database.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
+
+# --- Your models (class User, class Task, etc.) continue normally right below here ---
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -1482,8 +1490,17 @@ def handle_private_notification(data):
 
 if __name__ == '__main__':
     with app.app_context():
-        patch_database()  
+        # Only run the SQLite patch engine if we are NOT using PostgreSQL/Neon
+        if 'postgresql' not in app.config['SQLALCHEMY_DATABASE_URI']:
+            try:
+                patch_database()
+            except Exception as e:
+                print(f"⚠️ Skipping SQLite patch due to architecture variant: {e}")
+        else:
+            print("☁️ Neon Cloud PostgreSQL detected. Skipping legacy SQLite local patches.")
+            
+        # Rebuild all database object mappings safely in the cloud
         db.create_all()   
-        print("!!! Database has been patched and initialized with new columns !!!")
+        print("!!! Database connection initialized cleanly !!!")
         
-    socketio.run(app, debug=True, port=8000)
+    socketio.run(app, host='0.0.0.0', port=8000, debug=True)
