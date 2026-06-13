@@ -150,8 +150,6 @@
                 <div class="next-box">
                     <span class="next-label">more to rate</span>
                     <a href="{{ url_for('rate_user', task_id=task.id, target_user=next_target) }}">Next →</a>
-                    <hr class="divider">
-                    <a href="{{ url_for('my_task') }}" style="color: #aaa; font-size: 11px;">Skip</a>
                 </div>
                 {% endif %}
             </div>

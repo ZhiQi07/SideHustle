@@ -318,6 +318,7 @@ def cleanup_expired_tasks():
 def send_socket_notification(user_id, message, task_id=None):
     try:
         unread_count = Notification.query.filter_by(user_id=user_id, status='unread').count()
+        print(f"📢 [Socket Server] Emitting 'new_notification' to room '{user_id}': count={unread_count}, msg='{message}', task_id={task_id}")
         socketio.emit('new_notification', {
             'count': unread_count,
             'message': message,
@@ -1541,4 +1542,4 @@ if __name__ == '__main__':
         db.create_all()   
         print("!!! Database has been patched and initialized with new columns !!!")
         
-    socketio.run(app, debug=True, port=8000)
+    socketio.run(app, debug=True, port=8000, allow_unsafe_werkzeug=True)

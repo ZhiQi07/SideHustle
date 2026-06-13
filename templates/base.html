@@ -45,8 +45,8 @@
 </script>
 <script src="{{ url_for('static', filename='js/notification.js') }}"></script> 
 
-<script src="{{ url_for('static', filename='js/pm_notification.js') }}"></script>
-<script src="{{ url_for('static', filename='js/bell_notification.js') }}"></script>
+<script src="{{ url_for('static', filename='js/pm_notification.js') }}?v=3"></script>
+<script src="{{ url_for('static', filename='js/bell_notification.js') }}?v=3"></script>
                 <div class="notification-container" style="position: relative; display: inline-flex; align-items: center;">
                     <span id="bell-icon" style="cursor: pointer; font-size: 22px; color: white;">🔔</span>
                     <span id="bell-badge" style="
@@ -190,9 +190,11 @@
             setTimeout(() => toast.remove(), 400);
         }, 4000);
     }
+    window.launchToastAlert = launchToastAlert;
 
     // Initialize Socket Connection
-    const globalSocket = io();
+    window.globalSocket = io();
+    const globalSocket = window.globalSocket;
 
     // ✅ FIXED: Merged everything into your clean tracking listener
     globalSocket.on('new_unread', function(data) {
@@ -231,6 +233,6 @@ globalSocket.on('receive_private_message', function(data) {
     launchToastAlert(`New Direct Message from @${data.sender}: "${data.message.substring(0, 30)}..."`);
 });
 </script>
-<script src="{{ url_for('static', filename='js/task_progress.js') }}"></script>
+<script src="{{ url_for('static', filename='js/task_progress.js') }}?v=3"></script>
 </body>
 </html>
