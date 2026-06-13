@@ -207,38 +207,45 @@ def time_ago(value):
     if not value:
         return "Just Now"
     
-    now = datetime.now()
-    # Handle timezone differences safely if your database uses naive timestamps
+    # Both now and value are naive UTC datetimes
+    now = datetime.utcnow()
     diff = now - value
     
-    second_diff = diff.seconds
-    day_diff = diff.days
-
-    if day_diff < 0:
+    total_seconds = int(diff.total_seconds())
+    if total_seconds < 0:
         return "Just Now"
-
-    if day_diff == 0:
-        if second_diff < 10:
+    
+    days = total_seconds // 86400
+    hours = (total_seconds % 86400) // 3600
+    minutes = (total_seconds % 3600) // 60
+    
+    if days == 0:
+        if total_seconds < 10:
             return "Just Now"
-        if second_diff < 60:
-            return f"{second_diff} seconds ago"
-        if second_diff < 120:
-            return "a minute ago"
-        if second_diff < 3600:
-            return f"{second_diff // 60} minutes ago"
-        if second_diff < 7200:
-            return "an hour ago"
-        if second_diff < 86400:
-            return f"{second_diff // 3600} hours ago"
-            
-    if day_diff == 1:
+        if hours == 0:
+            if minutes == 0:
+                return f"{total_seconds} seconds ago"
+            elif minutes == 1:
+                return "1 minute ago"
+            else:
+                return f"{minutes} minutes ago"
+        else:
+            h_str = f"{hours} hour" if hours == 1 else f"{hours} hours"
+            if minutes > 0:
+                m_str = f"{minutes} minute" if minutes == 1 else f"{minutes} minutes"
+                return f"{h_str} {m_str} ago"
+            else:
+                return f"{h_str} ago"
+    
+    if days == 1:
         return "Yesterday"
-    if day_diff < 7:
-        return f"{day_diff} days ago"
-    if day_diff < 31:
-        return f"{day_diff // 7} weeks ago"
+    if days < 7:
+        return f"{days} days ago"
         
-    return value.strftime('%b %d, %Y')
+    # For dates older than 7 days, convert UTC to Malaysia Time (UTC+8)
+    from datetime import timedelta
+    malaysia_time = value + timedelta(hours=8)
+    return malaysia_time.strftime('%Y-%m-%d %H:%M')
 
 @app.context_processor
 def inject_global_unread():
@@ -279,10 +286,14 @@ def inject_notifications():
             user_notifications = Notification.query.filter_by(
                 user_id=current_user.id
             ).order_by(Notification.id.desc()).limit(5).all()
-            return dict(notifications=user_notifications)
+            unread_count = Notification.query.filter_by(
+                user_id=current_user.id,
+                status='unread'
+            ).count()
+            return dict(notifications=user_notifications, unread_notifications_count=unread_count)
         else:
             session.pop('user_id', None)
-    return dict(notifications=[])
+    return dict(notifications=[], unread_notifications_count=0)
 
 
 def cleanup_expired_tasks():
@@ -304,6 +315,17 @@ def cleanup_expired_tasks():
             db.session.delete(task)
     db.session.commit()
 
+def send_socket_notification(user_id, message, task_id=None):
+    try:
+        unread_count = Notification.query.filter_by(user_id=user_id, status='unread').count()
+        socketio.emit('new_notification', {
+            'count': unread_count,
+            'message': message,
+            'task_id': task_id
+        }, room=str(user_id))
+    except Exception as e:
+        print(f"Error emitting socket notification: {e}")
+
 @app.route('/clear_notifications', methods=['POST'])
 def clear_notifications():
     if 'user_id' not in session:
@@ -311,6 +333,15 @@ def clear_notifications():
         
     # Delete or change status of notifications belonging to this user
     Notification.query.filter_by(user_id=session['user_id']).delete()
+    db.session.commit()
+    return {"status": "success"}, 200
+
+@app.route('/mark_notifications_read', methods=['POST'])
+def mark_notifications_read():
+    if 'user_id' not in session:
+        return {"status": "unauthorized"}, 401
+        
+    Notification.query.filter_by(user_id=session['user_id'], status='unread').update({Notification.status: 'read'})
     db.session.commit()
     return {"status": "success"}, 200
 
@@ -545,6 +576,7 @@ def update_progress(task_id):
     if not task or not user_can_rate_target(task, user.username, task.user):
         flash("Only hired taskers can update this task progress.")
         return redirect(url_for('my_task'))
+    owner = None
     if new_progress == 100 and task.status != 'Completed':
         task.status = 'Completed'
         owner = User.query.filter_by(username=task.user).first()
@@ -573,6 +605,8 @@ def update_progress(task_id):
                     ))
     task.progress = new_progress
     db.session.commit()
+    if owner:
+        send_socket_notification(owner.id, f"Milestone Alert: @{user.username} marked your task '{task.title}' as 100% complete!", task.id)
     return redirect(url_for('my_task', view='applied'))
 
 
@@ -653,6 +687,7 @@ def delete_task(task_id):
     if task.get_hired_count() > 0:
         flash("Cannot delete a task that has active hired help!")
         return redirect(url_for('my_task'))
+    notified_users = []
     for app_record in Application.query.filter_by(task_id=task.id, status='Pending').all():
         applicant = User.query.filter_by(username=app_record.applicant_username).first()
         if applicant:
@@ -661,9 +696,12 @@ def delete_task(task_id):
                 message=f"Alert: The task '{task.title}' you applied for was deleted by the owner.",
                 status='unread'
             ))
+            notified_users.append(applicant.id)
     Application.query.filter_by(task_id=task.id).delete()
     db.session.delete(task)
     db.session.commit()
+    for uid in notified_users:
+        send_socket_notification(uid, f"Alert: The task '{task.title}' you applied for was deleted by the owner.")
     flash("Task deleted successfully. Pending applicants have been notified.")
     return redirect(url_for('my_task'))
 
@@ -785,6 +823,8 @@ def apply(task_id):
             ))
             socketio.emit('new_unread', {'task_id': task.id, 'role': 'created'}, room=str(owner.id))
         db.session.commit()
+        if owner:
+            send_socket_notification(owner.id, f"New Applicant: @{current_user.username} applied for your task: {task.title}!", task.id)
         flash("Application submitted successfully!")
         return redirect(url_for('marketplace'))
     return render_template('apply.html', task=task)
@@ -921,6 +961,7 @@ def hire_applicant(app_id):
                 message=f"You have been HIRED for the task: {task.title}!"
             ))
         
+        rejected_users = []
         if task.get_hired_count() >= task.capacity:
             # 1. Find all other pending applications for this task
             excess_applications = Application.query.filter_by(task_id=task.id, status='Pending').all()
@@ -937,12 +978,17 @@ def hire_applicant(app_id):
                         task_id=task.id,
                         message=f"The task '{task.title}' has reached full capacity, and your application was automatically released."
                     ))
+                    rejected_users.append((excess_user.id, f"The task '{task.title}' has reached full capacity, and your application was automatically released."))
                     
                     # 4. Optional: Send a live socket alert so their browser updates instantly
                     socketio.emit('new_unread', {'task_id': task.id, 'role': 'applied'}, room=str(excess_user.id))
 
         # --- Existing Commit & Flash ---
         db.session.commit()
+        if applicant_user:
+            send_socket_notification(applicant_user.id, f"You have been HIRED for the task: {task.title}!", task.id)
+        for r_id, r_msg in rejected_users:
+            send_socket_notification(r_id, r_msg, task.id)
         flash(f"You have hired {application.applicant_username}!")
     else:
         flash("Task is already at full capacity!")
