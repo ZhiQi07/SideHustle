@@ -127,10 +127,10 @@
                         {% else %}
                             <div class="progress-header" style="margin-top: 10px;">
                                 <span>Project Progress</span>
-                                <span class="progress-percent">{{ task.progress }}%</span>
+                                <span class="progress-percent" id="created-progress-text-{{ task.id }}">{{ task.progress }}%</span>
                             </div>
                             <div class="progress-bar">
-                                <div class="progress-fill" style="width: {{ task.progress | default(0) }}%;"></div>
+                                <div class="progress-fill" id="created-progress-fill-{{ task.id }}" style="width: {{ task.progress | default(0) }}%;"></div>
                             </div>
                             <div class="btn-flex-container" style="margin-top: 15px;">
                                 {% if task.progress == 100 %}
@@ -190,10 +190,10 @@
                         <div style="width: 100%;">
                             <div class="progress-header">
                                 <span>Your Progress</span>
-                                <span class="progress-percent">{{ task.progress }}%</span>
+                                <span class="progress-percent" id="applied-progress-text-{{ task.id }}">{{ task.progress }}%</span>
                             </div>
                             <div class="progress-bar">
-                                <div class="progress-fill" style="width: {{ task.progress }}%;"></div>
+                                <div class="progress-fill" id="applied-progress-fill-{{ task.id }}" style="width: {{ task.progress }}%;"></div>
                             </div>
                         </div>
                         <div class="btn-flex-container">
@@ -202,10 +202,11 @@
                                         onclick="togglePop('{{ task.id }}')">Update Progress</button>
                                 <div id="pop-{{ task.id }}" class="progress-popover">
                                     <span class="popover-title">Set Progress: <span id="val-{{ task.id }}">{{ task.progress }}%</span></span>
-                                    <form action="{{ url_for('update_progress', task_id=task.id) }}" method="POST" onsubmit="return confirmSubmission('{{ task.id }}', {{ task.progress }})">
+                                    <form action="{{ url_for('update_progress', task_id=task.id) }}" method="POST" onsubmit="return confirmSubmission('{{ task.id }}')">
                                         <input type="range" name="progress" class="range-slider" id="slider-{{ task.id }}"
+                                               data-current-progress="{{ task.progress }}"
                                                min="0" max="100" step="10" value="{{ task.progress }}"
-                                               oninput="lockSlider('{{ task.id }}', {{ task.progress }}, this.value)">
+                                               oninput="lockSlider('{{ task.id }}', this.value)">
                                         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
                                             <span class="check-link" onclick="alert('Note: Progress can only move forward once it has been updated.')">Note</span>
                                             <button type="submit" class="confirm-btn">✓</button>
@@ -345,20 +346,22 @@ function togglePop(id) {
     }
 }
 
-function lockSlider(id, originalVal, newVal) {
+function lockSlider(id, newVal) {
     const slider = document.getElementById('slider-' + id);
     const displaySpan = document.getElementById('val-' + id);
-    if (parseInt(newVal) < parseInt(originalVal)) {
-        slider.value = originalVal;
-        displaySpan.innerText = originalVal + '%';
+    const currentVal = parseInt(slider.dataset.currentProgress || 0);
+    if (parseInt(newVal) < currentVal) {
+        slider.value = currentVal;
+        displaySpan.innerText = currentVal + '%';
     } else {
         displaySpan.innerText = newVal + '%';
     }
 }
 
-function confirmSubmission(id, originalVal) {
+function confirmSubmission(id) {
     const slider = document.getElementById('slider-' + id);
-    if (parseInt(slider.value) < originalVal) {
+    const currentVal = parseInt(slider.dataset.currentProgress || 0);
+    if (parseInt(slider.value) < currentVal) {
         alert("Error: Progress cannot go backwards!");
         return false;
     }
@@ -395,4 +398,5 @@ window.onclick = function(event) {
     }
 }
 </script>
+<script src="{{ url_for('static', filename='js/task_progress.js') }}"></script>
 {% endblock %}

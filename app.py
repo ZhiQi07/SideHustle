@@ -605,6 +605,7 @@ def update_progress(task_id):
                     ))
     task.progress = new_progress
     db.session.commit()
+    socketio.emit('progress_updated', {'task_id': task.id, 'progress': new_progress})
     if owner:
         send_socket_notification(owner.id, f"Milestone Alert: @{user.username} marked your task '{task.title}' as 100% complete!", task.id)
     return redirect(url_for('my_task', view='applied'))
