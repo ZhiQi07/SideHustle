@@ -734,6 +734,14 @@ def patch_database():
         else:
             print("ℹ️ Message table doesn't exist yet, skipping patch.")
 
+        # 4. 检查 Notification 表
+        notif_check = conn.execute(text("SELECT name FROM sqlite_master WHERE type='table' AND name='notification'")).fetchone()
+        if notif_check:
+            notif_cols = [row[1] for row in conn.execute(text("PRAGMA table_info(notification)")).fetchall()]
+            if "timestamp" not in notif_cols:
+                conn.execute(text("ALTER TABLE notification ADD COLUMN timestamp DATETIME"))
+                print("✅ Notification table patched with timestamp column!")
+
 
 
 @app.route('/task/<int:task_id>')
