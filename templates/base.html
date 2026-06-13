@@ -21,9 +21,6 @@
                     <a href="{{ url_for('profile') }}">👤 Profile</a>
                 </div>
             </div>
-            <div class="sidebar-bottom">
-                <a href="#" class="menu-item">❓ Help</a>
-            </div>
         </div>
 
         <div class="top-nav">
@@ -66,6 +63,8 @@
                     <div class="profile-circle">
                         {% if user and user.avatar %}
                             <img src="{{ url_for('static', filename='uploads/' + user.avatar) }}" alt="Profile Picture">
+                        {% elif current_user and current_user.avatar %}
+                            <img src="{{ url_for('static', filename='uploads/' + current_user.avatar) }}" alt="Profile Picture">
                         {% else %}
                             <i class="fi fi-rr-user default-view-icon"></i>
                         {% endif %}

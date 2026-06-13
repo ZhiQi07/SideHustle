@@ -172,6 +172,13 @@ class MessageRead(db.Model):
 with app.app_context():
     db.create_all()
 
+@app.context_processor
+def inject_user():
+    """This makes the 'user' variable available in every template"""
+    user = None
+    if 'user_id' in session:
+        user = User.query.get(session['user_id'])
+    return dict(user=user)
 
 def get_task_member_usernames(task):
     members = {task.user}
