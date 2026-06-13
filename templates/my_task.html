@@ -57,8 +57,12 @@
             <span id="applied-unread-dot" class="dot-small" style="display:none;"></span>
         {% endif %}
     </a>
+    <a href="{{ url_for('my_task', view='completed') }}" class="tab-btn {% if view == 'completed' %}active{% endif %}">
+        History Archive
+    </a>
 </div>
 
+{% if view == 'created' or view == 'applied' %}
 <div class="task-grid">
     {% if view == 'created' %}
         {% for task in created %}
@@ -228,13 +232,80 @@
                 {% elif application.status == 'Rejected' %}
                     <p style="color: #d32f2f; font-size: 13px; margin-top: 15px;">Sorry, the client has chosen another tasker for this job.</p>
                 {% else %}
-                    <p style="color: #666; font-size: 13px; margin-top: 15px;">Your application is being reviewed. Check back soon!</p>
+                    <div style="margin-top: 15px; display: flex; flex-direction: column; gap: 10px;">
+                        <p style="color: #ef6c00; font-size: 13px; margin: 0; font-weight: 500;">⏳ Your application is being reviewed. Check back soon!</p>
+                        
+                        <a href="{{ url_for('withdraw_application', app_id=application.id) }}" 
+                           class="btn-reject" 
+                           style="display: inline-block; width: fit-content; padding: 6px 15px; font-size: 12px; text-align: center; text-decoration: none;"
+                           onclick="return confirm('Are you sure you want to withdraw your application? This cannot be undone.');">
+                           ❌ Withdraw Application
+                        </a>
+                    </div>
                 {% endif %}
             </div>
             {% endif %}
         {% endfor %}
     {% endif %}
 </div>
+{% endif %}
+
+{% if view == 'completed' %}
+<div class="archive-section-wrapper" style="width: 100%; max-width: 1100px; margin: 10px auto 30px auto;">
+    
+    <div class="archive-block-card">
+        <h2 class="archive-section-title">Tasks You Created</h2>
+        {% if completed_created %}
+            <table class="archive-table">
+                <thead>
+                    <tr>
+                        <th style="width: 30%;">Job Title</th>
+                        <th style="width: 50%;">Description</th>
+                        <th style="width: 20%;">Compensation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for task in completed_created %}
+                    <tr>
+                        <td class="archive-job-title">🏆 {{ task.title }}</td>
+                        <td class="archive-job-desc">{{ task.description }}</td>
+                        <td class="archive-job-payout">RM {{ task.price | money_amount }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p class="archive-empty-text">No completed created tasks found in your history log yet.</p>
+        {% endif %}
+    </div>
+
+    <div class="archive-block-card" style="margin-top: 40px;">
+        <h2 class="archive-section-title">Tasks You Completed (As Tasker)</h2>
+        {% if completed_applied %}
+            <table class="archive-table">
+                <thead>
+                    <tr>
+                        <th style="width: 30%;">Job Title</th>
+                        <th style="width: 50%;">Description</th>
+                        <th style="width: 20%;">Earnings Released</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in completed_applied %}
+                    <tr>
+                        <td class="archive-job-title">🛠️ {{ item.task.title }}</td>
+                        <td class="archive-job-desc">{{ item.task.description }}</td>
+                        <td class="archive-job-payout" style="color: #2e7d32;">+ RM {{ item.task.price | money_amount }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p class="archive-empty-text">You haven't fully finalized or rated any applied tasks yet.</p>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
 
 <div id="deleteModal" class="modal-overlay">
     <div class="modal-content">

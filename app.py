@@ -162,6 +162,7 @@ class Notification(db.Model):
     task_id = db.Column(db.Integer, db.ForeignKey('task.id'))
     message = db.Column(db.String(255), nullable=False)
     status = db.Column(db.String(20), default='unread')
+    timestamp = db.Column(db.DateTime, default=db.func.now())
 
 
 class MessageRead(db.Model):
@@ -200,6 +201,44 @@ def money_amount(value):
         return f"{amount:,.0f}"
     return f"{amount:,.2f}"
 
+# 🚀 PASTE THIS NEW RELATIVE TIME CONVERTER FILTER INTO APP.PY:
+@app.template_filter('time_ago')
+def time_ago(value):
+    if not value:
+        return "Just Now"
+    
+    now = datetime.now()
+    # Handle timezone differences safely if your database uses naive timestamps
+    diff = now - value
+    
+    second_diff = diff.seconds
+    day_diff = diff.days
+
+    if day_diff < 0:
+        return "Just Now"
+
+    if day_diff == 0:
+        if second_diff < 10:
+            return "Just Now"
+        if second_diff < 60:
+            return f"{second_diff} seconds ago"
+        if second_diff < 120:
+            return "a minute ago"
+        if second_diff < 3600:
+            return f"{second_diff // 60} minutes ago"
+        if second_diff < 7200:
+            return "an hour ago"
+        if second_diff < 86400:
+            return f"{second_diff // 3600} hours ago"
+            
+    if day_diff == 1:
+        return "Yesterday"
+    if day_diff < 7:
+        return f"{day_diff} days ago"
+    if day_diff < 31:
+        return f"{day_diff // 7} weeks ago"
+        
+    return value.strftime('%b %d, %Y')
 
 @app.context_processor
 def inject_global_unread():
@@ -265,6 +304,15 @@ def cleanup_expired_tasks():
             db.session.delete(task)
     db.session.commit()
 
+@app.route('/clear_notifications', methods=['POST'])
+def clear_notifications():
+    if 'user_id' not in session:
+        return {"status": "unauthorized"}, 401
+        
+    # Delete or change status of notifications belonging to this user
+    Notification.query.filter_by(user_id=session['user_id']).delete()
+    db.session.commit()
+    return {"status": "success"}, 200
 
 @app.route('/')
 def index():
@@ -431,19 +479,40 @@ def delete_account():
 @app.route('/marketplace')
 def marketplace():
     cleanup_expired_tasks()
+    
+    # 1. Gather all incoming parameters from the URL first
     query = request.args.get('q')
     category = request.args.get('cat')
+    min_price = request.args.get('min_p')
+    max_price = request.args.get('max_p')
+    
+    # 2. Setup base filter query
     tasks_filter = Task.query.filter_by(status='Available')
+    
+    # 3. Apply Text Search Filter
     if query:
         tasks_filter = tasks_filter.filter(
             (Task.title.contains(query)) | (Task.description.contains(query))
         )
+        
+    # 4. Apply Category Selection Filter
     if category:
         tasks_filter = tasks_filter.filter(Task.category == category)
+
+    # 5. Apply Budget Pricing Range Filters safely
+    if min_price and min_price.strip():
+        tasks_filter = tasks_filter.filter(Task.price >= float(min_price))
+    if max_price and max_price.strip():
+        tasks_filter = tasks_filter.filter(Task.price <= float(max_price))
+        
+    # 6. Execute database retrieval
     all_tasks = tasks_filter.all()
+    
+    # 7. Check authentication session
     current_user = None
     if 'user_id' in session:
         current_user = db.session.get(User, session['user_id'])
+        
     return render_template('marketplace.html', tasks=all_tasks, user=current_user)
 
 
@@ -478,6 +547,14 @@ def update_progress(task_id):
         return redirect(url_for('my_task'))
     if new_progress == 100 and task.status != 'Completed':
         task.status = 'Completed'
+        owner = User.query.filter_by(username=task.user).first()
+        if owner:
+            db.session.add(Notification(
+                user_id=owner.id,
+                task_id=task.id,
+                message=f"Milestone Alert: @{user.username} marked your task '{task.title}' as 100% complete!"
+            ))
+        socketio.emit('new_unread', {'task_id': task.id, 'role': 'created'}, room=str(owner.id))
         for app_record in Application.query.filter_by(task_id=task.id, status='Hired').all():
             worker = User.query.filter_by(username=app_record.applicant_username).first()
             if worker:
@@ -691,6 +768,14 @@ def apply(task_id):
             intro=request.form.get('intro'),
             reason=request.form.get('reason')
         ))
+        owner = User.query.filter_by(username=task.user).first()
+        if owner:
+            db.session.add(Notification(
+                user_id=owner.id,
+                task_id=task.id,
+                message=f"New Applicant: @{current_user.username} applied for your task: {task.title}!"
+            ))
+            socketio.emit('new_unread', {'task_id': task.id, 'role': 'created'}, room=str(owner.id))
         db.session.commit()
         flash("Application submitted successfully!")
         return redirect(url_for('marketplace'))
@@ -708,46 +793,80 @@ def my_task():
         return redirect(url_for('login'))
 
     view = request.args.get('view', 'created')
-    created_tasks = Task.query.filter_by(user=current_user.username).all()
+    
+    # Fetch all tasks related to the user
+    all_created_tasks = Task.query.filter_by(user=current_user.username).all()
+    my_all_applications = Application.query.filter_by(applicant_username=current_user.username).all()
 
-    first_unrated = {}
-    for task in created_tasks:
+    # Containers for Active vs Completed Archive lists
+    active_created = []
+    completed_created = []
+    
+    active_applied = []
+    completed_applied = []
+
+    # 1. Sort Created Tasks based on mutual rating completion states
+    for task in all_created_tasks:
+        is_fully_rated = False
         if task.progress == 100:
             hired_apps = Application.query.filter_by(task_id=task.id, status='Hired').all()
-            rated_list = [r.target_username for r in Rating.query.filter_by(
-                task_id=task.id, reviewer_username=current_user.username).all()]
+            # Check if employer rated all workers
+            employer_reviews = [r.target_username for r in Rating.query.filter_by(task_id=task.id, reviewer_username=current_user.username).all()]
+            employer_done = all(app.applicant_username in employer_reviews for app in hired_apps) if hired_apps else False
+            
+            # Check if all workers rated the employer
+            workers_done = True
+            for app in hired_apps:
+                worker_rated = Rating.query.filter_by(task_id=task.id, reviewer_username=app.applicant_username, target_username=current_user.username).first()
+                if not worker_rated:
+                    workers_done = False
+                    break
+            
+            if employer_done and workers_done:
+                is_fully_rated = True
+
+        if is_fully_rated:
+            completed_created.append(task)
+        else:
+            active_created.append(task)
+
+    # 2. Extract unrated target helper variables for the active created views
+    first_unrated = {}
+    for task in active_created:
+        if task.progress == 100:
+            hired_apps = Application.query.filter_by(task_id=task.id, status='Hired').all()
+            rated_list = [r.target_username for r in Rating.query.filter_by(task_id=task.id, reviewer_username=current_user.username).all()]
             for app in hired_apps:
                 if app.applicant_username not in rated_list:
                     first_unrated[task.id] = app.applicant_username
                     break
 
-    my_applications = Application.query.filter_by(applicant_username=current_user.username).all()
-    applied_tasks = []
-    for app in my_applications:
+    # 3. Sort Applied Tasks based on mutual rating completion states
+    for app in my_all_applications:
         task = Task.query.get(app.task_id)
-        print(f"DEBUG: app status={app.status}, task={task.title if task else 'NONE'}, task_id={app.task_id}")
-
-        applied_tasks.append({'app': app, 'task': task})
-
-    print(f"DEBUG FINAL: view={view}, applied_tasks count={len(applied_tasks)}")
+        if task:
+            is_fully_rated = False
+            if task.progress == 100 and app.status == 'Hired':
+                # Check if this worker rated the employer
+                worker_rated_owner = Rating.query.filter_by(task_id=task.id, reviewer_username=current_user.username, target_username=task.user).first()
+                # Check if the employer rated this specific worker
+                owner_rated_worker = Rating.query.filter_by(task_id=task.id, reviewer_username=task.user, target_username=current_user.username).first()
+                
+                if worker_rated_owner and owner_rated_worker:
+                    is_fully_rated = True
+            
+            if is_fully_rated:
+                completed_applied.append({'app': app, 'task': task})
+            else:
+                active_applied.append({'app': app, 'task': task})
 
     return render_template('my_task.html',
-        created=created_tasks, applied=applied_tasks,
+        created=active_created, 
+        applied=active_applied,
+        completed_created=completed_created,
+        completed_applied=completed_applied,
         view=view, user=current_user,
         Task=Task, Rating=Rating, first_unrated=first_unrated)
-
-
-@app.route('/view_applicants/<int:task_id>')
-def view_applicants(task_id):
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    task = Task.query.get_or_404(task_id)
-    user = User.query.get(session['user_id'])
-    if task.user != user.username:
-        flash("You are not authorized to view these applicants.")
-        return redirect(url_for('my_task'))
-    apps = Application.query.filter_by(task_id=task_id).all()
-    return render_template('view_applicants.html', task=task, apps=apps, user=user)
 
 
 @app.route('/hire-applicant/<int:app_id>')
@@ -794,6 +913,27 @@ def hire_applicant(app_id):
                 message=f"You have been HIRED for the task: {task.title}!"
             ))
         
+        if task.get_hired_count() >= task.capacity:
+            # 1. Find all other pending applications for this task
+            excess_applications = Application.query.filter_by(task_id=task.id, status='Pending').all()
+            
+            for excess_app in excess_applications:
+                # 2. Change their status to Rejected
+                excess_app.status = 'Rejected'
+                
+                # 3. Send a system notification to each rejected applicant
+                excess_user = User.query.filter_by(username=excess_app.applicant_username).first()
+                if excess_user:
+                    db.session.add(Notification(
+                        user_id=excess_user.id,
+                        task_id=task.id,
+                        message=f"The task '{task.title}' has reached full capacity, and your application was automatically released."
+                    ))
+                    
+                    # 4. Optional: Send a live socket alert so their browser updates instantly
+                    socketio.emit('new_unread', {'task_id': task.id, 'role': 'applied'}, room=str(excess_user.id))
+
+        # --- Existing Commit & Flash ---
         db.session.commit()
         flash(f"You have hired {application.applicant_username}!")
     else:
@@ -817,6 +957,50 @@ def reject_applicant(app_id):
     flash("Applicant has been rejected.")
     return redirect(url_for('view_applicants', task_id=application.task_id))
 
+
+@app.route('/view_applicants/<int:task_id>')
+def view_applicants(task_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+        
+    user = db.session.get(User, session['user_id'])
+    task = Task.query.get_or_404(task_id)
+    
+    # Security Check: Only the task owner is allowed to review candidates!
+    if task.user != user.username:
+        flash("You are not authorized to view applicants for this task.")
+        return redirect(url_for('my_task'))
+        
+    # Fetch all applications filed for this specific task listing campaign
+    apps = Application.query.filter_by(task_id=task.id).all()
+    
+    return render_template('view_applicants.html', task=task, apps=apps, user=user)
+
+
+@app.route('/withdraw_application/<int:app_id>')
+def withdraw_application(app_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+        
+    user = db.session.get(User, session['user_id'])
+    application = Application.query.get_or_404(app_id)
+    
+    # Security check: Make sure this application actually belongs to the logged-in user
+    if application.applicant_username != user.username:
+        flash("Unauthorized action!")
+        return redirect(url_for('my_task', view='applied'))
+        
+    # Security check: They can only cancel if it hasn't been processed yet
+    if application.status != 'Pending':
+        flash("Cannot withdraw an application that has already been hired or rejected!")
+        return redirect(url_for('my_task', view='applied'))
+        
+    # Run the database removal sweep
+    db.session.delete(application)
+    db.session.commit()
+    
+    flash("Your application has been successfully withdrawn.")
+    return redirect(url_for('my_task', view='applied'))
 
 @app.route('/chat/<int:task_id>')
 def chat(task_id):
@@ -985,26 +1169,29 @@ def completed_tasks():
 # =========================
 @socketio.on('join')
 def on_join(data):
-    room = str(data.get('room', ''))
-    current_user = db.session.get(User, session.get('user_id'))
-    if not current_user or not room:
+    room_id = str(data.get('room', ''))
+    user = db.session.get(User, session.get('user_id'))
+    
+    if not user or not room_id:
         return
 
-    # 🌟 通道 A：私信加入房间判定
-    if "private_" in room:
-        room_parts = room.replace("private_", "").split("_")
-        if current_user.username in room_parts:
-            join_room(room)
-            print(f"用户 {current_user.username} 加入了私信房间 {room}")
+    # 💬 Handle real-time Private Messaging Room joins
+    if room_id.startswith("private_"):
+        # Security: Split room names to ensure exact username match (prevents username spoofing)
+        room_parts = room_id.replace("private_", "").split("_")
+        if user.username in room_parts:
+            join_room(room_id)
+            print(f"🔒 User {user.username} successfully entered private secure room: {room_id}")
         return
 
-    # 🌟 通道 B：原有任务群聊加入房间判定
+    # 👥 Handle Task Group Chat Room joins
     try:
-        task = db.session.get(Task, int(room))
-        if task and user_can_access_task_chat(task, current_user):
-            join_room(room)
-            print(f"用户 {current_user.username} 加入了任务大群聊房间 {room}")
+        task = db.session.get(Task, int(room_id))
+        if task and user_can_access_task_chat(task, user):
+            join_room(room_id)
+            print(f"👥 User {user.username} entered task group room: {room_id}")
     except (ValueError, TypeError):
+        # Prevents crash if room_id is not a valid integer ID
         pass
 
 
@@ -1238,7 +1425,6 @@ def private_chat(username):
             db.session.add(new_dm)
             db.session.commit()
             
-            # 💡 聊天室内部同步
             socketio.emit('receive_private_message', {
                 'room': room_name,
                 'sender': current_user.username,
@@ -1250,6 +1436,12 @@ def private_chat(username):
                 'sender': current_user.username,
                 'receiver': target_user.username
             })
+            
+            # 2. 🚀 ✅ ADDED: Reach them globally across other app hooks to trigger real-time toasts
+            socketio.emit('receive_private_message', {
+                'sender': current_user.username,
+                'message': msg_content
+            }, room=str(target_user.id))
             
         return redirect(url_for('private_chat', username=username))
         

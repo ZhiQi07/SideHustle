@@ -1,97 +1,94 @@
 {% extends "base.html" %}
-{% block title %}Marketplace{% endblock %}
+
 {% block content %}
-    <h1 style="text-align: left; margin-bottom: 20px;">MARKETPLACE</h1>
+<h1 style="text-align: left; margin-bottom: 20px;">MARKETPLACE</h1>
 
-    <div class="search-container">
-        <form action="{{ url_for('marketplace') }}" method="GET" class="search-form">
-            <div class="search-input-wrapper">
-                <span class="search-icon">🔍</span>
-                <input type="text" name="q" placeholder="Search for anything..." value="{{ request.args.get('q', '') }}">
-            </div>
-            
-            <select name="cat" class="nav-select">
-                <option value="">All Categories</option>
-                <option value="Moving & Lifting" {% if request.args.get('cat') == 'Moving & Lifting' %}selected{% endif %}>Moving & Lifting</option>
-                <option value="Food & Delivery" {% if request.args.get('cat') == 'Food & Delivery' %}selected{% endif %}>Food & Delivery</option>
-                <option value="Academic & Education" {% if request.args.get('cat') == 'Academic & Education' %}selected{% endif %}>Academic & Education</option>
-                <option value="Creative & Digital" {% if request.args.get('cat') == 'Creative & Digital' %}selected{% endif %}>Creative & Digital</option>
-                <option value="Technical & IT" {% if request.args.get('cat') == 'Technical & IT' %}selected{% endif %}>Technical & IT</option>
-                <option value="Others" {% if request.args.get('cat') == 'Others' %}selected{% endif %}>Others</option>
-            </select>
-            
-            <button type="submit" class="btn-search">Search</button>
-        </form>
-
-        <div class="category-chips">
-            <a href="{{ url_for('marketplace') }}" class="chip {% if not request.args.get('cat') %}active{% endif %}">All Tasks</a>
-            
-            <a href="{{ url_for('marketplace', cat='Moving & Lifting') }}" class="chip chip-moving {% if request.args.get('cat') == 'Moving & Lifting' %}active{% endif %}">Moving & Lifting</a>
-            <a href="{{ url_for('marketplace', cat='Food & Delivery') }}" class="chip chip-food {% if request.args.get('cat') == 'Food & Delivery' %}active{% endif %}">Food & Delivery</a>
-            <a href="{{ url_for('marketplace', cat='Academic & Education') }}" class="chip chip-academic {% if request.args.get('cat') == 'Academic & Education' %}active{% endif %}">Academic & Education</a>
-            <a href="{{ url_for('marketplace', cat='Creative & Digital') }}" class="chip chip-creative {% if request.args.get('cat') == 'Creative & Digital' %}active{% endif %}">Creative & Digital</a>
-            <a href="{{ url_for('marketplace', cat='Technical & IT') }}" class="chip chip-technical {% if request.args.get('cat') == 'Technical & IT' %}active{% endif %}">Technical & IT</a>
-            <a href="{{ url_for('marketplace', cat='Others') }}" class="chip chip-others {% if request.args.get('cat') == 'Others' %}active{% endif %}">Others</a>
+<div class="search-container">
+    <form action="{{ url_for('marketplace') }}" method="GET" class="search-form">
+        <div class="search-input-wrapper">
+            <span class="search-icon">🔍</span>
+            <input type="text" name="q" placeholder="Search for anything..." value="{{ request.args.get('q', '') }}">
         </div>
+        
+        <div style="display: flex; align-items: center; gap: 5px; padding: 0 10px; border-left: 1px solid #eee;">
+            <span style="font-size: 14px; color: #666; font-weight: 600;">RM</span>
+            <input type="number" name="min_p" placeholder="Min" value="{{ request.args.get('min_p', '') }}" style="width: 70px; padding: 8px; border: 1px solid #eee; border-radius: 20px; font-size: 14px; text-align: center;">
+            <span style="color: #999;">-</span>
+            <input type="number" name="max_p" placeholder="Max" value="{{ request.args.get('max_p', '') }}" style="width: 70px; padding: 8px; border: 1px solid #eee; border-radius: 20px; font-size: 14px; text-align: center;">
+        </div>
+        
+        <select name="cat" class="nav-select">
+            <option value="">All Categories</option>
+            <option value="Moving & Lifting" {% if request.args.get('cat') == 'Moving & Lifting' %}selected{% endif %}>Moving & Lifting</option>
+            <option value="Food & Delivery" {% if request.args.get('cat') == 'Food & Delivery' %}selected{% endif %}>Food & Delivery</option>
+            <option value="Academic & Education" {% if request.args.get('cat') == 'Academic & Education' %}selected{% endif %}>Academic & Education</option>
+            <option value="Creative & Digital" {% if request.args.get('cat') == 'Creative & Digital' %}selected{% endif %}>Creative & Digital</option>
+            <option value="Technical & IT" {% if request.args.get('cat') == 'Technical & IT' %}selected{% endif %}>Technical & IT</option>
+            <option value="Others" {% if request.args.get('cat') == 'Others' %}selected{% endif %}>Others</option>
+        </select>
+        
+        <button type="submit" class="btn-search">Search</button>
+    </form>
+
+    <div class="category-chips">
+        <a href="{{ url_for('marketplace') }}" class="chip {% if not request.args.get('cat') %}active{% endif %}">All Tasks</a>
+        
+        <a href="{{ url_for('marketplace', cat='Moving & Lifting') }}" class="chip chip-moving {% if request.args.get('cat') == 'Moving & Lifting' %}active{% endif %}">Moving & Lifting</a>
+        <a href="{{ url_for('marketplace', cat='Food & Delivery') }}" class="chip chip-food {% if request.args.get('cat') == 'Food & Delivery' %}active{% endif %}">Food & Delivery</a>
+        <a href="{{ url_for('marketplace', cat='Academic & Education') }}" class="chip chip-academic {% if request.args.get('cat') == 'Academic & Education' %}active{% endif %}">Academic & Education</a>
+        <a href="{{ url_for('marketplace', cat='Creative & Digital') }}" class="chip chip-creative {% if request.args.get('cat') == 'Creative & Digital' %}active{% endif %}">Creative & Digital</a>
+        <a href="{{ url_for('marketplace', cat='Technical & IT') }}" class="chip chip-technical {% if request.args.get('cat') == 'Technical & IT' %}active{% endif %}">Technical & IT</a>
+        <a href="{{ url_for('marketplace', cat='Others') }}" class="chip chip-others {% if request.args.get('cat') == 'Others' %}active{% endif %}">Others</a>
     </div>
+</div>
 
-    <div class="task-grid">
-        {% if tasks %}
-            {% for task in tasks %}
-                <div class="card">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
-                        <h3>{{ task.title }}</h3>
-                        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
-                            <span style="color: #2e7d32; font-weight: bold;">RM {{ task.price }}</span>
-                            {% if task.is_negotiable %}
-                                <span class="tag-negotiable">Negotiable</span>
-                            {% endif %}
-                        </div>
+<div class="task-grid">
+    {% if tasks %}
+        {% for task in tasks %}
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+                    <h3>{{ task.title }}</h3>
+                    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+                        <span style="color: #2e7d32; font-weight: bold;">RM {{ task.price }}</span>
+                        {% if task.is_negotiable %}
+                            <span class="tag-negotiable">Negotiable</span>
+                        {% endif %}
                     </div>
-                    
-                    <div style="margin: 10px 0;">
-                        <span class="tag 
-                            {% if task.category == 'Moving & Lifting' %}tag-moving
-                            {% elif task.category == 'Food & Delivery' %}tag-food
-                            {% elif task.category == 'Academic & Education' %}tag-academic
-                            {% elif task.category == 'Creative & Digital' %}tag-creative
-                            {% elif task.category == 'Technical & IT' %}tag-technical
-                            {% elif task.category == 'Others' %}tag-others
-                            {% endif %}">
-                            {{ task.category }}
-                        </span>
-                        {% if task.urgent %}<span class="tag urgent-tag">URGENT</span>{% endif %}
-                    </div>
-
-                    <p style="font-size: 14px; color: #666;">{{ task.description[:100] }}...</p>
-
-                    <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
-
-                    <div style="display: flex; align-items: center; gap: 10px; font-size: 14px;">
-                        <div style="width: 30px; height: 30px; background: #8e9aaf; border-radius: 50%;"></div>
-                        <span><strong>{{ task.user }}</strong></span>
-                        <span>⭐ {{ task.rating if task.rating else '5.0' }}</span>
-                    </div>
-                    
-                    <a href="{{ url_for('task_detail', task_id=task.id) }}" class="btn-primary" style="display: block; text-align: center; margin-top: 15px; text-decoration: none;">SEE MORE INFO</a>
                 </div>
-            {% endfor %}
-        {% else %}
-            <div style="grid-column: 1 / -1; text-align: center; padding: 50px;">
-                <p style="color: #666; font-size: 18px;">No tasks available right now. 📦</p>
+                
+                <div style="margin: 10px 0;">
+                    <span class="tag 
+                        {% if task.category == 'Moving & Lifting' %}tag-moving
+                        {% elif task.category == 'Food & Delivery' %}tag-food
+                        {% elif task.category == 'Academic & Education' %}tag-academic
+                        {% elif task.category == 'Creative & Digital' %}tag-creative
+                        {% elif task.category == 'Technical & IT' %}tag-technical
+                        {% elif task.category == 'Others' %}tag-others
+                        {% endif %}">
+                        {{ task.category }}
+                    </span>
+                    {% if task.urgent %}<span class="tag urgent-tag">URGENT</span>{% endif %}
+                </div>
+
+                <p style="font-size: 14px; color: #666;">{{ task.description[:100] }}...</p>
+
+                <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+
+                <div style="display: flex; align-items: center; gap: 10px; font-size: 14px;">
+                    <div style="width: 30px; height: 30px; background: #8e9aaf; border-radius: 50%;"></div>
+                    <span><strong>{{ task.user }}</strong></span>
+                    <span>⭐ {{ task.rating if task.rating else '5.0' }}</span>
+                </div>
+                
+                <a href="{{ url_for('task_detail', task_id=task.id) }}" class="btn-primary" style="display: block; text-align: center; margin-top: 15px; text-decoration: none;">SEE MORE INFO</a>
             </div>
-        {% endif %}
-    </div>
+        {% endfor %}
+    {% else %}
+        <div style="grid-column: 1 / -1; text-align: center; padding: 50px;">
+            <p style="color: #666; font-size: 18px;">No tasks available right now. 📦</p>
+        </div>
+    {% endif %}
+</div>
 
-    <a href="{{ url_for('post_task') }}" class="fab">+ Create Task</a>
-
-    <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
-    <script>
-        const socket = io();
-        socket.on('new_unread', function(data) {
-            const dot = document.querySelector('#my-task-link .dot-small');
-            if (dot) dot.style.display = 'inline-block';
-        });
-    </script>
-
+<a href="{{ url_for('post_task') }}" class="fab">+ Create Task</a>
 {% endblock %}

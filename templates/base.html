@@ -7,6 +7,8 @@
     {% block extra_head %}{% endblock %}
 </head>
 <body>
+    <div id="toast-container" class="toast-notification-container"></div>
+
     <div class="main-layout">
         <div class="sidebar">
             <div class="sidebar-top">
@@ -45,10 +47,14 @@
 
 <script src="{{ url_for('static', filename='js/pm_notification.js') }}"></script>
                 <div class="notification-container" style="position: relative; display: inline-flex; align-items: center;">
-                    <span id="bell-icon" style="cursor: pointer; font-size: 22px;">🔔</span>
+                    <span id="bell-icon" style="cursor: pointer; font-size: 22px; color: white;">🔔</span>
                     
                     <div id="notification-popup" class="notification-popup">
-                        <div class="popup-header">Notifications</div>
+                        <div class="popup-header" style="display: flex; justify-content: space-between; align-items: center;">
+                            <span>Notifications</span>
+                            <span id="clear-all-notes" style="font-size: 11px; color: #5a32a8; cursor: pointer; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px;">Clear All</span>
+                        </div>
+                        
                         <div class="popup-body">
                             {% if notifications %}
                                 {% for note in notifications %}
@@ -56,13 +62,13 @@
                                         <a href="{{ url_for('task_detail', task_id=note.task_id) }}" class="notification-item">
                                             <span class="note-title"><span>✨</span> Job Update</span>
                                             <span class="note-msg">{{ note.message }}</span>
-                                            <span class="note-time">Just Now</span>
+                                            <span class="note-time">{{ note.timestamp | time_ago }}</span>
                                         </a>
                                     {% else %}
                                         <div class="notification-item" style="cursor: default;">
                                             <span class="note-title" style="color: #d32f2f;"><span>⚠️</span> System Alert</span>
                                             <span class="note-msg">{{ note.message }}</span>
-                                            <span class="note-time">Notification</span>
+                                            <span class="note-time">{{ note.timestamp | time_ago }}</span>
                                         </div>
                                     {% endif %}
                                 {% endfor %}
@@ -73,9 +79,12 @@
                             {% endif %}
                         </div>
                     </div>
-                </div> <div class="profile-circle"></div>
-                
-            </div> </div> <div class="content">
+                </div>
+                <div class="profile-circle"></div>
+            </div> 
+        </div> 
+            
+        <div class="content">
             {% with messages = get_flashed_messages() %}
             {% if messages %}
                 {% for message in messages %}
@@ -88,53 +97,100 @@
 
             {% block content %}{% endblock %}
         </div>
+    </div> 
 
-        <!-- Removed duplicate content block to avoid TemplateAssertionError -->
-    </div>
+</div>
 
-    <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
-    <script>
-        const bell = document.getElementById('bell-icon');
-        const popup = document.getElementById('notification-popup');
+<script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
+<script>
+    const bell = document.getElementById('bell-icon');
+    const popup = document.getElementById('notification-popup');
 
+    if (bell && popup) {
         bell.addEventListener('click', (e) => {
             e.stopPropagation();
             popup.style.display = (popup.style.display === 'block') ? 'none' : 'block';
         });
 
         document.addEventListener('click', (e) => {
-            if (popup && !popup.contains(e.target) && e.target !== bell) {
+            if (!popup.contains(e.target) && e.target !== bell) {
                 popup.style.display = 'none';
             }
         });
+    }
 
-        const globalSocket = io();
-        globalSocket.on('new_unread', function(data) {
-            const navDot = document.getElementById('global-nav-dot');
-            if (navDot) navDot.style.display = 'inline-block';
-
-            const createdDot = document.getElementById('created-unread-dot');
-            const appliedDot = document.getElementById('applied-unread-dot');
-            if (data.role === 'created' && createdDot) createdDot.style.display = 'inline-block';
-            else if (data.role === 'applied' && appliedDot) appliedDot.style.display = 'inline-block';
-
-            const chatBtn = document.querySelector(`a[href*="chat/${data.task_id}"], a[href*="group_chat/${data.task_id}"]`);
-            if (chatBtn) {
-                let badge = chatBtn.querySelector('.unread-badge');
-                if (!badge) {
-                    badge = document.createElement('span');
-                    badge.className = 'unread-badge';
-                    badge.innerText = '1';
-                    chatBtn.appendChild(badge);
-                } else {
-                    badge.innerText = parseInt(badge.innerText) + 1;
+    document.getElementById('clear-all-notes')?.addEventListener('click', function(e) {
+        e.stopPropagation();
+        fetch('/clear_notifications', { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    const body = document.querySelector('.popup-body');
+                    if(body) body.innerHTML = '<div class="empty-notif"><p>😴 All caught up!</p></div>';
+                    
+                    const navDot = document.getElementById('global-nav-dot');
+                    if (navDot) navDot.style.display = 'none';
                 }
-            }
-        });
+            });
+    });
+
+    // ✅ ADDED: Toast Generator Script Function Engine
+     Bark
+    function launchToastAlert(messageText) {
+        const container = document.getElementById('toast-container');
+        if (!container) return;
         
-        window.onclick = () => {
-            popup.style.display = 'none';
-        };
-    </script>
+        const toast = document.createElement('div');
+        toast.className = 'toast-alert-box';
+        toast.innerHTML = `<span>✨</span> <div>${messageText}</div>`;
+        
+        container.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 400);
+        }, 4000);
+    }
+
+    // Initialize Socket Connection
+    const globalSocket = io();
+
+    // ✅ FIXED: Merged everything into your clean tracking listener
+    globalSocket.on('new_unread', function(data) {
+        const navDot = document.getElementById('global-nav-dot');
+        if (navDot) navDot.style.display = 'inline-block';
+
+        const createdDot = document.getElementById('created-unread-dot');
+        const appliedDot = document.getElementById('applied-unread-dot');
+        if (data.role === 'created' && createdDot) createdDot.style.display = 'inline-block';
+        else if (data.role === 'applied' && appliedDot) appliedDot.style.display = 'inline-block';
+
+        const chatBtn = document.querySelector(`a[href*="chat/${data.task_id}"], a[href*="group_chat/${data.task_id}"]`);
+        if (chatBtn) {
+            let badge = chatBtn.querySelector('.unread-badge');
+            if (!badge) {
+                badge = document.createElement('span');
+                badge.className = 'unread-badge';
+                badge.innerText = '1';
+                chatBtn.appendChild(badge);
+            } else {
+                badge.innerText = parseInt(badge.innerText) + 1;
+            }
+        }
+
+        // 🚀 Triggers the real-time toast banner!
+        launchToastAlert(`New unread team discussion message waiting inside Task #${data.task_id}!`);
+    });
+
+globalSocket.on('receive_private_message', function(data) {
+    // Only pop up the toast alert box if we aren't currently inside the chat room with them!
+    if (typeof targetUsername !== 'undefined' && data.sender === targetUsername) {
+        return; // Ignore popup since the message is already rendering inside their chat box window panel!
+    }
+
+    // Trigger the slide-in notification toast
+    launchToastAlert(`New Direct Message from @${data.sender}: "${data.message.substring(0, 30)}..."`);
+});
+</script>
 </body>
 </html>
