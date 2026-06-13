@@ -232,5 +232,6 @@ globalSocket.on('receive_private_message', function(data) {
     launchToastAlert(`New Direct Message from @${data.sender}: "${data.message.substring(0, 30)}..."`);
 });
 </script>
+<script src="{{ url_for('static', filename='js/task_progress.js') }}"></script>
 </body>
 </html>
