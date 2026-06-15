@@ -72,6 +72,29 @@
     <div class="history-card">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
             <h2 style="font-size: 24px; margin: 0;">Earnings History</h2>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <label for="sort-select" style="font-size: 13px; font-weight: 700; color: #4b5563;">Sort By:</label>
+                <select id="sort-select" onchange="location.href = '?sort=' + this.value;" style="
+                    padding: 8px 16px;
+                    border-radius: 12px;
+                    border: 1px solid #adb600;
+                    font-size: 13px;
+                    font-weight: 600;
+                    background-color: #ffffff;
+                    color: #1a1a1a;
+                    cursor: pointer;
+                    outline: none;
+                    box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+                    transition: border-color 0.2s;
+                ">
+                    <option value="date_desc" {% if sort_by == 'date_desc' %}selected{% endif %}>Date latest</option>
+                    <option value="date_asc" {% if sort_by == 'date_asc' %}selected{% endif %}>Date earliest</option>
+                    <option value="name_asc" {% if sort_by == 'name_asc' %}selected{% endif %}>Name A-Z</option>
+                    <option value="name_desc" {% if sort_by == 'name_desc' %}selected{% endif %}>Name Z-A</option>
+                    <option value="amount_desc" {% if sort_by == 'amount_desc' %}selected{% endif %}>Amount high to low</option>
+                    <option value="amount_asc" {% if sort_by == 'amount_asc' %}selected{% endif %}>Amount low to high</option>
+                </select>
+            </div>
         </div>
 
         <div style="display: flex; justify-content: space-between; font-weight: bold; padding: 0 20px 10px; color: #374151;">

@@ -114,10 +114,31 @@
     <div class="history-card">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
             <h2 style="font-size: 18px; color: #1f2937; font-weight: 600; margin: 0;">Task History</h2>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <label for="sort-select" style="font-size: 13px; font-weight: 700; color: #4b5563;">Sort By:</label>
+                <select id="sort-select" onchange="location.href = '?sort=' + this.value;" style="
+                    padding: 8px 16px;
+                    border-radius: 12px;
+                    border: 1px solid #00668b;
+                    font-size: 13px;
+                    font-weight: 600;
+                    background-color: #ffffff;
+                    color: #1a1a1a;
+                    cursor: pointer;
+                    outline: none;
+                    box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+                    transition: border-color 0.2s;
+                ">
+                    <option value="date_desc" {% if sort_by == 'date_desc' %}selected{% endif %}>Date latest</option>
+                    <option value="date_asc" {% if sort_by == 'date_asc' %}selected{% endif %}>Date earliest</option>
+                    <option value="name_asc" {% if sort_by == 'name_asc' %}selected{% endif %}>Name A-Z</option>
+                    <option value="name_desc" {% if sort_by == 'name_desc' %}selected{% endif %}>Name Z-A</option>
+                </select>
+            </div>
         </div>
 
         <div class="history-list">
-            {% for task in tasks|reverse %}
+            {% for task in tasks %}
             <div class="task-item">
                 <div class="task-left">
                     <div class="task-header">

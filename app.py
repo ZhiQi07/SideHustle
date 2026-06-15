@@ -617,8 +617,30 @@ def earnings():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     user = db.session.get(User, session['user_id'])
-    earnings_list = Earning.query.filter_by(user_id=user.id).order_by(Earning.timestamp.desc()).all()
-    return render_template('earnings.html', earnings_list=earnings_list, total_credit=user.credit)
+    
+    sort_by = request.args.get('sort', 'date_desc')
+    query = Earning.query.filter_by(user_id=user.id)
+    if sort_by == 'date_asc':
+        query = query.order_by(Earning.timestamp.asc())
+    elif sort_by == 'amount_desc':
+        query = query.order_by(Earning.amount.desc())
+    elif sort_by == 'amount_asc':
+        query = query.order_by(Earning.amount.asc())
+    else:
+        query = query.order_by(Earning.timestamp.desc())
+        
+    earnings_list = query.all()
+    
+    if sort_by in ('name_asc', 'name_desc'):
+        def get_sort_key(e):
+            act = e.activity or ""
+            prefix = "Completed Task: "
+            if act.startswith(prefix):
+                act = act[len(prefix):]
+            return act.lower().strip()
+        earnings_list.sort(key=get_sort_key, reverse=(sort_by == 'name_desc'))
+        
+    return render_template('earnings.html', earnings_list=earnings_list, total_credit=user.credit, sort_by=sort_by)
 
 
 @app.route('/post', methods=['GET', 'POST'])
@@ -1177,11 +1199,25 @@ def view_ratings():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     user = db.session.get(User, session['user_id'])
-    real_reviews = Rating.query.filter_by(
-        target_username=user.username
-    ).order_by(Rating.timestamp.desc()).all()
+    
+    sort_by = request.args.get('sort', 'date_desc')
+    query = Rating.query.filter_by(target_username=user.username)
+    if sort_by == 'name_asc':
+        query = query.order_by(Rating.reviewer_username.asc())
+    elif sort_by == 'name_desc':
+        query = query.order_by(Rating.reviewer_username.desc())
+    elif sort_by == 'date_asc':
+        query = query.order_by(Rating.timestamp.asc())
+    elif sort_by == 'score_desc':
+        query = query.order_by(Rating.score.desc())
+    elif sort_by == 'score_asc':
+        query = query.order_by(Rating.score.asc())
+    else:
+        query = query.order_by(Rating.timestamp.desc())
+        
+    real_reviews = query.all()
     avg_rating = round(user.total_rating / user.review_count, 1) if user.review_count > 0 else 5.0
-    return render_template('view_ratings.html', user=user, reviews=real_reviews, avg_rating=avg_rating)
+    return render_template('view_ratings.html', user=user, reviews=real_reviews, avg_rating=avg_rating, sort_by=sort_by)
 
 @app.route('/completed_tasks')
 def completed_tasks():
@@ -1209,15 +1245,28 @@ def completed_tasks():
         if earning_record:
             # 格式化好时间
             task.completed_time = earning_record.timestamp.strftime('%Y-%m-%d %H:%M')
+            task.completed_dt = earning_record.timestamp
         else:
             task.completed_time = "Recently"
+            task.completed_dt = datetime.min
         hired_usernames = task.get_hired_usernames()
         task.finish_with_usernames = [
             username for username in hired_usernames
             if username != user.username
         ] if len(hired_usernames) > 1 else []
 
-    return render_template('completed_tasks.html', user=user, tasks=done_tasks)
+    # Sort tasks in memory
+    sort_by = request.args.get('sort', 'date_desc')
+    if sort_by == 'name_asc':
+        done_tasks.sort(key=lambda t: t.title.lower())
+    elif sort_by == 'name_desc':
+        done_tasks.sort(key=lambda t: t.title.lower(), reverse=True)
+    elif sort_by == 'date_asc':
+        done_tasks.sort(key=lambda t: t.completed_dt)
+    else: # date_desc
+        done_tasks.sort(key=lambda t: t.completed_dt, reverse=True)
+
+    return render_template('completed_tasks.html', user=user, tasks=done_tasks, sort_by=sort_by)
 
 
 # =========================
