@@ -201,6 +201,7 @@ def money_amount(value):
         return f"{amount:,.0f}"
     return f"{amount:,.2f}"
 
+
 # 🚀 PASTE THIS NEW RELATIVE TIME CONVERTER FILTER INTO APP.PY:
 @app.template_filter('time_ago')
 def time_ago(value):
@@ -326,6 +327,25 @@ def send_socket_notification(user_id, message, task_id=None):
         }, room=str(user_id))
     except Exception as e:
         print(f"Error emitting socket notification: {e}")
+
+def send_system_message(task_id, content):
+    try:
+        sys_msg = Message(
+            task_id=task_id,
+            sender='System',
+            content=content
+        )
+        db.session.add(sys_msg)
+        db.session.commit()
+        
+        socketio.emit('receive_message', {
+            'room': str(task_id),
+            'username': 'System',
+            'message': content,
+            'reply_to_id': None
+        }, room=str(task_id))
+    except Exception as e:
+        print(f"Error sending system message: {e}")
 
 @app.route('/clear_notifications', methods=['POST'])
 def clear_notifications():
@@ -555,11 +575,19 @@ def dashboard():
     user = db.session.get(User, session['user_id'])
     hired_apps = Application.query.filter_by(applicant_username=user.username, status='Hired').all()
     hired_task_ids = [app.task_id for app in hired_apps]
-    # 只查询进度小于 100% 且你被录用了的任务
-    tracking_list = Task.query.filter(
-        Task.id.in_(hired_task_ids),
-        Task.progress < 100
-    ).all()
+    all_hired_tasks = Task.query.filter(Task.id.in_(hired_task_ids)).all()
+    tracking_list = []
+    for t in all_hired_tasks:
+        if t.progress < 100:
+            tracking_list.append({'task': t, 'is_claimed': False})
+        elif t.progress == 100:
+            earning_record = Earning.query.filter_by(
+                user_id=user.id,
+                activity=f"Completed Task: {t.title}"
+            ).first()
+            if not earning_record:
+                tracking_list.append({'task': t, 'is_claimed': False})
+                
     avg_rating = round(user.total_rating / user.review_count, 1) if user.review_count > 0 else 5.0
     return render_template('dashboard.html',
         username=user.username, total_credit=user.credit,
@@ -577,6 +605,9 @@ def update_progress(task_id):
     if not task or not user_can_rate_target(task, user.username, task.user):
         flash("Only hired taskers can update this task progress.")
         return redirect(url_for('my_task'))
+    if task.status != 'In Progress':
+        flash("This task has not started yet. Waiting for more helpers to join.")
+        return redirect(url_for('my_task', view='applied'))
     owner = None
     if new_progress == 100 and task.status != 'Completed':
         task.status = 'Completed'
@@ -588,27 +619,102 @@ def update_progress(task_id):
                 message=f"Milestone Alert: @{user.username} marked your task '{task.title}' as 100% complete!"
             ))
         socketio.emit('new_unread', {'task_id': task.id, 'role': 'created'}, room=str(owner.id))
-        for app_record in Application.query.filter_by(task_id=task.id, status='Hired').all():
-            worker = User.query.filter_by(username=app_record.applicant_username).first()
-            if worker:
-                if worker.tasks_completed is None:
-                    worker.tasks_completed = 0
-                worker.tasks_completed += 1
-                if task.price:
-                    if worker.credit is None:
-                        worker.credit = 0.0
-                    worker.credit += task.price
-                    db.session.add(Earning(
-                        user_id=worker.id,
-                        activity=f"Completed Task: {task.title}",
-                        amount=task.price,
-                        timestamp=datetime.now()
-                    ))
     task.progress = new_progress
     db.session.commit()
+    
+    # Send system notification in task chat
+    sys_content = f"@{user.username} updated task progress to {new_progress}%."
+    if new_progress == 100 and task.status == 'Completed':
+        sys_content = f"Task Completed! @{user.username} marked the task as 100% complete."
+    send_system_message(task.id, sys_content)
+    
     socketio.emit('progress_updated', {'task_id': task.id, 'progress': new_progress})
     if owner:
         send_socket_notification(owner.id, f"Milestone Alert: @{user.username} marked your task '{task.title}' as 100% complete!", task.id)
+    return redirect(url_for('my_task', view='applied'))
+
+@app.route('/claim_earnings/<int:task_id>')
+def claim_earnings(task_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+        
+    task = db.session.get(Task, task_id)
+    user = db.session.get(User, session['user_id'])
+    
+    if not task:
+        flash("Task not found.")
+        return redirect(url_for('my_task', view='applied'))
+        
+    app_record = Application.query.filter_by(task_id=task.id, applicant_username=user.username, status='Hired').first()
+    if not app_record:
+        flash("You are not hired for this task.")
+        return redirect(url_for('my_task', view='applied'))
+        
+    if task.status != 'Completed' or task.progress < 100:
+        flash("This task is not completed yet.")
+        return redirect(url_for('my_task', view='applied'))
+        
+    earning_record = Earning.query.filter_by(
+        user_id=user.id,
+        activity=f"Completed Task: {task.title}"
+    ).first()
+    if earning_record:
+        flash("You have already claimed earnings for this task.")
+        return redirect(url_for('my_task', view='applied'))
+        
+    if user.tasks_completed is None:
+        user.tasks_completed = 0
+    user.tasks_completed += 1
+    
+    if task.price:
+        if user.credit is None:
+            user.credit = 0.0
+        user.credit += task.price
+        
+    db.session.add(Earning(
+        user_id=user.id,
+        activity=f"Completed Task: {task.title}",
+        amount=task.price,
+        timestamp=datetime.now()
+    ))
+    db.session.commit()
+    
+    flash("Earnings claimed successfully!")
+    return redirect(url_for('my_task', view='applied'))
+
+@app.route('/report_dispute/<int:task_id>', methods=['POST'])
+def report_dispute(task_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+        
+    task = db.session.get(Task, task_id)
+    user = db.session.get(User, session['user_id'])
+    
+    if not task:
+        flash("Task not found.")
+        return redirect(url_for('my_task', view='applied'))
+        
+    app_record = Application.query.filter_by(task_id=task.id, applicant_username=user.username, status='Hired').first()
+    if not app_record:
+        flash("You are not hired for this task.")
+        return redirect(url_for('my_task', view='applied'))
+        
+    reason = request.form.get('reason', '').strip()
+    description = request.form.get('description', '').strip()
+    if not reason or not description:
+        flash("Please fill in both the dispute category and description.")
+        return redirect(url_for('my_task', view='applied'))
+        
+    new_report = Report(
+        task_id=task.id,
+        reporter_username=user.username,
+        reason=reason,
+        description=description
+    )
+    db.session.add(new_report)
+    db.session.commit()
+    
+    flash("Dispute submitted successfully. Admin will review the default payment.")
     return redirect(url_for('my_task', view='applied'))
 
 
@@ -917,6 +1023,14 @@ def my_task():
     for app in my_all_applications:
         task = Task.query.get(app.task_id)
         if task:
+            is_claimed = False
+            if app.status == 'Hired':
+                earning_record = Earning.query.filter_by(
+                    user_id=current_user.id,
+                    activity=f"Completed Task: {task.title}"
+                ).first()
+                is_claimed = earning_record is not None
+
             is_fully_rated = False
             if task.progress == 100 and app.status == 'Hired':
                 # Check if this worker rated the employer
@@ -928,9 +1042,9 @@ def my_task():
                     is_fully_rated = True
             
             if is_fully_rated:
-                completed_applied.append({'app': app, 'task': task})
+                completed_applied.append({'app': app, 'task': task, 'is_claimed': is_claimed})
             else:
-                active_applied.append({'app': app, 'task': task})
+                active_applied.append({'app': app, 'task': task, 'is_claimed': is_claimed})
 
     return render_template('my_task.html',
         created=active_created, 
@@ -1009,6 +1123,11 @@ def hire_applicant(app_id):
 
         # --- Existing Commit & Flash ---
         db.session.commit()
+        
+        # Send system notification in task chat
+        sys_content = f"@{user.username} hired @{application.applicant_username} as task helper."
+        send_system_message(task.id, sys_content)
+        
         if applicant_user:
             send_socket_notification(applicant_user.id, f"You have been HIRED for the task: {task.title}!", task.id)
         for r_id, r_msg in rejected_users:
@@ -1089,10 +1208,18 @@ def chat(task_id):
     if not user_can_access_task_chat(task, user):
         flash("You are not part of this task chat.")
         return redirect(url_for('my_task'))
-    for msg in Message.query.filter_by(task_id=task_id, is_read=False).filter(Message.sender != user.username).all():
+    unread_msgs = Message.query.filter(
+        Message.task_id == task_id,
+        Message.sender != user.username
+    ).outerjoin(
+        MessageRead,
+        (MessageRead.message_id == Message.id) & (MessageRead.username == user.username)
+    ).filter(
+        MessageRead.id == None
+    ).all()
+    for msg in unread_msgs:
         msg.is_read = True
-        if not MessageRead.query.filter_by(message_id=msg.id, username=user.username).first():
-            db.session.add(MessageRead(message_id=msg.id, username=user.username))
+        db.session.add(MessageRead(message_id=msg.id, username=user.username))
     db.session.commit()
     socketio.emit('clear_unread', {'task_id': task_id}, room=str(session['user_id']))
     history = Message.query.filter_by(task_id=task_id).order_by(Message.timestamp.asc()).all()
@@ -1108,9 +1235,18 @@ def group_chat(task_id):
     if not user_can_access_task_chat(task, user):
         flash("You are not part of this task chat.")
         return redirect(url_for('my_task'))
-    for msg in Message.query.filter_by(task_id=task_id, is_read=False).filter(Message.sender != user.username).all():
-        if not MessageRead.query.filter_by(message_id=msg.id, username=user.username).first():
-            db.session.add(MessageRead(message_id=msg.id, username=user.username))
+    unread_msgs = Message.query.filter(
+        Message.task_id == task_id,
+        Message.sender != user.username
+    ).outerjoin(
+        MessageRead,
+        (MessageRead.message_id == Message.id) & (MessageRead.username == user.username)
+    ).filter(
+        MessageRead.id == None
+    ).all()
+    for msg in unread_msgs:
+        msg.is_read = True
+        db.session.add(MessageRead(message_id=msg.id, username=user.username))
     db.session.commit()
     socketio.emit('clear_unread', {'task_id': task_id}, room=str(session['user_id']))
     history = Message.query.filter_by(task_id=task_id).order_by(Message.timestamp.asc()).all()
@@ -1583,6 +1719,7 @@ def handle_private_notification(data):
         'sender': data.get('sender'),
         'receiver': data.get('receiver')
     })
+
 
 
 if __name__ == '__main__':

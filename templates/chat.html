@@ -231,38 +231,54 @@
 
     <div id="chat-box">
         {% for m in history %}
-            <div id="msg-wrapper-{{ m.id }}" class="msg-container {% if m.sender == user.username %}my-container{% else %}others-container{% endif %}">
-                
-                {% if m.sender != user.username and not m.is_deleted %}
-                    <div class="sender-name-hint">@{{ m.sender }}</div>
-                {% endif %}
-
-                <div class="message {% if not m.is_deleted %}can-open-actions{% endif %} {% if m.sender == user.username %}my-msg{% else %}others-msg{% endif %}" {% if not m.is_deleted %}oncontextmenu="openMsgMenu(event, '{{ m.id }}')" title="Right-click for actions"{% endif %}>
-                    
-                    {% if m.reply_to_id and not m.is_deleted %}
-                        <div class="reply-quote" data-quote-raw="{{ m.replied_message.content }}" data-is-origin-deleted="{% if m.replied_message.is_deleted or m.replied_message.content.startswith('[DELETED_PRIVATE_MSG]') %}true{% else %}false{% endif %}">
-                            {{ m.replied_message.content }}
-                        </div>
-                    {% endif %}
-
-                    <div class="msg-content-text">
-                        <span id="body-text-{{ m.id }}" class="text-body {% if m.is_deleted %}is-deleted{% endif %}" data-raw="{{ m.content }}">{% if m.is_deleted %}This message was deleted{% else %}{{ m.content }}{% endif %}</span>
-                        {% if m.is_edited and not m.is_deleted %}
-                            <small class="edited-label-hint" style="color:#8696a0; font-size: 10px; margin-top: 2px; display: block; text-align: right;">(edited)</small>
+            {% if m.sender == 'System' %}
+                <div class="system-msg-container" style="align-self: center !important; margin: 10px auto !important; max-width: 80% !important; text-align: center;">
+                    <div class="system-msg" style="display: inline-block; background-color: #e2e8fd; border: 1px solid #dcd8f3; color: #4f3cba; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 600; line-height: 1.4; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                        📢 {% set display_content = m.content %}
+                        {% if user.username %}
+                            {% set at_user = '@' + user.username %}
+                            {% if display_content.startswith(at_user) %}
+                                {% set display_content = 'You' + display_content[at_user|length:] %}
+                            {% endif %}
+                            {% set display_content = display_content.replace(at_user, 'you') %}
                         {% endif %}
+                        {{ display_content }}
                     </div>
                 </div>
+            {% else %}
+                <div id="msg-wrapper-{{ m.id }}" class="msg-container {% if m.sender == user.username %}my-container{% else %}others-container{% endif %}">
+                    
+                    {% if m.sender != user.username and not m.is_deleted %}
+                        <div class="sender-name-hint">@{{ m.sender }}</div>
+                    {% endif %}
 
-                {% if not m.is_deleted %}
-                <div id="ops-bar-{{ m.id }}" class="msg-action-menu" aria-hidden="true" onclick="event.stopPropagation()">
-                    <button type="button" class="btn-reply-trigger" data-id="{{ m.id }}" data-sender="{{ m.sender }}">Reply</button>
-                    {% if m.sender == user.username %}
-                        <button type="button" class="btn-edit-trigger" data-id="{{ m.id }}">Edit</button>
-                        <button type="button" class="btn-delete-trigger danger" data-id="{{ m.id }}">Delete</button>
+                    <div class="message {% if not m.is_deleted %}can-open-actions{% endif %} {% if m.sender == user.username %}my-msg{% else %}others-msg{% endif %}" {% if not m.is_deleted %}oncontextmenu="openMsgMenu(event, '{{ m.id }}')" title="Right-click for actions"{% endif %}>
+                        
+                        {% if m.reply_to_id and not m.is_deleted %}
+                            <div class="reply-quote" data-quote-raw="{{ m.replied_message.content }}" data-is-origin-deleted="{% if m.replied_message.is_deleted or m.replied_message.content.startswith('[DELETED_PRIVATE_MSG]') %}true{% else %}false{% endif %}">
+                                {{ m.replied_message.content }}
+                            </div>
+                        {% endif %}
+
+                        <div class="msg-content-text">
+                            <span id="body-text-{{ m.id }}" class="text-body {% if m.is_deleted %}is-deleted{% endif %}" data-raw="{{ m.content }}">{% if m.is_deleted %}This message was deleted{% else %}{{ m.content }}{% endif %}</span>
+                            {% if m.is_edited and not m.is_deleted %}
+                                <small class="edited-label-hint" style="color:#8696a0; font-size: 10px; margin-top: 2px; display: block; text-align: right;">(edited)</small>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {% if not m.is_deleted %}
+                    <div id="ops-bar-{{ m.id }}" class="msg-action-menu" aria-hidden="true" onclick="event.stopPropagation()">
+                        <button type="button" class="btn-reply-trigger" data-id="{{ m.id }}" data-sender="{{ m.sender }}">Reply</button>
+                        {% if m.sender == user.username %}
+                            <button type="button" class="btn-edit-trigger" data-id="{{ m.id }}">Edit</button>
+                            <button type="button" class="btn-delete-trigger danger" data-id="{{ m.id }}">Delete</button>
+                        {% endif %}
+                    </div>
                     {% endif %}
                 </div>
-                {% endif %}
-            </div>
+            {% endif %}
         {% endfor %}
     </div>
 

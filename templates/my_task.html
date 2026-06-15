@@ -159,6 +159,7 @@
         {% for item in applied %}
             {% set application = item.app %}
             {% set task = item.task %}
+            {% set is_claimed = item.is_claimed %}
             {% if task %}
             <div class="card">
                 <div class="card-header">
@@ -197,29 +198,37 @@
                             </div>
                         </div>
                         <div class="btn-flex-container">
-                            {% if task.progress < 100 %}
-                                <button type="button" class="btn-outline" style="flex: 1; text-align: center; padding: 10px; cursor: pointer;"
-                                        onclick="togglePop('{{ task.id }}')">Update Progress</button>
-                                <div id="pop-{{ task.id }}" class="progress-popover">
-                                    <span class="popover-title">Set Progress: <span id="val-{{ task.id }}">{{ task.progress }}%</span></span>
-                                    <form action="{{ url_for('update_progress', task_id=task.id) }}" method="POST" onsubmit="return confirmSubmission('{{ task.id }}')">
-                                        <input type="range" name="progress" class="range-slider" id="slider-{{ task.id }}"
-                                               data-current-progress="{{ task.progress }}"
-                                               min="0" max="100" step="10" value="{{ task.progress }}"
-                                               oninput="lockSlider('{{ task.id }}', this.value)">
-                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
-                                            <span class="check-link" onclick="alert('Note: Progress can only move forward once it has been updated.')">Note</span>
-                                            <button type="submit" class="confirm-btn">✓</button>
-                                        </div>
-                                    </form>
-                                </div>
-                            {% else %}
-                                {% set already_rated = Rating.query.filter_by(task_id=task.id, reviewer_username=user.username, target_username=task.user).first() if Rating else none %}
-                                {% if already_rated %}
-                                    <span style="font-size: 11px; color: #aaa; flex:1; text-align:center; padding: 10px;">✅ Rated</span>
-                                {% else %}
-                                    <a href="{{ url_for('rate_user', task_id=task.id, target_user=task.user) }}" class="btn-rate">⭐ Rate Client</a>
+                            {% if task.status == 'In Progress' %}
+                                {% if task.progress < 100 %}
+                                    <button type="button" class="btn-outline" style="flex: 1; text-align: center; padding: 10px; cursor: pointer;"
+                                            onclick="togglePop('{{ task.id }}')">Update Progress</button>
+                                    <div id="pop-{{ task.id }}" class="progress-popover">
+                                        <span class="popover-title">Set Progress: <span id="val-{{ task.id }}">{{ task.progress }}%</span></span>
+                                        <form action="{{ url_for('update_progress', task_id=task.id) }}" method="POST" onsubmit="return confirmSubmission('{{ task.id }}')">
+                                            <input type="range" name="progress" class="range-slider" id="slider-{{ task.id }}"
+                                                   data-current-progress="{{ task.progress }}"
+                                                   min="0" max="100" step="10" value="{{ task.progress }}"
+                                                   oninput="lockSlider('{{ task.id }}', this.value)">
+                                            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+                                                <span class="check-link" onclick="alert('Note: Progress can only move forward once it has been updated.')">Note</span>
+                                                <button type="submit" class="confirm-btn">✓</button>
+                                            </div>
+                                        </form>
+                                    </div>
                                 {% endif %}
+                            {% elif task.status == 'Completed' or task.progress == 100 %}
+                                {% if not is_claimed %}
+                                    <span style="font-size: 11px; color: #f57c00; font-weight: 600; flex: 1; text-align: center; padding: 10px; background: #fff3e0; border-radius: 8px; border: 1px dashed #ef6c00;" title="Please go to your Dashboard to confirm payment and claim credits.">⏳ Awaiting claim on Dashboard</span>
+                                {% else %}
+                                    {% set already_rated = Rating.query.filter_by(task_id=task.id, reviewer_username=user.username, target_username=task.user).first() if Rating else none %}
+                                    {% if already_rated %}
+                                        <span style="font-size: 11px; color: #aaa; flex:1; text-align:center; padding: 10px;">✅ Claimed & Rated</span>
+                                    {% else %}
+                                        <a href="{{ url_for('rate_user', task_id=task.id, target_user=task.user) }}" class="btn-rate">⭐ Rate Client</a>
+                                    {% endif %}
+                                {% endif %}
+                            {% else %}
+                                <span style="font-size: 11px; color: #ef6c00; font-weight: 600; flex: 1; text-align: center; padding: 8px 4px; background: #fff3e0; border: 1px dashed #ef6c00; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; gap: 4px;" title="Waiting for all helpers to be hired to start the project.">⏳ Waiting for start...</span>
                             {% endif %}
                             <a href="{{ url_for('chat' if task.capacity == 1 else 'group_chat', task_id=task.id) }}" class="btn-msg-half">
                                 💬 Message
@@ -345,6 +354,7 @@ function togglePop(id) {
         pop.style.display = 'block';
     }
 }
+
 
 function lockSlider(id, newVal) {
     const slider = document.getElementById('slider-' + id);
