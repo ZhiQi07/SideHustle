@@ -1588,3 +1588,50 @@ body {
     padding: 30px 0;
     font-style: italic;
 }
+
+/* ==========================================================================
+   📌 PRIORITY STAR PINNING UI ALIGNMENT
+   ========================================================================== */
+.pinned-card {
+    border: 2px solid #ff9800 !important; /* Elegant Gold accent border link */
+    background-color: #fffdf9 !important; /* Clean warm paper background color tint */
+    box-shadow: 0 8px 24px rgba(255, 152, 0, 0.05) !important;
+    position: relative;
+}
+
+.pin-action-badge {
+    position: absolute;
+    top: -12px;
+    left: 20px;
+    font-size: 13px;
+    text-decoration: none !important;
+    background: #ffffff;
+    color: #8c8599; /* Muted slate color for unpinned item placeholder state */
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 20px;
+    border: 1px solid #eae6f0;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    z-index: 150;
+    transition: all 0.2s ease-in-out;
+    cursor: pointer;
+}
+
+/* Hover effect rules when selecting/deselecting icons */
+.pin-action-badge:hover {
+    transform: translateY(-2px);
+    border-color: #ff9800;
+    color: #ff9800;
+    box-shadow: 0 6px 14px rgba(255, 152, 0, 0.15);
+}
+
+/* Persistent style configuration layout block when an item is pinned active */
+.pinned-card-active {
+    border-color: #ff9800 !important;
+    color: #ff9800 !important;
+    background: #ffffff !important;
+    box-shadow: 0 4px 10px rgba(255, 152, 0, 0.15) !important;
+}

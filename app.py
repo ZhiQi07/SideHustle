@@ -83,6 +83,7 @@ class Task(db.Model):
     progress = db.Column(db.Integer, default=0)
     urgent = db.Column(db.Boolean, default=False)
     is_negotiable = db.Column(db.Boolean, default=False)
+    is_pinned = db.Column(db.Boolean, default=False)
 
     def get_applicant_count(self):
         return Application.query.filter_by(task_id=self.id).count()
@@ -631,25 +632,30 @@ def edit_task(task_id):
     if not user or task.user != user.username:
         flash("You are not authorized to edit this task!")
         return redirect(url_for('my_task'))
+        
     if request.method == 'POST':
         task.title = request.form.get('title')
         task.category = request.form.get('category')
         task.description = request.form.get('description')
         task.deadline = request.form.get('deadline')
         
+        # 🔗 ✅ FIX: Extract and save the new helper capacity value
+        new_capacity = request.form.get('capacity')
+        if new_capacity:
+            # max() fallback ensures employers can't pass numbers lower than already hired teams
+            task.capacity = max(task.get_hired_count(), int(new_capacity))
+        
         # --- NEW PRICE SAFE LOCK CHECK ---
-        # Only update the price if NO helper matches active hired tracking values
         if task.get_hired_count() == 0:
             task.price = float(request.form.get('price', task.price))
         else:
-            # If someone tries to hack the disabled HTML input, force keep the database price
             print(f"🔒 Price change blocked for Task {task.id} because a team member is already hired.")
 
         db.session.commit()
         flash("Task updated successfully!")
         return redirect(url_for('my_task'))
+        
     return render_template('edit_task.html', task=task)
-
 
 @app.route('/delete_task/<int:task_id>')
 def delete_task(task_id):
@@ -709,6 +715,30 @@ def report_task(task_id):
     flash("Thank you. The task has been reported to an admin for review.")
     return redirect(url_for('task_detail', task_id=task.id))
 
+# 🚀 UPDATE THIS TOGGLE_PIN ROUTE IN APP.PY:
+@app.route('/toggle_pin/<int:task_id>')
+def toggle_pin(task_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    task = Task.query.get_or_404(task_id)
+    user = User.query.get(session['user_id'])
+    
+    is_owner = (task.user == user.username)
+    is_hired = Application.query.filter_by(task_id=task.id, applicant_username=user.username, status='Hired').first()
+    
+    if not is_owner and not is_hired:
+        flash("You are not authorized to pin this item!")
+        return redirect(url_for('my_task'))
+        
+    task.is_pinned = not task.is_pinned
+    db.session.commit()
+    
+    # 🔗 ✅ FIX: Dynamically match the active tab view string format parameter
+    view_type = request.args.get('redirect_view', 'created')
+    flash("Task priority updated successfully!")
+    return redirect(url_for('my_task', view=view_type))
+
 def patch_database():
     with db.engine.connect() as conn:
         # 1. 检查 User 表
@@ -756,26 +786,36 @@ def task_tracking(task_id):
     return f"This is tracking page for Task {task_id}. Developing..."
 
 
+# 🚀 REPLACE WITH THIS SECURE COMBINED FLOW:
 @app.route('/apply/<int:task_id>', methods=['GET', 'POST'])
 def apply(task_id):
+    # 1. Ensure user is logged in
     if 'user_id' not in session:
         flash("Please login to apply!")
         return redirect(url_for('login'))
+        
     task = Task.query.get_or_404(task_id)
     current_user = User.query.get(session['user_id'])
+    
+    # 2. 🛡️ GLOBAL SECURITY BARRIER: Kick out creators on BOTH GET and POST requests instantly!
+    if task.user == current_user.username:
+        flash("Access Denied: You cannot apply for a task you created yourself!")
+        return redirect(url_for('marketplace'))
+        
+    # 3. Double application checker fallback
+    if Application.query.filter_by(task_id=task.id, applicant_username=current_user.username).first():
+        flash("You have already submitted an application for this task!")
+        return redirect(url_for('marketplace'))
+
+    # 4. Handle form submission
     if request.method == 'POST':
-        if task.user == current_user.username:
-            flash("You cannot apply for a task you created!")
-            return redirect(url_for('marketplace'))
-        if Application.query.filter_by(task_id=task.id, applicant_username=current_user.username).first():
-            flash("You have already applied for this task!")
-            return redirect(url_for('marketplace'))
         db.session.add(Application(
             task_id=task.id,
             applicant_username=current_user.username,
             intro=request.form.get('intro'),
             reason=request.form.get('reason')
         ))
+        
         owner = User.query.filter_by(username=task.user).first()
         if owner:
             db.session.add(Notification(
@@ -784,9 +824,11 @@ def apply(task_id):
                 message=f"New Applicant: @{current_user.username} applied for your task: {task.title}!"
             ))
             socketio.emit('new_unread', {'task_id': task.id, 'role': 'created'}, room=str(owner.id))
+            
         db.session.commit()
         flash("Application submitted successfully!")
         return redirect(url_for('marketplace'))
+        
     return render_template('apply.html', task=task)
 
 
@@ -803,7 +845,8 @@ def my_task():
     view = request.args.get('view', 'created')
     
     # Fetch all tasks related to the user
-    all_created_tasks = Task.query.filter_by(user=current_user.username).all()
+    all_created_tasks = Task.query.filter_by(user=current_user.username).order_by(Task.is_pinned.desc(), Task.id.desc()).all()
+    # For your applications, we sort them after assembly using Python's list sort mechanism
     my_all_applications = Application.query.filter_by(applicant_username=current_user.username).all()
 
     # Containers for Active vs Completed Archive lists
@@ -867,6 +910,8 @@ def my_task():
                 completed_applied.append({'app': app, 'task': task})
             else:
                 active_applied.append({'app': app, 'task': task})
+
+    active_applied.sort(key=lambda x: x['task'].is_pinned, reverse=True)
 
     return render_template('my_task.html',
         created=active_created, 
