@@ -1,3 +1,7 @@
+# 🚀 CHOOSE THIS NEW ASYNC-SAFE STARTUP BLOCK:
+import eventlet
+eventlet.monkey_patch()  # 🛡️ MUST BE THE FIRST EXECUTED OPERATIONS LINE ON THE SERVER!
+
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from flask_socketio import SocketIO, emit, join_room
 from flask_sqlalchemy import SQLAlchemy
