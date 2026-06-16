@@ -8,15 +8,13 @@
 
 <div class="profile-wrapper">
     <div class="tab-container">
-        <button class="tab active">Profile Settings</button>
-        <button class="tab">Security</button>
-        <button class="tab">Notification</button>
-        <button class="tab">History</button>
+        <button class="tab active" id="tab-profile" onclick="switchTab('profile')">Profile Settings</button>
+        <button class="tab" id="tab-security" onclick="switchTab('security')">Security</button>
     </div>
 
     <div class="profile-main-card">
         
-        <div class="profile-left-panel">
+        <div class="profile-left-panel" id="profile-left-panel">
             <h3 class="section-title">PROFILE PHOTO</h3>
             <form id="avatar-form" action="{{ url_for('update_profile') }}" method="POST" enctype="multipart/form-data">
                 <input type="hidden" name="field" value="avatar">
@@ -48,7 +46,7 @@
             </div>
         </div>
 
-        <div class="profile-right-panel">
+        <div class="profile-right-panel" id="panel-profile">
             <div class="detail-row" id="row-displayname">
                 <label>DISPLAY NAME</label>
                 <div class="field-content">
@@ -108,6 +106,30 @@
                 </div>
             </div>
         </div>
+        <div class="profile-right-panel" id="panel-security" style="display: none; width: 100%;">
+            <div class="detail-row">
+                <label>PASSWORD</label>
+                <div class="field-content">
+                    <span>••••••••</span>
+                    <button class="edit-btn" onclick="openSecurityPopup('password')">Change</button>
+                </div>
+            </div>
+
+            <div class="detail-row">
+                <label>SECURITY QUESTION</label>
+                <div class="field-content">
+                    <span>{{ user.security_question if user.security_question else "Not set" }}</span>
+                    <button class="edit-btn" onclick="openSecurityPopup('question')">Change</button>
+                </div>
+            </div>
+            
+            <div class="log-out-delete security-footer-actions">
+                <form action="{{ url_for('delete_account') }}" method="POST" onsubmit="return confirm('Are you absolutely sure you want to permanently delete your account? This action cannot be undone.');" style="display: inline;">
+                    <button type="submit" class="delete-acc-btn" style="cursor: pointer;">DELETE ACCOUNT</button>
+                </form>
+                <a href="{{ url_for('login') }}" class="logout-link-btn">LOG OUT</a>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -146,6 +168,104 @@
 
         viewElements.forEach(el => el.style.display = 'none');
         editElements.forEach(el => el.style.display = 'flex');
+    }
+
+    function switchTab(tabName) {
+        const profileLeft = document.querySelector('.profile-left-panel');
+        const profileRight = document.getElementById('row-displayname').parentElement; // Finds default right panel
+        const securityRight = document.getElementById('panel-security');
+        
+        const btnProfile = document.getElementById('tab-profile');
+        const btnSecurity = document.getElementById('tab-security');
+
+        if (tabName === 'security') {
+            profileLeft.style.display = 'none';
+            profileRight.style.display = 'none';
+            securityRight.style.display = 'block';
+            
+            btnProfile.classList.remove('active');
+            btnSecurity.classList.add('active');
+        } else {
+            profileLeft.style.display = 'block';
+            profileRight.style.display = 'block';
+            securityRight.style.display = 'none';
+            
+            btnSecurity.classList.remove('active');
+            btnProfile.classList.add('active');
+        }
+    }
+
+    function openSecurityPopup(type) {
+    if(type === 'password') {
+        const newPass = prompt("Enter new password:");
+        if (newPass) submitSecurityChange('password', newPass);
+    } else if(type === 'question') {
+        // Fetch your signup page dynamically in the background
+        fetch("{{ url_for('signup') }}")
+            .then(response => response.text())
+            .then(htmlText => {
+                // Parse the retrieved signup HTML code
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(htmlText, 'text/html');
+                
+                // Extract all valid options from the security question select dropdown
+                const options = doc.querySelectorAll('select[name="security_question"] option');
+                
+                let validQuestions = [];
+                let promptMessage = "Select a Security Question (Enter option number):\n\n";
+                let count = 1;
+
+                options.forEach(opt => {
+                    // Skip the placeholder "SELECT A SECURITY QUESTION" option
+                    if (opt.value !== "") {
+                        validQuestions.push(opt.value);
+                        promptMessage += count + ". " + opt.text + "\n";
+                        count++;
+                    }
+                });
+
+                // Display the list of questions compiled directly from the signup file
+                const choice = prompt(promptMessage);
+                
+                if (choice) {
+                    const index = parseInt(choice.trim(), 10) - 1;
+                    
+                    // Check if the user choice corresponds to an available question number
+                    if (index >= 0 && index < validQuestions.length) {
+                        const selectedQuestion = validQuestions[index];
+                        const newA = prompt("Enter your new secret answer:");
+                        
+                        if (newA && newA.trim() !== "") {
+                            submitSecurityChange('security_question', selectedQuestion, newA);
+                        }
+                    } else {
+                        alert("Invalid option selected! Please pick a number from 1 to " + validQuestions.length + ".");
+                    }
+                }
+            })
+            .catch(error => {
+                console.error("Error linking sign up questions:", error);
+                alert("Could not load security questions from signup page.");
+            });
+    }
+}
+
+    function submitSecurityChange(field, value1, value2 = '') {
+        const formData = new FormData();
+        formData.append('field', field);
+        formData.append('value1', value1);
+        formData.append('value2', value2);
+
+        fetch("{{ url_for('update_security') }}", {
+            method: 'POST',
+            body: formData
+        }).then(response => {
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                alert("Failed to update security credentials.");
+            }
+        });
     }
 
     let cropper;

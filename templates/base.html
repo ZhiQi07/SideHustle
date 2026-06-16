@@ -77,11 +77,57 @@
                             {% endif %}
                         </div>
                     </div>
+                </div> 
+                <div class="profile-menu-container" style="position: relative;">
+                    <div class="profile-circle">
+                        {% if user and user.avatar %}
+                            <img src="{{ url_for('static', filename='uploads/' + user.avatar) }}" alt="Profile Picture">
+                        {% elif current_user and current_user.avatar %}
+                            <img src="{{ url_for('static', filename='uploads/' + current_user.avatar) }}" alt="Profile Picture">
+                        {% else %}
+                            <i class="fi fi-rr-user default-view-icon"></i>
+                        {% endif %}
+                    </div>
+                    <div id="profile-popup" class="profile-popup">
+                        <div class="profile-popup-avatar-row">
+                            <div class="profile-popup-avatar">
+                                {% if user and user.avatar %}
+                                    <img src="{{ url_for('static', filename='uploads/' + user.avatar) }}" alt="Avatar">
+                                {% else %}
+                                    <i class="fi fi-rr-user default-view-icon"></i>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="profile-popup-info">
+                            <div class="profile-popup-detail-section">
+                                <span class="profile-popup-label">DISPLAY NAME</span>
+                                <div class="profile-popup-value">{% if user and user.display_name %}{{ user.display_name }}{% else %}{% if user %}{{ user.username }}{% else %}Guest User{% endif %}{% endif %}</div>
+                            </div>
+
+                            <div class="profile-popup-detail-section">
+                                <span class="profile-popup-label">USERNAME</span>
+                                <div class="profile-popup-value">{% if user %}{{ user.username }}{% else %}guest_user{% endif %}</div>
+                            </div>
+
+                            <div class="profile-popup-detail-section">
+                                <span class="profile-popup-label">BIO</span>
+                                <div class="profile-popup-value bio-text">{% if user and user.bio and user.bio.strip() != "" %}{{ user.bio }}{% else %}No bio currently{% endif %}</div>
+                            </div>
+
+                            <div class="profile-popup-detail-section">
+                                <span class="profile-popup-label">SKILLS</span>
+                                <div class="profile-popup-value skills-text">{% if user and user.skills %}{{ user.skills }}{% else %}No skills listed{% endif %}</div>
+                            </div>
+                        </div>
+                        <hr class="profile-popup-divider">
+                        <div class="profile-popup-menu">
+                            <a href="{{ url_for('profile') }}" class="popup-panel-btn logout-link-btn">EDIT PROFILE</a>
+                            <a href="{{ url_for('login') }}" class="popup-panel-btn logout-link-btn">LOG OUT</a>
+                        </div>
+                    </div>
                 </div>
-                <div class="profile-circle"></div>
-            </div> 
-        </div> 
-            
+            </div>
+        </div>
         <div class="content">
             {% with messages = get_flashed_messages() %}
             {% if messages %}
@@ -95,14 +141,18 @@
 
             {% block content %}{% endblock %}
         </div>
-    </div> 
-
+<<<<<<< HEAD
+</div> 
 </div>
 
 <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
 <script>
     const bell = document.getElementById('bell-icon');
     const popup = document.getElementById('notification-popup');
+    
+    // Friend's Profile Page Elements (Kept)
+    const profileCircle = document.querySelector('.profile-circle');
+    const profilePopup = document.getElementById('profile-popup');
 
     if (bell && popup) {
         bell.addEventListener('click', (e) => {
@@ -110,9 +160,22 @@
             popup.style.display = (popup.style.display === 'block') ? 'none' : 'block';
         });
 
+        if (profileCircle && profilePopup) {
+            profileCircle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                // Toggle profile visibility state
+                profilePopup.style.display = (profilePopup.style.display === 'block') ? 'none' : 'block';
+                // Automatically hide notification panel if open
+                if (popup) popup.style.display = 'none';
+            });
+        }
+
         document.addEventListener('click', (e) => {
             if (!popup.contains(e.target) && e.target !== bell) {
                 popup.style.display = 'none';
+            }
+            if (profilePopup && !profilePopup.contains(e.target) && !profileCircle.contains(e.target)) {
+                profilePopup.style.display = 'none';
             }
         });
     }

@@ -182,6 +182,13 @@ class MessageRead(db.Model):
 with app.app_context():
     db.create_all()
 
+@app.context_processor
+def inject_user():
+    """This makes the 'user' variable available in every template"""
+    user = None
+    if 'user_id' in session:
+        user = User.query.get(session['user_id'])
+    return dict(user=user)
 
 def get_task_member_usernames(task):
     members = {task.user}
@@ -293,6 +300,13 @@ def inject_notifications():
             session.pop('user_id', None)
     return dict(notifications=[])
 
+@app.context_processor
+def inject_user_globally():
+    if 'user_id' in session:
+        current_user = db.session.get(User, session['user_id'])
+        if current_user:
+            return dict(user=current_user)
+    return dict(user=None)
 
 def cleanup_expired_tasks():
     today = datetime.now().strftime('%Y-%m-%d')
@@ -470,6 +484,27 @@ def update_profile():
 
     db.session.commit()
     return redirect(url_for('profile'))
+
+@app.route('/update_security', methods=['POST'])
+def update_security():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+        
+    user = db.session.get(User, session['user_id'])
+    field = request.form.get('field')
+    value1 = request.form.get('value1')
+    value2 = request.form.get('value2')
+
+    if field == 'password':
+        if value1 and len(value1) >= 8: # Basic processing validation rule
+            user.password = value1
+    elif field == 'security_question':
+        user.security_question = value1
+        if value2:
+            user.security_answer = value2.strip().lower()
+
+    db.session.commit()
+    return '', 200
 
 @app.route('/delete_account', methods=['POST'])
 def delete_account():
