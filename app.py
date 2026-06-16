@@ -1466,13 +1466,15 @@ def handle_combined_message(data):
             'room': room,
             'username': current_user.username,
             'sender': current_user.username,
-            'message': msg_content
+            'message': msg_content,
+            'id': new_dm.id
         }, room=room)
         
         emit('receive_private_message', {
             'room': room,
             'sender': current_user.username,
-            'message': msg_content
+            'message': msg_content,
+            'id': new_dm.id
         }, room=room)
         return
 

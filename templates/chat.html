@@ -5,7 +5,18 @@
     <title>Chat - {{ task.title }}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
-        body { font-family: sans-serif; margin: 0; background-color: white !important; } 
+        html, body {
+            height: 100vh !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: hidden !important;
+        }
+        body {
+            font-family: sans-serif;
+            background-color: white !important;
+            display: flex !important;
+            flex-direction: column !important;
+        } 
         .chat-header {
             padding: 12px 20px;
             display: flex;
@@ -13,14 +24,13 @@
             gap: 20px;
             background: white;
             border-bottom: 1px solid #ddd;
-            position: sticky; top: 0; z-index: 100;
+            flex-shrink: 0 !important;
         }
         
-        /* 💡 融合背景：高度拉长，底部白色死空全部变成灰色聊天背景的延伸 */
         #chat-box {
-            height: calc(100vh - 75px); 
-            overflow-y: auto;
-            padding: 15px 20px 70px 20px; /* 给底部留 80px 填充，保证最后一条消息能安全滚到输入框上方 */
+            flex-grow: 1 !important;
+            overflow-y: auto !important;
+            padding: 15px 20px !important;
             display: flex !important;
             flex-direction: column !important;
             gap: 12px !important; 
@@ -129,6 +139,16 @@
         }
 
         /* 💡 优化回复栏与编辑栏：定位在固定输入框的正上方 */
+        .chat-input-container {
+            flex-shrink: 0 !important;
+            background: #f0f2f5 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            position: relative !important;
+            width: 100% !important;
+            z-index: 1000 !important;
+        }
+
         #reply-preview-bar {
             display: none;
             padding: 8px 20px;
@@ -138,11 +158,7 @@
             color: #333;
             justify-content: space-between;
             align-items: center;
-            position: fixed;
-            bottom: 58px; /* 刚好卡在输入框顶上 */
-            width: 100%;
             box-sizing: border-box;
-            z-index: 999;
         }
 
         /* 编辑预览提示条样式 */
@@ -155,11 +171,7 @@
             color: #333;
             justify-content: space-between;
             align-items: center;
-            position: fixed;
-            bottom: 58px;
-            width: 100%;
             box-sizing: border-box;
-            z-index: 999;
             border-left: 4px solid #fbc02d;
         }
 
@@ -169,11 +181,7 @@
             display: flex;
             align-items: flex-end; 
             gap: 10px;
-            position: fixed;
-            bottom: 0;
-            width: 100%;
             box-sizing: border-box;
-            z-index: 1000; 
         }
         
         #message-input { 
@@ -282,19 +290,34 @@
         {% endfor %}
     </div>
 
-    <div id="reply-preview-bar">
-        <span id="reply-text"></span>
-        <span onclick="cancelReply()" style="cursor: pointer; font-weight: bold; font-size: 18px;">×</span>
-    </div>
+    <div class="chat-input-container">
+        <div id="reply-preview-bar">
+            <span id="reply-text"></span>
+            <span onclick="cancelReply()" style="cursor: pointer; font-weight: bold; font-size: 18px;">×</span>
+        </div>
 
-    <div id="edit-preview-bar">
-        <span id="edit-text"><b>Editing message...</b></span>
-        <span onclick="cancelEdit()" style="cursor: pointer; font-weight: bold; font-size: 18px; color: #757575;">×</span>
-    </div>
+        <div id="edit-preview-bar">
+            <span id="edit-text"><b>Editing message...</b></span>
+            <span onclick="cancelEdit()" style="cursor: pointer; font-weight: bold; font-size: 18px; color: #757575;">×</span>
+        </div>
 
-    <div class="input-area">
-        <textarea id="message-input" placeholder="Type a message..." rows="1" autocomplete="off"></textarea>
-        <button id="send-btn" class="btn-send">Send</button>
+        <div class="input-area" style="position: relative;">
+            <textarea id="message-input" placeholder="Type a message..." rows="1" autocomplete="off"></textarea>
+            
+            <!-- Emoji button (placed next to Send on its left) -->
+            <button type="button" id="emoji-btn" style="background: none; border: none; font-size: 20px; cursor: pointer; padding: 5px 8px; outline: none; transition: transform 0.1s ease; user-select: none; align-self: center;" title="Insert Emoji">😀</button>
+
+            <button id="send-btn" class="btn-send">Send</button>
+
+            <!-- Emoji Picker Popup -->
+            <div id="emoji-picker" style="display: none; position: absolute; bottom: 100%; right: 20px; margin-bottom: 10px; background: white; border: 1px solid #ddd; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); width: 280px; padding: 10px; z-index: 1001; box-sizing: border-box; font-family: sans-serif;">
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding-bottom: 6px; margin-bottom: 8px; align-items: center; user-select: none;">
+                    <span style="font-size: 12px; font-weight: bold; color: #6500a8;">Quick Emojis</span>
+                    <span style="font-size: 11px; color: #888; cursor: pointer; font-weight: bold;" onclick="closeEmojiPicker()">Close</span>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; max-height: 200px; overflow-y: auto; padding: 2px;" id="emoji-grid"></div>
+            </div>
+        </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
@@ -312,6 +335,65 @@
 
         let currentReplyId = null;
         let currentEditId = null;
+
+        // Emoji Picker System
+        const EMOS = [
+            "😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇","🙂","🙃","😉","😌","😍","🥰","😘","😗","😙","😚","😋","😛","😝","😜","🤪","🤨","🧐","🤓","😎","🥸","🤩","🥳","😏","😒","😞","😔","😟","😕","🙁","☹️","😣","😖","😫","😩","🥺","😢","😭","😤","😠","😡","🤬","🤯","😳","🥵","🥶","😱","😨","😰","😥","😓","🤗","🤔","🫣","🤭","🤫","🫠","🤥","😶","😐","😑","😬","🫨","🙄","😯","😦","😧","😮","😲","🥱","😴","🤤","😪","😵","😵‍💫","🤐","🥴","🤢","🤮","🤧","😷","🤒","🤕",
+            "👍","👎","👌","🤌","✌️","🤞","🫰","🤟","🤘","🫵","👉","👈","👆","🖕","👇","☝️","✋","🤚","🖐️","🖖","👋","💪","🦾","👊","✊","🤛","🤜","🤝","🙌","👏","🫶","👐","🤲","🙏","✍️","💅","🤳",
+            "❤️","🧡","💛","💚","💙","💜","🖤","🤍","🤎","💔","❤️‍🔥","❤️‍🩹","❣️","💕","💞","💓","💗","💖","💘","💝","💟","💌","⭐️","🌟","✨","⚡️","💥","🔥","🌈","☀️","🌤️","⛅️","🌥️","☁️","🌧️","❄️","☃️","💨",
+            "🎉","🎈","🎁","🎂","🏆","🏅","🎟️","🎮","🎲","🎯","⚽️","🏀","🏈","⚾️","🎾","🏐","🍕","🍔","🍟","🌭","🍿","🍩","🍪","🍫","🍬","🍭","☕️","🍺","🍻","🥂","🍷","🥤","🧋"
+        ];
+
+        const emojiBtn = document.getElementById('emoji-btn');
+        const emojiPicker = document.getElementById('emoji-picker');
+        const emojiGrid = document.getElementById('emoji-grid');
+
+        if (emojiBtn && emojiPicker && emojiGrid) {
+            // Populate Emojis
+            EMOS.forEach(emoji => {
+                const span = document.createElement('span');
+                span.innerText = emoji;
+                span.style.cssText = "font-size: 20px; padding: 4px; cursor: pointer; text-align: center; border-radius: 6px; user-select: none; transition: background 0.1s;";
+                span.onmouseover = () => span.style.background = "#f1f1f1";
+                span.onmouseout = () => span.style.background = "none";
+                span.onclick = (e) => {
+                    e.stopPropagation();
+                    insertEmoji(emoji);
+                };
+                emojiGrid.appendChild(span);
+            });
+
+            emojiBtn.onclick = (e) => {
+                e.stopPropagation();
+                if (emojiPicker.style.display === 'block') {
+                    emojiPicker.style.display = 'none';
+                } else {
+                    emojiPicker.style.display = 'block';
+                }
+            };
+
+            document.addEventListener('click', (e) => {
+                if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) {
+                    emojiPicker.style.display = 'none';
+                }
+            });
+        }
+
+        function insertEmoji(emoji) {
+            const start = messageInput.selectionStart;
+            const end = messageInput.selectionEnd;
+            const text = messageInput.value;
+            messageInput.value = text.substring(0, start) + emoji + text.substring(end);
+            messageInput.selectionStart = messageInput.selectionEnd = start + emoji.length;
+            messageInput.focus();
+            if (typeof autoResizeInput === 'function') {
+                autoResizeInput();
+            }
+        }
+
+        function closeEmojiPicker() {
+            if (emojiPicker) emojiPicker.style.display = 'none';
+        }
 
         chatBox.scrollTop = chatBox.scrollHeight;
         socket.emit('join', { room: ROOM_ID, username: USERNAME });
