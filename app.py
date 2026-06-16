@@ -1574,7 +1574,6 @@ def handle_private_notification(data):
 
 if __name__ == '__main__':
     with app.app_context():
-        # Only run the SQLite patch engine if we are NOT using PostgreSQL/Neon
         if 'postgresql' not in app.config['SQLALCHEMY_DATABASE_URI']:
             try:
                 patch_database()
@@ -1583,8 +1582,11 @@ if __name__ == '__main__':
         else:
             print("☁️ Neon Cloud PostgreSQL detected. Skipping legacy SQLite local patches.")
             
-        # Rebuild all database object mappings safely in the cloud
         db.create_all()   
         print("!!! Database connection initialized cleanly !!!")
         
-    socketio.run(app, host='0.0.0.0', port=8000, debug=True)
+    # 🔗 ✅ DYNAMIC CLOUD PORT RESOLUTION:
+    # Fetches Render's official system port (10000) or falls back to your local port (8000)
+    render_port = int(os.environ.get("PORT", 8000))
+    
+    socketio.run(app, host='0.0.0.0', port=render_port, debug=True)
