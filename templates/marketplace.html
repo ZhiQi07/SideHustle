@@ -30,6 +30,7 @@
         <button type="submit" class="btn-search">Search</button>
     </form>
 
+<!-- 🚀 REPLACED CORRECT HOOK: -->
     <div class="category-chips">
         <a href="{{ url_for('marketplace') }}" class="chip {% if not request.args.get('cat') %}active{% endif %}">All Tasks</a>
         
@@ -40,8 +41,7 @@
         <a href="{{ url_for('marketplace', cat='Technical & IT') }}" class="chip chip-technical {% if request.args.get('cat') == 'Technical & IT' %}active{% endif %}">Technical & IT</a>
         <a href="{{ url_for('marketplace', cat='Others') }}" class="chip chip-others {% if request.args.get('cat') == 'Others' %}active{% endif %}">Others</a>
     </div>
-    </div>
-</div>
+</div> <!-- Only ONE closing div belongs here to cleanly close your .search-container! -->
 
 <div class="task-grid">
     {% if tasks %}
