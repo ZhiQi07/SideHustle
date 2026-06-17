@@ -208,10 +208,8 @@ def get_task_member_usernames(task):
         members.add(app_record.applicant_username)
     return members
 
-
 def user_can_access_task_chat(task, user):
     return user and user.username in get_task_member_usernames(task)
-
 
 def user_can_rate_target(task, reviewer_username, target_username):
     hired_usernames = set(task.get_hired_usernames())
@@ -221,7 +219,6 @@ def user_can_rate_target(task, reviewer_username, target_username):
         return target_username == task.user
     return False
 
-
 @app.template_filter('money_amount')
 def money_amount(value):
     amount = round(float(value or 0), 2)
@@ -229,8 +226,6 @@ def money_amount(value):
         return f"{amount:,.0f}"
     return f"{amount:,.2f}"
 
-
-# 🚀 PASTE THIS NEW RELATIVE TIME CONVERTER FILTER INTO APP.PY:
 @app.template_filter('time_ago')
 def time_ago(value):
     if not value:
@@ -248,6 +243,7 @@ def time_ago(value):
     hours = (total_seconds % 86400) // 3600
     minutes = (total_seconds % 3600) // 60
     
+    #today
     if days == 0:
         if total_seconds < 10:
             return "Just Now"
@@ -265,7 +261,7 @@ def time_ago(value):
                 return f"{h_str} {m_str} ago"
             else:
                 return f"{h_str} ago"
-    
+    #after today but within 7 days
     if days == 1:
         return "Yesterday"
     if days < 7:

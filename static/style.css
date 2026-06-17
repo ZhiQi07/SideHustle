@@ -1,4 +1,7 @@
-/* --- 1. THE "MAGIC" RESET --- */
+/* ==========================================================
+   # GLOBAL RESET & BASE THEME
+   # This section controls the default page reset and body styling.
+   ========================================================== */
 * {
     box-sizing: border-box;
     margin: 0;
@@ -12,7 +15,10 @@ body {
     overflow-x: hidden;
 }
 
-/* --- 2. LAYOUT: SIDEBAR & TOP NAV --- */
+/* ==========================================================
+   # LAYOUT: SIDEBAR & TOP NAVIGATION
+   # This section styles the main dashboard structure and nav area.
+   ========================================================== */
 .main-layout {
     display: flex;
 }
@@ -228,7 +234,10 @@ body {
     color: #545252 !important;
 }
 
-/* --- 3. MAIN CONTENT --- */
+/* ==========================================================
+   # MAIN CONTENT AREA
+   # This section controls the spacing and wrapper for page content.
+   ========================================================== */
 .content {
     margin-left: 240px; 
     margin-top: 80px;  
@@ -236,7 +245,11 @@ body {
     width: calc(100% - 240px);
     box-sizing: border-box;
 }
-/* --- 4. MARKETPLACE CARDS (3 Tasks Per Row) --- */
+
+/* ==========================================================
+   # MARKETPLACE CARDS & TASK GRID
+   # This section styles the task listing cards and their layout.
+   ========================================================== */
 .task-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -350,7 +363,10 @@ body {
 .urgent-tag { background: #ffebee; color: #c62828; }
 .available-tag { background: #e8f5e9; color: #2e7d32; }
 
-/* --- 5. BUTTONS --- */
+/* ==========================================================
+   # BUTTONS & ACTION ELEMENTS
+   # This section styles all primary, secondary, and action buttons.
+   ========================================================== */
 .btn-primary {
     display: block;
     width: 100%;
@@ -475,7 +491,10 @@ body {
     color: #333;
 }
 
-/* --- 6. CENTERED PAGES (POST & APPLY) --- */
+/* ==========================================================
+   # CENTERED FORM PAGES
+   # This section is used for post-task, apply, and similar centered layouts.
+   ========================================================== */
 .center-screen {
     display: flex;
     justify-content: center;
@@ -510,7 +529,10 @@ body {
     margin-bottom: 20px;
 }
 
-/* --- 7. DETAIL PAGE --- */
+/* ==========================================================
+   # TASK DETAIL PAGE
+   # This section styles the detailed task view and side information blocks.
+   ========================================================== */
 .detail-layout { display: flex; gap: 40px; }
 
 .blue-box {
@@ -530,7 +552,10 @@ body {
     align-items: center;
 }
 
-/* --- 8. SEARCH BAR --- */
+/* ==========================================================
+   # SEARCH & FILTER CONTROLS
+   # This section styles the search bar, category chips, and filter UI.
+   ========================================================== */
 .search-container {
     margin: 20px 0 50px 0;
     display: flex;
@@ -694,9 +719,12 @@ body {
     border-color: #e3d2f0 !important;
     box-shadow: 0 4px 12px rgba(106, 82, 128, 0.15); /* Soft matching purple shadow glow */
 }
-/* --- MY TASKS DASHBOARD --- */
+/* ==========================================================
+   # MY TASKS DASHBOARD
+   # This section styles the task tabs and dashboard card layouts.
+   ========================================================== */
 
-/* 1. Tab Buttons at the top */
+/* # Tab buttons at the top of the dashboard */
 .task-tabs {
     display: flex;
     gap: 20px;
@@ -736,7 +764,10 @@ body {
 
 .status-text { font-size: 12px; color: #888; }
 
-/* --- 10. PROGRESS BAR --- */
+/* ==========================================================
+   # PROGRESS BAR & STATUS UI
+   # This section styles progress indicators and task status visuals.
+   ========================================================== */
 .progress-bar {
     width: 100%;
     height: 10px;
@@ -819,7 +850,10 @@ body {
     font-weight: bold;
 }
 
-/* --- 12. UNREAD / RED DOT SYSTEM --- */
+/* ==========================================================
+   # UNREAD / RED DOT SYSTEM
+   # This section controls notification indicators and unread markers.
+   ========================================================== */
 .unread-badge {
     position: absolute;
     top: -8px;
@@ -846,7 +880,10 @@ body {
     border: 1px solid white;
 }
 
-/* --- 13. NOTIFICATION POPUP --- */
+/* ==========================================================
+   # NOTIFICATION POPUP
+   # This section styles the popup panel for alerts and updates.
+   ========================================================== */
 .notification-container { position: relative; }
 
 .notification-popup {
@@ -1725,5 +1762,5 @@ body {
 .pin-action-badge {
     position: absolute;
     top: -12px;
-    left:
+    left: 0;
 }
