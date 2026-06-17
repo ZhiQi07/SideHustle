@@ -24,6 +24,8 @@
                     <a href="{{ url_for('profile') }}">👤 Profile</a>
                 </div>
             </div>
+            <div class="sidebar-bottom">
+            </div>
         </div>
 
         <div class="top-nav">
@@ -43,9 +45,30 @@
 </script>
 <script src="{{ url_for('static', filename='js/notification.js') }}"></script> 
 
-<script src="{{ url_for('static', filename='js/pm_notification.js') }}"></script>
+<script src="{{ url_for('static', filename='js/pm_notification.js') }}?v=3"></script>
+<script src="{{ url_for('static', filename='js/bell_notification.js') }}?v=3"></script>
                 <div class="notification-container" style="position: relative; display: inline-flex; align-items: center;">
                     <span id="bell-icon" style="cursor: pointer; font-size: 22px; color: white;">🔔</span>
+                    <span id="bell-badge" style="
+                        position: absolute;
+                        top: -5px;
+                        right: -5px;
+                        background-color: #d92d20;
+                        color: white;
+                        font-size: 10px;
+                        font-weight: 700;
+                        min-width: 16px;
+                        height: 16px;
+                        border-radius: 50%;
+                        display: {% if unread_notifications_count and unread_notifications_count > 0 %}flex{% else %}none{% endif %};
+                        align-items: center;
+                        justify-content: center;
+                        border: 2px solid #5a32a8;
+                        padding: 1px;
+                        box-sizing: border-box;
+                        line-height: 1;
+                        pointer-events: none;
+                    ">{% if unread_notifications_count and unread_notifications_count > 0 %}{{ unread_notifications_count }}{% endif %}</span>
                     
                     <div id="notification-popup" class="notification-popup">
                         <div class="popup-header" style="display: flex; justify-content: space-between; align-items: center;">
@@ -157,6 +180,19 @@
         bell.addEventListener('click', (e) => {
             e.stopPropagation();
             popup.style.display = (popup.style.display === 'block') ? 'none' : 'block';
+            
+            // Mark notifications as read when panel is opened
+            const bellBadge = document.getElementById('bell-badge');
+            if (popup.style.display === 'block' && bellBadge && bellBadge.style.display !== 'none') {
+                fetch('/mark_notifications_read', { method: 'POST' })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            bellBadge.style.display = 'none';
+                            bellBadge.innerText = '0';
+                        }
+                    });
+            }
         });
 
         if (profileCircle && profilePopup) {
@@ -190,12 +226,17 @@
                     
                     const navDot = document.getElementById('global-nav-dot');
                     if (navDot) navDot.style.display = 'none';
+                    
+                    const bellBadge = document.getElementById('bell-badge');
+                    if (bellBadge) {
+                        bellBadge.style.display = 'none';
+                        bellBadge.innerText = '0';
+                    }
                 }
             });
     });
 
     // ✅ ADDED: Toast Generator Script Function Engine
-     Bark
     function launchToastAlert(messageText) {
         const container = document.getElementById('toast-container');
         if (!container) return;
@@ -211,9 +252,11 @@
             setTimeout(() => toast.remove(), 400);
         }, 4000);
     }
+    window.launchToastAlert = launchToastAlert;
 
     // Initialize Socket Connection
-    const globalSocket = io();
+    window.globalSocket = io();
+    const globalSocket = window.globalSocket;
 
     // ✅ FIXED: Merged everything into your clean tracking listener
     globalSocket.on('new_unread', function(data) {
@@ -252,5 +295,6 @@ globalSocket.on('receive_private_message', function(data) {
     launchToastAlert(`New Direct Message from @${data.sender}: "${data.message.substring(0, 30)}..."`);
 });
 </script>
+<script src="{{ url_for('static', filename='js/task_progress.js') }}?v=3"></script>
 </body>
 </html>

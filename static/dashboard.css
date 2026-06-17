@@ -93,8 +93,8 @@ body {
     width: 100%;
 }
 
+/* 通用基础样式 */
 .summary-card {
-    background: #eef2ff; /* Softer dashboard card color */
     border-radius: 25px;
     padding: 30px;
     min-height: 180px;
@@ -105,9 +105,13 @@ body {
     transition: transform 0.25s ease;
 }
 
-.summary-card:hover {
-    transform: translateY(-5px);
-}
+/* 特定颜色类 */
+.card-credit { background: #f9f8d8; }
+.card-rating { background: #fff2e4; }
+.card-tasks  { background: #dcf5fc; }
+
+/* 如果想要鼠标悬停效果，也可以统一设置 */
+.summary-card:hover { transform: scale(1.03); }
 
 .card-title {
     font-weight: bold;
@@ -140,7 +144,7 @@ body {
     grid-template-columns: 340px 1fr 40px; /* 340px 给进度条 */
     align-items: center;
     gap: 20px;
-    background: #dfe8f5;
+    background: #d9d5f8;
     border-radius: 20px;
     padding: 25px 30px; /* 增加 padding 防止看起来太扁 */
     cursor: pointer;
@@ -167,14 +171,14 @@ body {
 .tracking-progress-bar {
     flex: 1;
     height: 16px;
-    background: #c6d4f5;
+    background: #f8f5fa;
     border-radius: 10px;
     overflow: hidden;
 }
 
 .tracking-progress-fill {
     height: 100%;
-    background: #4f88ff;
+    background: #845bfd;
     border-radius: 10px;
     transition: width 0.5s ease;
 }

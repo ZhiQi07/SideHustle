@@ -44,13 +44,28 @@
             <span onclick="cancelReply()" style="cursor:pointer; font-weight:bold; font-size:18px; margin-left:10px;">×</span>
         </div>
         
-        <div style="display: flex; gap: 12px; margin-top: auto;">
+        <div style="display: flex; gap: 12px; margin-top: auto; position: relative; align-items: center;">
             <input id="msg-input" type="text" placeholder="Type a private message..." autocomplete="off" required
                    style="flex-grow: 1; padding: 14px; border: 1px solid #eae6f0; border-radius: 12px; outline: none; background-color: #fdfcff; font-size: 14px;">
-            <button id="send-btn" class="btn-primary" style="margin-top: 0; width: auto; padding: 0 30px; border-radius: 12px; background-color: #440fae; color: white; border: none; cursor: pointer; font-weight: bold;">Send</button>
+            
+            <!-- Emoji button -->
+            <button type="button" id="emoji-btn" style="background: none; border: none; font-size: 20px; cursor: pointer; padding: 5px 8px; outline: none; transition: transform 0.1s ease; user-select: none;" title="Insert Emoji">😀</button>
+
+            <button id="send-btn" class="btn-primary" style="margin-top: 0; width: auto; padding: 0 30px; border-radius: 12px; background-color: #440fae; color: white; border: none; cursor: pointer; font-weight: bold; height: 48px;">Send</button>
+
+            <!-- Emoji Picker Popup -->
+            <div id="emoji-picker" style="display: none; position: absolute; bottom: 65px; right: 10px; background: white; border: 1px solid #ddd; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); width: 280px; padding: 10px; z-index: 1001; box-sizing: border-box; font-family: sans-serif;">
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding-bottom: 6px; margin-bottom: 8px; align-items: center; user-select: none;">
+                    <span style="font-size: 12px; font-weight: bold; color:  #1f00a8;">Quick Emojis</span>
+                    <span style="font-size: 11px; color: #888; cursor: pointer; font-weight: bold;" onclick="closeEmojiPicker()">Close</span>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; max-height: 200px; overflow-y: auto; padding: 2px;" id="emoji-grid"></div>
+            </div>
         </div>
     </div>
 </div>
+
+
 
 <div id="global-context-menu" style="display:none; position:absolute; z-index:99999; background:white; border:1px solid #ddd; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.15); padding:4px; min-width:110px;">
     <button id="menu-reply-btn" style="display:block; width:100%; border:0; background:transparent; color:#333; cursor:pointer; font-size:13px; text-align:left; padding:8px 12px; border-radius:6px;">↩ Reply</button>
@@ -79,21 +94,36 @@
         socket.emit('join', { room: roomName, username: currentUsername });
     });
 
-    // 💡 核心免刷新监听：当房间内收到别人发来的私聊时，直接无刷新追加 DOM 节点
+    // 💡 核心免刷新监听：当房间内收到私聊时，直接无刷新追加 DOM 节点
     socket.on('receive_private_message', function(data) {
-        if (data.sender !== currentUsername) {
-            const newMsgDiv = document.createElement('div');
-            newMsgDiv.className = "msg-bubble-container";
-            newMsgDiv.style.cssText = "position: relative; max-width: 75%; padding: 12px 18px; border-radius: 16px; font-size: 14px; line-height: 1.4; word-break: break-word; background-color: #f1ecf7; color: #2d263b; align-self: flex-start; border-bottom-left-radius: 4px; margin-bottom: 4px;";
-            
-            // 拼接对方的 @人名 标签
-            let nameTag = `<div style="font-size: 11px; color: #5a32a8; font-weight: bold; margin-bottom: 4px;">@${data.sender}</div>`;
-            newMsgDiv.innerHTML = `${nameTag}<div class="msg-body-wrapper" data-raw-content="${data.message}">${data.message}</div>`;
-            
-            msgBox.appendChild(newMsgDiv);
-            formatReplies(); // 重新清洗引文格式
-            msgBox.scrollTop = msgBox.scrollHeight;
+        if (document.querySelector(`.msg-bubble-container[data-container-msg-id="${data.id}"]`)) {
+            return;
         }
+
+        const isOwn = (data.sender === currentUsername);
+        const newMsgDiv = document.createElement('div');
+        newMsgDiv.className = "msg-bubble-container";
+        newMsgDiv.setAttribute('data-container-msg-id', data.id);
+        newMsgDiv.setAttribute('data-is-deleted', 'false');
+        newMsgDiv.setAttribute('data-raw-text', data.message);
+        
+        // 绑定右键菜单
+        newMsgDiv.oncontextmenu = function(event) {
+            openMenu(event, data.id, data.sender);
+        };
+        
+        if (isOwn) {
+            newMsgDiv.style.cssText = "position: relative; max-width: 75%; padding: 12px 18px; border-radius: 16px; font-size: 14px; line-height: 1.4; word-break: break-word; background-color: #e4e2fd; color: black; align-self: flex-end; border-bottom-right-radius: 4px; margin-bottom: 4px; cursor: pointer;";
+            newMsgDiv.innerHTML = `<div class="msg-body-wrapper" data-msg-id="${data.id}" data-raw-content="${data.message}"><span id="body-${data.id}" data-raw="${data.message}">${data.message}</span></div>`;
+        } else {
+            newMsgDiv.style.cssText = "position: relative; max-width: 75%; padding: 12px 18px; border-radius: 16px; font-size: 14px; line-height: 1.4; word-break: break-word; background-color: #f1ecf7; color: #2d263b; align-self: flex-start; border-bottom-left-radius: 4px; margin-bottom: 4px; cursor: pointer;";
+            let nameTag = `<div style="font-size: 11px; color: #5a32a8; font-weight: bold; margin-bottom: 4px;">@${data.sender}</div>`;
+            newMsgDiv.innerHTML = `${nameTag}<div class="msg-body-wrapper" data-msg-id="${data.id}" data-raw-content="${data.message}"><span id="body-${data.id}" data-raw="${data.message}">${data.message}</span></div>`;
+        }
+        
+        msgBox.appendChild(newMsgDiv);
+        formatReplies(); // 重新清洗引文格式
+        msgBox.scrollTop = msgBox.scrollHeight;
     });
 
     // --- 右键上下文菜单控制 ---
@@ -158,7 +188,6 @@
         let msg = document.getElementById('msg-input').value.trim();
         if (!msg) return;
 
-        let originalMsg = msg; // 暂存未拼装的原始文本以便本地渲染
         if (currentReplyId && replyQuoteText) {
             msg = `[REPLY_TO:${replyQuoteText}]\n` + msg;
         }
@@ -176,21 +205,10 @@
             'sender': currentUsername,
             'receiver': targetUsername
         });
-
-        // 3. 将自己发的消息无刷新直接推入本地 DOM 节点
-        const newMsgDiv = document.createElement('div');
-        newMsgDiv.className = "msg-bubble-container";
-        // 我的消息（右手边）本地渲染：浅紫色背景，黑字
-        newMsgDiv.style.cssText = "position: relative; max-width: 75%; padding: 12px 18px; border-radius: 16px; font-size: 14px; line-height: 1.4; word-break: break-word; background-color: #e4e2fd; color: black; align-self: flex-end; border-bottom-right-radius: 4px; margin-bottom: 4px;";
-        newMsgDiv.innerHTML = `<div class="msg-body-wrapper" data-raw-content="${msg}"><span>${originalMsg}</span></div>`;
-        
-        msgBox.appendChild(newMsgDiv);
-        formatReplies(); // 重新格式化引文
         
         document.getElementById('msg-input').value = "";
         cancelReply();
         document.getElementById('msg-input').focus();
-        msgBox.scrollTop = msgBox.scrollHeight;
     }
 
     document.getElementById('send-btn').onclick = doSend;
@@ -253,6 +271,63 @@
                 `;
             }
         });
+    }
+
+    // Emoji Picker System
+    const EMOS = [
+        "😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇","🙂","🙃","😉","😌","😍","🥰","😘","😗","😙","😚","😋","😛","😝","😜","🤪","🤨","🧐","🤓","😎","🥸","🤩","🥳","😏","😒","😞","😔","😟","😕","🙁","☹️","😣","😖","😫","😩","🥺","😢","😭","😤","😠","😡","🤬","🤯","😳","🥵","🥶","😱","😨","😰","😥","😓","🤗","🤔","🫣","🤭","🤫","🫠","🤥","😶","😐","😑","😬","🫨","🙄","😯","😦","😧","😮","😲","🥱","😴","🤤","😪","😵","😵‍💫","🤐","🥴","🤢","🤮","🤧","😷","🤒","🤕",
+        "👍","👎","👌","🤌","✌️","🤞","🫰","🤟","🤘","🫵","👉","👈","👆","🖕","👇","☝️","✋","🤚","🖐️","🖖","👋","💪","🦾","👊","✊","🤛","🤜","🤝","🙌","👏","🫶","👐","🤲","🙏","✍️","💅","🤳",
+        "❤️","🧡","💛","💚","💙","💜","🖤","🤍","🤎","💔","❤️‍🔥","❤️‍🩹","❣️","💕","💞","💓","💗","💖","💘","💝","💟","💌","⭐️","🌟","✨","⚡️","💥","🔥","🌈","☀️","🌤️","⛅️","🌥️","☁️","🌧️","❄️","☃️","💨",
+        "🎉","🎈","🎁","🎂","🏆","🏅","🎟️","🎮","🎲","🎯","⚽️","🏀","🏈","⚾️","🎾","🏐","🍕","🍔","🍟","🌭","🍿","🍩","🍪","🍫","🍬","🍭","☕️","🍺","🍻","🥂","🍷","🥤","🧋"
+    ];
+
+    const emojiBtn = document.getElementById('emoji-btn');
+    const emojiPicker = document.getElementById('emoji-picker');
+    const emojiGrid = document.getElementById('emoji-grid');
+    const messageInput = document.getElementById('msg-input');
+
+    if (emojiBtn && emojiPicker && emojiGrid) {
+        EMOS.forEach(emoji => {
+            const span = document.createElement('span');
+            span.innerText = emoji;
+            span.style.cssText = "font-size: 20px; padding: 4px; cursor: pointer; text-align: center; border-radius: 6px; user-select: none; transition: background 0.1s;";
+            span.onmouseover = () => span.style.background = "#f1f1f1";
+            span.onmouseout = () => span.style.background = "none";
+            span.onclick = (e) => {
+                e.stopPropagation();
+                insertEmoji(emoji);
+            };
+            emojiGrid.appendChild(span);
+        });
+
+        emojiBtn.onclick = (e) => {
+            e.stopPropagation();
+            if (emojiPicker.style.display === 'block') {
+                emojiPicker.style.display = 'none';
+            } else {
+                emojiPicker.style.display = 'block';
+            }
+        };
+
+        document.addEventListener('click', (e) => {
+            if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) {
+                emojiPicker.style.display = 'none';
+            }
+        });
+    }
+
+    function insertEmoji(emoji) {
+        if (!messageInput) return;
+        const start = messageInput.selectionStart || 0;
+        const end = messageInput.selectionEnd || 0;
+        const text = messageInput.value;
+        messageInput.value = text.substring(0, start) + emoji + text.substring(end);
+        messageInput.selectionStart = messageInput.selectionEnd = start + emoji.length;
+        messageInput.focus();
+    }
+
+    function closeEmojiPicker() {
+        if (emojiPicker) emojiPicker.style.display = 'none';
     }
 
     window.addEventListener('load', () => {

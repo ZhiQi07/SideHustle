@@ -9,44 +9,46 @@
 {% block content %}
     <main class="main-content">
         <div class="cards-row">
-            <a href="{{ url_for('earnings') }}" style="text-decoration: none; color: inherit;">
-                <div class="summary-card">
-                    <div class="card-title">Credit 💵</div>
-                    <div class="card-value">RM {{ total_credit|money_amount }}</div>
-                    <div style="font-size: 11px; color: #4f46e5; margin-top: 5px;">View History →</div>
-                </div>
-            </a>
-
-            <a href="{{ url_for('view_ratings') }}" style="text-decoration: none; color: inherit;">
-                <div class="summary-card" style="cursor: pointer;">
-                    <div class="card-title">User Rating</div>
-                    <div class="card-value">⭐ {{ average_rating }} / 5.0</div>
-                    <div style="font-size: 11px; color: #4f46e5; margin-top: 5px;">View Reviews →</div>
-                </div>
-            </a>
-
-            <a href="{{ url_for('completed_tasks') }}" style="text-decoration: none; color: inherit;">
-                <div class="summary-card" style="cursor: pointer;">
-                    <div class="card-title">Tasks Done</div>
-                    <div class="card-value">{{ tasks_done if tasks_done is not none else '0' }}</div>
-                    <div style="font-size: 11px; color: #4f46e5; margin-top: 5px;">View History →</div>
-                </div>
-            </a>
+    <a href="{{ url_for('earnings') }}" style="text-decoration: none; color: inherit;">
+        <div class="summary-card card-credit">
+            <div class="card-title">Credit 💵</div>
+            <div class="card-value">RM {{ total_credit|money_amount }}</div>
+            <div style="font-size: 11px; color: #4f46e5; margin-top: 5px;">View History →</div>
         </div>
+    </a>
+
+    <a href="{{ url_for('view_ratings') }}" style="text-decoration: none; color: inherit;">
+        <div class="summary-card card-rating">
+            <div class="card-title">User Rating ⭐</div>
+            <div class="card-value"> {{ average_rating }} / 5.0</div>
+            <div style="font-size: 11px; color: #4f46e5; margin-top: 5px;">View Reviews →</div>
+        </div>
+    </a>
+
+    <a href="{{ url_for('completed_tasks') }}" style="text-decoration: none; color: inherit;">
+        <div class="summary-card card-tasks">
+            <div class="card-title">Tasks Done 📝</div>
+            <div class="card-value">{{ tasks_done if tasks_done is not none else '0' }}</div>
+            <div style="font-size: 11px; color: #4f46e5; margin-top: 5px;">View History →</div>
+        </div>
+    </a>
+</div>
 
         <h2 class="tracking-section-title">Tasks Tracking 📈</h2>
         <div class="tracking-list-wrapper">
             {% if tracking_list %}
-                {% for item in tracking_list %}
+                {% for entry in tracking_list %}
+                {% set item = entry.task %}
+                {% set is_claimed = entry.is_claimed %}
                 <div class="tracking-row" 
                      style="{% if item.status == 'Completed' %}opacity: 0.75;{% endif %}"
-                     onclick="openTaskPopup('{{ item.title }}', '{{ item.progress }}%', '{{ item.status }}', '{{ item.deadline }}')">
+                     onclick="openTaskPopup('{{ item.id }}', '{{ item.title }}', '{{ item.progress }}%', '{{ item.status }}', '{{ item.deadline }}', {{ 'true' if is_claimed else 'false' }}, '{{ item.price | money_amount }}')">
                     
                     <div class="tracking-progress-side">
                         <div class="tracking-progress-inline">
                             <div class="tracking-progress-bar">
                                 <div class="tracking-progress-fill" 
-                                     style="width: {{ item.progress }}%; {% if item.status == 'Completed' %}background-color: #2e7d32;{% endif %}"></div>
+                                     style="width: {{ item.progress }}%; {% if item.status == 'Completed' %}background-color: #479b36;{% endif %}"></div>
                             </div>
                             <span class="tracking-percent">{{ item.progress }}%</span>
                         </div>
@@ -69,12 +71,41 @@
     </main>
 
     <div class="tracking-popup-overlay" id="popupOverlay">
-        <div class="tracking-popup">
-            <h3 style="margin-bottom: 20px;">Task Information</h3>
+        <div class="tracking-popup" style="max-width: 400px; width: 90%; box-sizing: border-box;">
+            <h3 style="margin-bottom: 20px; color: #5a32a8;">Task Information</h3>
             <p><strong>Task:</strong> <span id="p-task"></span></p>
             <p><strong>Progress:</strong> <span id="p-progress"></span></p>
             <p><strong>Status:</strong> <span id="p-status"></span></p>
             <p><strong>Deadline:</strong> <span id="p-deadline"></span></p>
+            
+            <!-- Claim and Dispute Section -->
+            <div id="popup-claim-section" style="display: none; margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee; text-align: center;">
+                <div style="display: flex; gap: 10px; width: 100%;">
+                    <a id="popup-claim-btn" href="#" class="confirm-btn" style="flex: 1; text-align: center; text-decoration: none; padding: 10px; background-color: #2e7d32; color: white; border-radius: 8px; font-weight: bold; font-size: 13px; border: none; cursor: pointer; display: inline-block;" onclick="return confirmClaim()">✓ Confirm Payment</a>
+                    <button type="button" class="popup-dispute-btn" style="flex: 1; padding: 10px; background-color: white; color: #c62828; border: 1px solid #c62828; border-radius: 8px; font-weight: bold; font-size: 13px; cursor: pointer;" onclick="showPopupDisputeForm()">⚠️ Report Default</button>
+                </div>
+                
+                <!-- Dispute form inside popup -->
+                <div id="popup-dispute-form-wrapper" style="display: none; margin-top: 15px; background: #fffebf; border: 1px solid #c62828; border-radius: 8px; padding: 12px; text-align: left; box-sizing: border-box;">
+                    <span style="color: #c62828; font-weight: bold; font-size: 12px; display: block; margin-bottom: 6px;">Submit dispute report:</span>
+                    <form id="popup-dispute-form" action="" method="POST">
+                        <select name="reason" style="width: 100%; border: 1px solid #ccc; border-radius: 6px; padding: 6px; font-family: inherit; font-size: 12px; margin-bottom: 8px; box-sizing: border-box; background: white;" required>
+                            <option value="" disabled selected>Select dispute category...</option>
+                            <option value="Client Refused to Pay">Client Refused to Pay</option>
+                            <option value="Client Unresponsive / Missing">Client Unresponsive / Missing</option>
+                            <option value="Disagreement on Completion Quality">Disagreement on Completion Quality</option>
+                            <option value="Client Paid Incorrect Amount">Client Paid Incorrect Amount</option>
+                            <option value="Other Dispute Reason">Other Dispute Reason</option>
+                        </select>
+                        <textarea name="description" placeholder="Describe the dispute (e.g. Client refused to pay)..." style="width: 100%; border: 1px solid #ccc; border-radius: 6px; padding: 6px; font-family: inherit; font-size: 12px; resize: none; box-sizing: border-box;" rows="2" required></textarea>
+                        <div style="display: flex; justify-content: space-between; margin-top: 8px; align-items: center;">
+                            <button type="button" style="padding: 4px 8px; font-size: 11px; background: none; border: 1px solid #777; border-radius: 4px; cursor: pointer;" onclick="hidePopupDisputeForm()">Cancel</button>
+                            <button type="submit" style="padding: 4px 12px; font-size: 11px; background: #c62828; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Submit</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
             <div style="text-align: right; margin-top: 25px;">
                 <button class="popup-back-btn" onclick="closePopup()">Back</button>
             </div>
@@ -82,12 +113,38 @@
     </div>
 
     <script>
-        function openTaskPopup(task, progress, status, deadline) {
+        let activeTaskId = null;
+        let activeTaskPrice = 0;
+
+        function openTaskPopup(id, task, progress, status, deadline, is_claimed, price) {
+            activeTaskId = id;
+            activeTaskPrice = price;
+            
             document.getElementById('p-task').innerText = task;
             document.getElementById('p-progress').innerText = progress;
             document.getElementById('p-status').innerText = status;
             document.getElementById('p-deadline').innerText = deadline;
+            
+            // Reset sections
+            document.getElementById('popup-claim-section').style.display = 'none';
+            document.getElementById('popup-dispute-form-wrapper').style.display = 'none';
+            
+            if (status === 'Completed' && !is_claimed) {
+                document.getElementById('popup-claim-section').style.display = 'block';
+                document.getElementById('popup-claim-btn').href = `/claim_earnings/${id}`;
+                document.getElementById('popup-dispute-form').action = `/report_dispute/${id}`;
+            }
+            
             document.getElementById('popupOverlay').classList.add('show');
+        }
+        function confirmClaim() {
+            return confirm(`Confirm that you have received payment from the client offline? This will add RM ${activeTaskPrice} to your credit balance.`);
+        }
+        function showPopupDisputeForm() {
+            document.getElementById('popup-dispute-form-wrapper').style.display = 'block';
+        }
+        function hidePopupDisputeForm() {
+            document.getElementById('popup-dispute-form-wrapper').style.display = 'none';
         }
         function closePopup() {
             document.getElementById('popupOverlay').classList.remove('show');
