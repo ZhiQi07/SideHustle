@@ -588,7 +588,7 @@ def update_profile():
         file = request.files.get('avatar')
         if file and file.filename != '':
 
-            upload_folder = os.path.join(basedir, 'static', 'uploads')
+            upload_folder = os.path.join('static', 'uploads')
             os.makedirs(upload_folder, exist_ok=True)
             
             filename = f"user_{user.id}_{file.filename}"
@@ -1753,9 +1753,17 @@ def handle_private_notification(data):
         'receiver': data.get('receiver')
     })
 
+@app.template_filter('get_user_avatar')
+def get_user_avatar(username):
+    target_user = User.query.filter_by(username=username).first()
+    if target_user and target_user.avatar:
+        return target_user.avatar
+    return None
 
 if __name__ == '__main__':
     with app.app_context():
+        os.makedirs(os.path.join('static', 'uploads'), exist_ok=True)
+
         if 'postgresql' not in app.config['SQLALCHEMY_DATABASE_URI']:
             try:
                 patch_database()
