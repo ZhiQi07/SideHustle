@@ -1760,6 +1760,20 @@ def get_user_avatar(username):
         return target_user.avatar
     return None
 
+@app.template_filter('get_user_bio')
+def get_user_bio(username):
+    target_user = User.query.filter_by(username=username).first()
+    if target_user and target_user.bio and target_user.bio.strip():
+        return target_user.bio
+    return "No bio currently"
+
+@app.template_filter('get_user_skills')
+def get_user_skills(username):
+    target_user = User.query.filter_by(username=username).first()
+    if target_user and target_user.skills and target_user.skills.strip():
+        return target_user.skills
+    return "No skills listed"
+
 if __name__ == '__main__':
     with app.app_context():
         os.makedirs(os.path.join('static', 'uploads'), exist_ok=True)
