@@ -684,11 +684,110 @@ def marketplace():
 def task_detail(task_id):
     task = Task.query.get_or_404(task_id)
     current_user = User.query.get(session['user_id'])
+    # to frontend layout
     return render_template('task_detail.html', task=task, user=current_user)
 
 @app.route('/task_tracking/<int:task_id>')
 def task_tracking(task_id):
     return f"This is tracking page for Task {task_id}. Developing..."
+
+@app.route('/post', methods=['GET', 'POST'])
+def post_task():
+    if 'user_id' not in session:
+        flash("Please login to post a task!")
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        current_user = User.query.get(session['user_id'])
+        capacity = request.form.get('capacity') or 1
+
+        # 1. Store the new Task instance inside the 'new_task' variable first
+        new_task = Task(
+            title=request.form.get('title'),
+            price=float(request.form.get('price')),
+            description=request.form.get('description'),
+            category=request.form.get('category'),
+            deadline=request.form.get('deadline'),
+            capacity=max(1, int(capacity)),
+            urgent=True if request.form.get('urgent') else False,
+            user=current_user.username,
+            is_negotiable=True if request.form.get('is_negotiable') else False
+        )
+        # 2. Pass that variable to your session handlers cleanly
+        db.session.add(new_task)
+        db.session.commit()
+        
+        return redirect(url_for('my_task')) 
+        
+    return render_template('post_task.html')
+
+@app.route('/report_task/<int:task_id>', methods=['POST'])
+def report_task(task_id):
+    if 'user_id' not in session:
+        flash("Please login to report a task!")
+        return redirect(url_for('login'))
+        
+    current_user = User.query.get(session['user_id'])
+    task = Task.query.get_or_404(task_id)
+    
+    reason = request.form.get('reason')
+    description = request.form.get('description')
+    
+    if not reason or not description:
+        flash("Please fill in all fields to submit a report.")
+        return redirect(url_for('task_detail', task_id=task.id))
+        
+    if task.user == current_user.username:
+        flash("You cannot report your own task!")
+        return redirect(url_for('task_detail', task_id=task.id))
+
+    new_report = Report(
+        task_id=task.id,
+        reporter_username=current_user.username,
+        reason=reason,
+        description=description
+    )
+    
+    db.session.add(new_report)
+    db.session.commit()
+    
+    flash("Thank you. The task has been reported to an admin for review.")
+    return redirect(url_for('task_detail', task_id=task.id))
+
+@app.route('/apply/<int:task_id>', methods=['GET', 'POST'])
+def apply(task_id):
+    if 'user_id' not in session:
+        flash("Please login to apply!")
+        return redirect(url_for('login'))
+    task = Task.query.get_or_404(task_id)
+    current_user = User.query.get(session['user_id'])
+    if request.method == 'POST':
+        if task.user == current_user.username:
+            flash("You cannot apply for a task you created!")
+            return redirect(url_for('marketplace'))
+        if Application.query.filter_by(task_id=task.id, applicant_username=current_user.username).first():
+            flash("You have already applied for this task!")
+            return redirect(url_for('marketplace'))
+        db.session.add(Application(
+            task_id=task.id,
+            applicant_username=current_user.username,
+            intro=request.form.get('intro'),
+            reason=request.form.get('reason')
+        ))
+        owner = User.query.filter_by(username=task.user).first()
+        if owner:
+            db.session.add(Notification(
+                user_id=owner.id,
+                task_id=task.id,
+                message=f"New Applicant: @{current_user.username} applied for your task: {task.title}!"
+            ))
+            socketio.emit('new_unread', {'task_id': task.id, 'role': 'created'}, room=str(owner.id))
+        db.session.commit()
+        if owner:
+            send_socket_notification(owner.id, f"New Applicant: @{current_user.username} applied for your task: {task.title}!", task.id)
+        flash("Application submitted successfully!")
+        return redirect(url_for('marketplace'))
+    return render_template('apply.html', task=task)
 
 # ==========================================
 # DASHBOARD FEATURES
@@ -872,35 +971,107 @@ def earnings():
         
     return render_template('earnings.html', earnings_list=earnings_list, total_credit=user.credit, sort_by=sort_by)
 
-@app.route('/post', methods=['GET', 'POST'])
-def post_task():
+# ==========================================
+# MY TASKS (MANAGEMENT, RATINGS & APPLICATIONS)
+# ==========================================
+
+@app.route('/my_task')
+def my_task():
+    cleanup_expired_tasks()
     if 'user_id' not in session:
-        flash("Please login to post a task!")
+        return redirect(url_for('login'))
+    current_user = User.query.get(session['user_id'])
+    if not current_user:
+        session.clear()
         return redirect(url_for('login'))
 
-    if request.method == 'POST':
-        current_user = User.query.get(session['user_id'])
-        capacity = request.form.get('capacity') or 1
+    # Determine which view to show: 'created' or 'applied'
+    view = request.args.get('view', 'created')
+    
+    # Fetch all tasks related to the user
+    all_created_tasks = Task.query.filter_by(user=current_user.username).order_by(Task.is_pinned.desc(), Task.id.desc()).all()
+    my_all_applications = Application.query.filter_by(applicant_username=current_user.username).all()
 
-        # 1. Store the new Task instance inside the 'new_task' variable first
-        new_task = Task(
-            title=request.form.get('title'),
-            price=float(request.form.get('price')),
-            description=request.form.get('description'),
-            category=request.form.get('category'),
-            deadline=request.form.get('deadline'),
-            capacity=max(1, int(capacity)),
-            urgent=True if request.form.get('urgent') else False,
-            user=current_user.username,
-            is_negotiable=True if request.form.get('is_negotiable') else False
-        )
-        # 2. Pass that variable to your session handlers cleanly
-        db.session.add(new_task)
-        db.session.commit()
-        
-        return redirect(url_for('my_task')) 
-        
-    return render_template('post_task.html')
+    # Initialize lists to hold categorized tasks
+    active_created = []
+    completed_created = []
+    active_applied = []
+    completed_applied = []
+
+    # SECTION 1 (EMPLOYER VIEW): Process created tasks
+    for task in all_created_tasks:
+        is_fully_rated = False
+        if task.progress == 100:
+            hired_apps = Application.query.filter_by(task_id=task.id, status='Hired').all()
+            # Check if employer rated all workers
+            employer_reviews = [r.target_username for r in Rating.query.filter_by(task_id=task.id, reviewer_username=current_user.username).all()]
+            employer_done = all(app.applicant_username in employer_reviews for app in hired_apps) if hired_apps else False
+            
+            # Check if all workers rated the employer
+            workers_done = True
+            for app in hired_apps:
+                worker_rated = Rating.query.filter_by(task_id=task.id, reviewer_username=app.applicant_username, target_username=current_user.username).first()
+                if not worker_rated:
+                    workers_done = False
+                    break
+            
+            if employer_done and workers_done:
+                is_fully_rated = True
+
+        #Distibute to completed or active lists based on rating status
+        if is_fully_rated:
+            completed_created.append(task)
+        else:
+            active_created.append(task)
+
+    # SECTION 2 (EMPLOYER VIEW): Identify the next worker who needs a review from you
+    first_unrated = {}
+    for task in active_created:
+        if task.progress == 100:
+            hired_apps = Application.query.filter_by(task_id=task.id, status='Hired').all()
+            rated_list = [r.target_username for r in Rating.query.filter_by(task_id=task.id, reviewer_username=current_user.username).all()]
+            for app in hired_apps:
+                if app.applicant_username not in rated_list:
+                    first_unrated[task.id] = app.applicant_username
+                    break
+
+    # SECTION 3 (TASKER VIEW): Process tasks you applied for
+    for app in my_all_applications:
+        task = Task.query.get(app.task_id)
+        if task:
+            is_claimed = False
+            if app.status == 'Hired':
+                earning_record = Earning.query.filter_by(
+                    user_id=current_user.id,
+                    activity=f"Completed Task: {task.title}"
+                ).first()
+                is_claimed = earning_record is not None
+
+            # Check if both the tasker and employer have rated each other for this task
+            is_fully_rated = False
+            if task.progress == 100 and app.status == 'Hired':
+                # Check if this tasker rated the employer
+                worker_rated_owner = Rating.query.filter_by(task_id=task.id, reviewer_username=current_user.username, target_username=task.user).first()
+                # Check if the employer rated this specific tasker
+                owner_rated_worker = Rating.query.filter_by(task_id=task.id, reviewer_username=task.user, target_username=current_user.username).first()
+                
+                if worker_rated_owner and owner_rated_worker:
+                    is_fully_rated = True
+            
+            if is_fully_rated:
+                completed_applied.append({'app': app, 'task': task, 'is_claimed': is_claimed})
+            else:
+                active_applied.append({'app': app, 'task': task, 'is_claimed': is_claimed})
+
+    active_applied.sort(key=lambda x: x['task'].is_pinned, reverse=True)
+
+    return render_template('my_task.html',
+        created=active_created, 
+        applied=active_applied,
+        completed_created=completed_created,
+        completed_applied=completed_applied,
+        view=view, user=current_user,
+        Task=Task, Rating=Rating, first_unrated=first_unrated)
 
 @app.route('/edit_task/<int:task_id>', methods=['GET', 'POST'])
 def edit_task(task_id):
@@ -909,6 +1080,7 @@ def edit_task(task_id):
     if not user or task.user != user.username:
         flash("You are not authorized to edit this task!")
         return redirect(url_for('my_task'))
+    # check if user filled out form
     if request.method == 'POST':
         task.title = request.form.get('title')
         task.category = request.form.get('category')
@@ -954,175 +1126,6 @@ def delete_task(task_id):
     flash("Task deleted successfully. Pending applicants have been notified.")
     return redirect(url_for('my_task'))
 
-@app.route('/report_task/<int:task_id>', methods=['POST'])
-def report_task(task_id):
-    if 'user_id' not in session:
-        flash("Please login to report a task!")
-        return redirect(url_for('login'))
-        
-    current_user = User.query.get(session['user_id'])
-    task = Task.query.get_or_404(task_id)
-    
-    reason = request.form.get('reason')
-    description = request.form.get('description')
-    
-    if not reason or not description:
-        flash("Please fill in all fields to submit a report.")
-        return redirect(url_for('task_detail', task_id=task.id))
-        
-    if task.user == current_user.username:
-        flash("You cannot report your own task!")
-        return redirect(url_for('task_detail', task_id=task.id))
-
-    new_report = Report(
-        task_id=task.id,
-        reporter_username=current_user.username,
-        reason=reason,
-        description=description
-    )
-    
-    db.session.add(new_report)
-    db.session.commit()
-    
-    flash("Thank you. The task has been reported to an admin for review.")
-    return redirect(url_for('task_detail', task_id=task.id))
-
-@app.route('/apply/<int:task_id>', methods=['GET', 'POST'])
-def apply(task_id):
-    if 'user_id' not in session:
-        flash("Please login to apply!")
-        return redirect(url_for('login'))
-    task = Task.query.get_or_404(task_id)
-    current_user = User.query.get(session['user_id'])
-    if request.method == 'POST':
-        if task.user == current_user.username:
-            flash("You cannot apply for a task you created!")
-            return redirect(url_for('marketplace'))
-        if Application.query.filter_by(task_id=task.id, applicant_username=current_user.username).first():
-            flash("You have already applied for this task!")
-            return redirect(url_for('marketplace'))
-        db.session.add(Application(
-            task_id=task.id,
-            applicant_username=current_user.username,
-            intro=request.form.get('intro'),
-            reason=request.form.get('reason')
-        ))
-        owner = User.query.filter_by(username=task.user).first()
-        if owner:
-            db.session.add(Notification(
-                user_id=owner.id,
-                task_id=task.id,
-                message=f"New Applicant: @{current_user.username} applied for your task: {task.title}!"
-            ))
-            socketio.emit('new_unread', {'task_id': task.id, 'role': 'created'}, room=str(owner.id))
-        db.session.commit()
-        if owner:
-            send_socket_notification(owner.id, f"New Applicant: @{current_user.username} applied for your task: {task.title}!", task.id)
-        flash("Application submitted successfully!")
-        return redirect(url_for('marketplace'))
-    return render_template('apply.html', task=task)
-
-# ==========================================
-# MY TASKS (MANAGEMENT, RATINGS & APPLICATIONS)
-# ==========================================
-
-@app.route('/my_task')
-def my_task():
-    cleanup_expired_tasks()
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    current_user = User.query.get(session['user_id'])
-    if not current_user:
-        session.clear()
-        return redirect(url_for('login'))
-
-    view = request.args.get('view', 'created')
-    
-    # Fetch all tasks related to the user
-    all_created_tasks = Task.query.filter_by(user=current_user.username).order_by(Task.is_pinned.desc(), Task.id.desc()).all()
-    # For your applications, we sort them after assembly using Python's list sort mechanism
-    my_all_applications = Application.query.filter_by(applicant_username=current_user.username).all()
-
-    # Containers for Active vs Completed Archive lists
-    active_created = []
-    completed_created = []
-    
-    active_applied = []
-    completed_applied = []
-
-    # 1. Sort Created Tasks based on mutual rating completion states
-    for task in all_created_tasks:
-        is_fully_rated = False
-        if task.progress == 100:
-            hired_apps = Application.query.filter_by(task_id=task.id, status='Hired').all()
-            # Check if employer rated all workers
-            employer_reviews = [r.target_username for r in Rating.query.filter_by(task_id=task.id, reviewer_username=current_user.username).all()]
-            employer_done = all(app.applicant_username in employer_reviews for app in hired_apps) if hired_apps else False
-            
-            # Check if all workers rated the employer
-            workers_done = True
-            for app in hired_apps:
-                worker_rated = Rating.query.filter_by(task_id=task.id, reviewer_username=app.applicant_username, target_username=current_user.username).first()
-                if not worker_rated:
-                    workers_done = False
-                    break
-            
-            if employer_done and workers_done:
-                is_fully_rated = True
-
-        if is_fully_rated:
-            completed_created.append(task)
-        else:
-            active_created.append(task)
-
-    # 2. Extract unrated target helper variables for the active created views
-    first_unrated = {}
-    for task in active_created:
-        if task.progress == 100:
-            hired_apps = Application.query.filter_by(task_id=task.id, status='Hired').all()
-            rated_list = [r.target_username for r in Rating.query.filter_by(task_id=task.id, reviewer_username=current_user.username).all()]
-            for app in hired_apps:
-                if app.applicant_username not in rated_list:
-                    first_unrated[task.id] = app.applicant_username
-                    break
-
-    # 3. Sort Applied Tasks based on mutual rating completion states
-    for app in my_all_applications:
-        task = Task.query.get(app.task_id)
-        if task:
-            is_claimed = False
-            if app.status == 'Hired':
-                earning_record = Earning.query.filter_by(
-                    user_id=current_user.id,
-                    activity=f"Completed Task: {task.title}"
-                ).first()
-                is_claimed = earning_record is not None
-
-            is_fully_rated = False
-            if task.progress == 100 and app.status == 'Hired':
-                # Check if this worker rated the employer
-                worker_rated_owner = Rating.query.filter_by(task_id=task.id, reviewer_username=current_user.username, target_username=task.user).first()
-                # Check if the employer rated this specific worker
-                owner_rated_worker = Rating.query.filter_by(task_id=task.id, reviewer_username=task.user, target_username=current_user.username).first()
-                
-                if worker_rated_owner and owner_rated_worker:
-                    is_fully_rated = True
-            
-            if is_fully_rated:
-                completed_applied.append({'app': app, 'task': task, 'is_claimed': is_claimed})
-            else:
-                active_applied.append({'app': app, 'task': task, 'is_claimed': is_claimed})
-
-    active_applied.sort(key=lambda x: x['task'].is_pinned, reverse=True)
-
-    return render_template('my_task.html',
-        created=active_created, 
-        applied=active_applied,
-        completed_created=completed_created,
-        completed_applied=completed_applied,
-        view=view, user=current_user,
-        Task=Task, Rating=Rating, first_unrated=first_unrated)
-
 @app.route('/toggle_pin/<int:task_id>')
 def toggle_pin(task_id):
     if 'user_id' not in session:
@@ -1141,7 +1144,7 @@ def toggle_pin(task_id):
     task.is_pinned = not task.is_pinned
     db.session.commit()
     
-    # 🔗 ✅ FIX: Dynamically match the active tab view string format parameter
+    # Determine which view to show: 'created' or 'applied'
     view_type = request.args.get('redirect_view', 'created')
     flash("Task priority updated successfully!")
     return redirect(url_for('my_task', view=view_type))
