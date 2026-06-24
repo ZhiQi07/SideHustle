@@ -20,11 +20,12 @@
                         📋 My Task 
                         <span id="global-nav-dot" class="dot-small" style="display: none;"></span>
                     </a>
-                    
                     <a href="{{ url_for('profile') }}">👤 Profile</a>
+
+                    {% if user and user.is_admin %}
+                        <a href="{{ url_for('admin_dashboard') }}" class="admin-nav-item">🛡️ Admin Panel</a>
+                    {% endif %}
                 </div>
-            </div>
-            <div class="sidebar-bottom">
             </div>
         </div>
 

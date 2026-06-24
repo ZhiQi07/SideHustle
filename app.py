@@ -1756,6 +1756,80 @@ def handle_private_notification(data):
         'receiver': data.get('receiver')
     })
 
+# ==========================================
+# 🛡️ SYSTEM ADMINISTRATION ROUTES
+# ==========================================
+
+@app.route('/admin/dashboard')
+def admin_dashboard():
+    # Security Check: Ensure user is logged in and is an admin
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    current_user = db.session.get(User, session['user_id'])
+    if not current_user or not current_user.is_admin:
+        flash("Access Denied: Admin authorization required!")
+        return redirect(url_for('marketplace'))
+        
+    # Fetch all reported tasks and user lists from database
+    reports = Report.query.order_by(Report.id.desc()).all()
+    all_users = User.query.filter(User.id != current_user.id).order_by(User.username.asc()).all()
+    
+    return render_template('admin_dashboard.html', reports=reports, users=all_users, user=current_user)
+
+@app.route('/admin/dismiss_report/<int:report_id>')
+def admin_dismiss_report(report_id):
+    if 'user_id' not in session: return redirect(url_for('login'))
+    current_user = db.session.get(User, session['user_id'])
+    if not current_user or not current_user.is_admin: return redirect(url_for('marketplace'))
+        
+    report = Report.query.get_or_404(report_id)
+    db.session.delete(report)
+    db.session.commit()
+    flash("Report dismissed cleanly!")
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/delete_task/<int:task_id>')
+def admin_force_delete_task(task_id):
+    if 'user_id' not in session: return redirect(url_for('login'))
+    current_user = db.session.get(User, session['user_id'])
+    if not current_user or not current_user.is_admin: return redirect(url_for('marketplace'))
+        
+    task = Task.query.get_or_404(task_id)
+    
+    # Notify creator their post was removed for violating community guidelines
+    owner = User.query.filter_by(username=task.user).first()
+    if owner:
+        db.session.add(Notification(
+            user_id=owner.id,
+            message=f"🛡️ Admin Alert: Your listing '{task.title}' was removed for violating community post terms."
+        ))
+    
+    # Clear outstanding applications and tasks from Neon database tables
+    Application.query.filter_by(task_id=task.id).delete()
+    Report.query.filter_by(task_id=task.id).delete()
+    db.session.delete(task)
+    db.session.commit()
+    
+    if owner:
+        send_socket_notification(owner.id, f"🛡️ Admin Alert: Your listing '{task.title}' was removed for violating terms.")
+        
+    flash("Violating task has been force removed from marketplace.")
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/toggle_user_admin/<int:target_user_id>')
+def admin_toggle_user_role(target_user_id):
+    if 'user_id' not in session: return redirect(url_for('login'))
+    current_user = db.session.get(User, session['user_id'])
+    if not current_user or not current_user.is_admin: return redirect(url_for('marketplace'))
+        
+    target_user = db.session.get(User, target_user_id)
+    if target_user:
+        target_user.is_admin = not target_user.is_admin
+        db.session.commit()
+        flash(f"Updated @{target_user.username}'s administrative authorization permissions!")
+        
+    return redirect(url_for('admin_dashboard'))
 
 if __name__ == '__main__':
     with app.app_context():

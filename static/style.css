@@ -1764,3 +1764,144 @@ body {
     top: -12px;
     left: 0;
 }
+
+/* ==========================================================================
+   🛡️ SYSTEM ADMINISTRATION THEME STYLES
+   ========================================================================== */
+/* Changed from dark red to a premium deep royal purple gradient */
+.admin-header-container {
+    background: linear-gradient(135deg, #4c2893, #2b1360);
+    border-radius: 20px;
+    padding: 35px;
+    color: white;
+    margin-bottom: 35px;
+    box-shadow: 0 10px 25px rgba(90, 50, 168, 0.12);
+}
+
+.admin-header-title {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    margin: 0 0 8px 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* Softer lavender text for the subtitle */
+.admin-header-subtitle {
+    color: #e3d2f0;
+    font-size: 14px;
+    margin: 0;
+    font-weight: 500;
+}
+
+.admin-card {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 30px;
+    border: 1px solid #eae6f0;
+    box-shadow: 0 4px 20px rgba(90, 50, 168, 0.02);
+    margin-bottom: 35px;
+}
+
+.admin-section-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e1233;
+    margin-bottom: 20px;
+    padding-left: 12px;
+    letter-spacing: -0.2px;
+}
+
+/* Left accent indicators updated to matching brand colors */
+.report-title-border { border-left: 4px solid #ff9800; } /* Warning Orange */
+.user-title-border { border-left: 4px solid #5a32a8; }   /* Brand Purple */
+
+/* Table Refinements */
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.admin-table th {
+    background-color: #fbfafc;
+    color: #5a32a8;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    padding: 14px 18px;
+    border-bottom: 2px solid #eae6f0;
+}
+
+.admin-table td {
+    padding: 18px;
+    border-bottom: 1px solid #f5f2f9;
+    vertical-align: middle;
+    font-size: 14px;
+    color: #2d263b;
+}
+
+.admin-table tr:last-child td { border-bottom: none; }
+
+/* Custom Badge Pill Profiles */
+.infraction-badge {
+    background-color: #ffebee;
+    color: #c62828;
+    border: 1px solid #ffcdcf;
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.admin-pill-badge {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    border: 1px solid #c8e6c9;
+}
+
+/* Premium Sidebar Admin Button Style Overrides */
+.sidebar-menu a.admin-nav-item {
+    background-color: #f6f0fa;
+    color: #5a32a8;
+    border: 1px solid #e3d2f0;
+    font-weight: 700;
+}
+
+.sidebar-menu a.admin-nav-item:hover {
+    background-color: #5a32a8;
+    color: white;
+    border-color: #5a32a8;
+    box-shadow: 0 4px 12px rgba(90, 50, 168, 0.15);
+}
+
+/* Button UI Normalization */
+.btn-admin-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.btn-admin-view { background: #f3f0fa; color: #5a32a8; border: 1px solid #e3d2f0; }
+.btn-admin-view:hover { background: #5a32a8; color: white; transform: translateY(-1px); }
+
+.btn-admin-delete { background: #b71c1c; color: white; border: none; }
+.btn-admin-delete:hover { background: #961515; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(183, 28, 28, 0.2); }
+
+.btn-admin-dismiss { background: #ffffff; color: #666; border: 1px solid #eae6f0; }
+.btn-admin-dismiss:hover { background: #eee; color: #333; transform: translateY(-1px); }
+
+.btn-admin-toggle { background: #ffffff; color: #5a32a8; border: 1px solid #eae6f0; }
+.btn-admin-toggle:hover { background: #f3f0fa; border-color: #5a32a8; transform: translateY(-1px); }
