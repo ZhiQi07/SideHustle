@@ -579,7 +579,9 @@ def update_profile():
     if field == 'displayname':
         user.display_name = value
     elif field == 'username':
+        old_username = user.username
         user.username = value
+        Task.query.filter_by(user=old_username).update({Task.user: value})
     elif field == 'bio':
         user.bio = value
     elif field == 'skills':
@@ -1759,6 +1761,10 @@ def get_user_avatar(username):
     if target_user and target_user.avatar:
         return target_user.avatar
     return None
+
+@app.template_filter('get_user_by_username')
+def get_user_by_username(username):
+    return User.query.filter_by(username=username).first()
 
 @app.template_filter('get_user_bio')
 def get_user_bio(username):

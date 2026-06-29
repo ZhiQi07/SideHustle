@@ -44,7 +44,18 @@
         background: linear-gradient(135deg, #5a32a8, #8c6cd4); 
         border-radius: 50%; 
         flex-shrink: 0;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
+
+    .pm-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    }
+
     .pm-text-area {
         flex-grow: 1; 
         min-width: 0;
@@ -87,7 +98,12 @@
         {% for item in inbox_data %}
             <a href="{{ url_for('private_chat', username=item.username) }}" style="text-decoration: none; color: inherit; display: block;">
                 <div class="pm-inbox-card">
-                    <div class="pm-avatar"></div>
+                    <div class="pm-avatar">
+                        {% set partner_avatar = item.username|get_user_avatar %}
+                        {% if partner_avatar %}
+                            <img src="{{ url_for('static', filename='uploads/' + partner_avatar) }}" alt="User Avatar">
+                        {% endif %}
+                    </div>
                     
                     <div class="pm-text-area">
                         <h3 class="pm-username">{{ item.username }}</h3>
