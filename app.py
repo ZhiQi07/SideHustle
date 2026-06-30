@@ -453,7 +453,7 @@ def patch_database():
                 print("✅ Notification table patched with timestamp column!")
 
 # ==========================================
-# AUTHENTICATION ROUTES (LOGIN / SIGNUP / RESET)
+# AUTHENTICATION ROUTES (LOGIN / SIGNUP / RESET) (Sc part)
 # ==========================================
 
 @app.route('/')
@@ -556,7 +556,7 @@ def update_password():
     return redirect(url_for('forgot_password'))
 
 # ==========================================
-# USER PROFILE & EARNINGS ROUTES
+# USER PROFILE & EARNINGS ROUTES (Sc part)
 # ==========================================
 
 @app.route('/profile')
@@ -638,7 +638,7 @@ def delete_account():
     return redirect(url_for('login'))
 
 # ==========================================
-# MARKETPLACE & TASK CREATION ROUTES
+# MARKETPLACE & TASK CREATION ROUTES (Zq part)
 # ==========================================
 
 @app.route('/marketplace')
@@ -790,7 +790,7 @@ def apply(task_id):
     return render_template('apply.html', task=task)
 
 # ==========================================
-# DASHBOARD FEATURES
+# DASHBOARD FEATURES (Rq part)
 # ==========================================
 
 @app.route('/dashboard')
@@ -972,7 +972,7 @@ def earnings():
     return render_template('earnings.html', earnings_list=earnings_list, total_credit=user.credit, sort_by=sort_by)
 
 # ==========================================
-# MY TASKS (MANAGEMENT, RATINGS & APPLICATIONS)
+# MY TASKS (MANAGEMENT, RATINGS & APPLICATIONS) (Zq & Rq part)
 # ==========================================
 
 @app.route('/my_task')
@@ -988,7 +988,7 @@ def my_task():
     # Determine which view to show: 'created' or 'applied'
     view = request.args.get('view', 'created')
     
-    # Fetch all tasks related to the user
+    # Fetch all tasks related to the user, also with pin task first
     all_created_tasks = Task.query.filter_by(user=current_user.username).order_by(Task.is_pinned.desc(), Task.id.desc()).all()
     my_all_applications = Application.query.filter_by(applicant_username=current_user.username).all()
 
@@ -1063,6 +1063,7 @@ def my_task():
             else:
                 active_applied.append({'app': app, 'task': task, 'is_claimed': is_claimed})
 
+    # Sort active_applied by pinned status (pinned tasks first)
     active_applied.sort(key=lambda x: x['task'].is_pinned, reverse=True)
 
     return render_template('my_task.html',
@@ -1471,7 +1472,7 @@ def view_ratings():
     return render_template('view_ratings.html', user=user, reviews=real_reviews, avg_rating=avg_rating, sort_by=sort_by)
 
 # ==========================================
-# NOTIFICATION SYSTEM PANELS
+# NOTIFICATION SYSTEM PANELS 
 # ==========================================
 
 @app.route('/clear_notifications', methods=['POST'])
@@ -1484,7 +1485,7 @@ def clear_notifications():
     return {"status": "success"}, 200
 
 # ==========================================
-# INBOX & PRIVATE MESSAGING ROUTES
+# INBOX & PRIVATE MESSAGING ROUTES (Rq part- function, Zq part- ui)
 # ==========================================
 
 @app.route('/private_inbox')
@@ -1582,7 +1583,7 @@ def private_chat(username):
     return render_template('private_chat.html', target_user=target_user, user=current_user, history=history)
 
 # ==========================================
-# WEBSOCKET CHANNELS & SIGNAL HANDLERS
+# WEBSOCKET CHANNELS & SIGNAL HANDLERS (Rq part)
 # ==========================================
 
 @socketio.on('join')
@@ -1831,6 +1832,56 @@ def admin_toggle_user_role(target_user_id):
         
     return redirect(url_for('admin_dashboard'))
 
+@app.route('/admin/resolve_payment_dispute/<int:report_id>/<int:task_id>', methods=['POST'])
+def admin_resolve_payment_dispute(report_id, task_id):
+    if 'user_id' not in session: 
+        return redirect(url_for('login'))
+    current_user = db.session.get(User, session['user_id'])
+    if not current_user or not current_user.is_admin: 
+        return redirect(url_for('marketplace'))
+        
+    action = request.form.get('action') # 'approve' or 'dismiss'
+    report = Report.query.get_or_404(report_id)
+    task = Task.query.get_or_404(task_id)
+    
+    # Identify the worker who opened the dispute
+    worker = User.query.filter_by(username=report.reporter_username).first()
+    
+    if action == 'approve' and worker:
+        # 1. Credit the worker's wallet balance safely
+        if worker.credit is None: 
+            worker.credit = 0.0
+        worker.credit += task.price
+        
+        # 2. Log it into their clear ledger earnings index history
+        db.session.add(Earning(
+            user_id=worker.id,
+            activity=f"Dispute Approved: Overrode Payment for '{task.title}'",
+            amount=task.price,
+            timestamp=datetime.now()
+        ))
+        
+        # 3. Update task tracking statistics parameters
+        if worker.tasks_completed is None: 
+            worker.tasks_completed = 0
+        worker.tasks_completed += 1
+        
+        # 4. Issue system confirmation notifications
+        db.session.add(Notification(
+            user_id=worker.id,
+            message=f"🛡️ Dispute Resolved: Admin approved your default report for '{task.title}'. RM {task.price} has been credited."
+        ))
+        send_socket_notification(worker.id, f"🛡️ Dispute Resolved: RM {task.price} credited.")
+        flash(f"Dispute approved! Paid RM {task.price} to @{worker.username}.")
+        
+    else:
+        flash("Dispute dismissed without executing credit changes.")
+
+    # Clean up the report tracking row out of the dashboard feed
+    db.session.delete(report)
+    db.session.commit()
+    return redirect(url_for('admin_dashboard'))
+    
 if __name__ == '__main__':
     with app.app_context():
         if 'postgresql' not in app.config['SQLALCHEMY_DATABASE_URI']:

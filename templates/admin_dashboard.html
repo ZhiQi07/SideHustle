@@ -9,21 +9,68 @@
         <p class="admin-header-subtitle">Monitor community infraction logs, process active violations, and manage systemic developer privileges.</p>
     </div>
 
-    <div class="admin-card">
-        <h2 class="admin-section-title report-title-border">Active Violation Flags Log</h2>
-        {% if reports %}
-            <div style="overflow-x: auto;">
-                <table class="admin-table">
-                    <thead>
+    <!-- SECTION 1: PAYMENT DISPUTES DEFAULT (NEW STUFF) -->
+    <div class="admin-card" style="border-top: 4px solid #2e7d32;">
+        <h2 class="admin-section-title" style="border-left: 4px solid #2e7d32; padding-left: 10px;">💵 Outstanding Payment Default Disputes</h2>
+        
+        {% set dispute_count = namespace(value=0) %}
+        <div style="overflow-x: auto;">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th style="width: 20%;">Task Details</th>
+                        <th style="width: 15%;">Disputing Worker</th>
+                        <th style="width: 35%;">Dispute Reason & Logs</th>
+                        <th style="width: 30%; text-align: right;">Financial Action Controls</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in reports %}
+                        <!-- Filter out items that are default payment issues from dashboard.html -->
+                        {% if "Pay" in r.reason or "Client" in r.reason or "Disagreement" in r.reason or "Dispute" in r.reason %}
+                        {% set dispute_count.value = dispute_count.value + 1 %}
                         <tr>
-                            <th style="width: 18%;">Target Listing</th>
-                            <th style="width: 15%;">Flagged By</th>
-                            <th style="width: 32%;">Infraction Parameters</th>
-                            <th style="width: 35%; text-align: right;">Moderation Action Controls</th>
+                            <td><strong>Campaign #{{ r.task_id }}</strong></td>
+                            <td><span style="font-weight: 600;">@{{ r.reporter_username }}</span></td>
+                            <td>
+                                <span class="tag urgent-tag" style="background-color: #fff3e0; color: #e65100; border: 1px solid #ffe0b2;">{{ r.reason }}</span>
+                                <p style="font-size: 13px; color: #555; margin-top: 5px; font-style: italic;">"{{ r.description }}"</p>
+                            </td>
+                            <td style="text-align: right;">
+                                <form action="{{ url_for('admin_resolve_payment_dispute', report_id=r.id, task_id=r.task_id) }}" method="POST" style="display: inline-flex; gap: 8px; justify-content: flex-end;">
+                                    <button type="submit" name="action" value="approve" class="btn-admin-action" style="background-color: #2e7d32; color: white; border: none;" onclick="return confirm('Force release payment authorization? This directly transfers credits to this user.');">✓ Release Funds</button>
+                                    <button type="submit" name="action" value="dismiss" class="btn-admin-action btn-admin-dismiss" onclick="return confirm('Dismiss this dispute report?');">Cancel Report</button>
+                                </form>
+                            </td>
                         </tr>
-                    </thead>
-                    <tbody>
-                        {% for r in reports %}
+                        {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% if dispute_count.value == 0 %}
+                <p style="text-align: center; padding: 30px; color: #888; font-style: italic; font-size: 14px;">🎉 Perfect! No unpaid default payment disputes filed by workers.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- SECTION 2: REGULAR MARKETPLACE POST VIOLATIONS -->
+    <div class="admin-card" style="margin-top: 30px;">
+        <h2 class="admin-section-title report-title-border">Active Marketplace Content Flags</h2>
+        <div style="overflow-x: auto;">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th style="width: 18%;">Target Listing</th>
+                        <th style="width: 15%;">Flagged By</th>
+                        <th style="width: 32%;">Infraction Parameters</th>
+                        <th style="width: 35%; text-align: right;">Moderation Action Controls</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set content_count = namespace(value=0) %}
+                    {% for r in reports %}
+                        {% if "Pay" not in r.reason and "Client" not in r.reason and "Disagreement" not in r.reason and "Dispute" not in r.reason %}
+                        {% set content_count.value = content_count.value + 1 %}
                         <tr>
                             <td>
                                 <strong style="color: #1e1233;">Campaign #{{ r.task_id }}</strong>
@@ -44,17 +91,19 @@
                                 </div>
                             </td>
                         </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        {% else %}
-            <div style="text-align: center; padding: 45px 20px; color: #8c8599; font-style: italic; font-size: 14px;">
-                😴 Fantastic! No open platform violation listings need review right now.
-            </div>
-        {% endif %}
+                        {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% if content_count.value == 0 %}
+                <div style="text-align: center; padding: 30px; color: #8c8599; font-style: italic; font-size: 14px;">
+                    😴 No open platform violation listings need review right now.
+                </div>
+            {% endif %}
+        </div>
     </div>
 
+    <!-- SECTION 3: STUDENT PRIVILEGE MATRIX -->
     <div class="admin-card">
         <h2 class="admin-section-title user-title-border">Student Privilege Matrix</h2>
         <div style="overflow-x: auto;">
