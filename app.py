@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
-from flask_socketio import SocketIO, emit, join_room
+from flask_socketio import SocketIO, emit, join_room, leave_room
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import func, text
 import os
@@ -12,6 +12,10 @@ import re
 app = Flask(__name__)
 app.secret_key = "mmu_secret_key"
 socketio = SocketIO(app, cors_allowed_origins="*")
+active_rooms = {}
+ 
+def is_user_in_room(username, room_id):
+    return room_id in active_rooms.get(username, set())
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 db_path = os.path.join(basedir, 'database.db')
@@ -336,6 +340,13 @@ def send_system_message(task_id, content):
             content=content
         )
         db.session.add(sys_msg)
+        db.session.flush()
+        
+        task = db.session.get(Task, task_id)
+        if task:
+            for username in get_task_member_usernames(task):
+                if is_user_in_room(username, str(task_id)):
+                    db.session.add(MessageRead(message_id=sys_msg.id, username=username))
         db.session.commit()
         
         socketio.emit('receive_message', {
@@ -1422,6 +1433,7 @@ def on_join(data):
         room_parts = room_id.replace("private_", "").split("_")
         if user.username in room_parts:
             join_room(room_id)
+            active_rooms.setdefault(user.username, set()).add(room_id)
             print(f"🔒 User {user.username} successfully entered private secure room: {room_id}")
         return
 
@@ -1430,10 +1442,23 @@ def on_join(data):
         task = db.session.get(Task, int(room_id))
         if task and user_can_access_task_chat(task, user):
             join_room(room_id)
+            active_rooms.setdefault(user.username, set()).add(room_id)
             print(f"👥 User {user.username} entered task group room: {room_id}")
     except (ValueError, TypeError):
         # Prevents crash if room_id is not a valid integer ID
         pass
+
+
+@socketio.on('leave')
+def on_leave(data):
+    room_id = str(data.get('room', ''))
+    user = db.session.get(User, session.get('user_id'))
+    if not user or not room_id:
+        return
+    if user.username in active_rooms:
+        active_rooms[user.username].discard(room_id)
+    leave_room(room_id)
+    print(f"👋 User {user.username} left room: {room_id}")
 
 
 @socketio.on('send_message')
@@ -1452,11 +1477,14 @@ def handle_combined_message(data):
             return
         receiver_username = room_parts[1] if room_parts[0] == current_user.username else room_parts[0]
 
+        receiver_is_active = is_user_in_room(receiver_username, room)
+
         # 存入私信表 DirectMessage
         new_dm = DirectMessage(
             sender_username=current_user.username,
             receiver_username=receiver_username,
-            content=msg_content
+            content=msg_content,
+            is_read=receiver_is_active
         )
         db.session.add(new_dm)
         db.session.commit()
@@ -1476,6 +1504,12 @@ def handle_combined_message(data):
             'message': msg_content,
             'id': new_dm.id
         }, room=room)
+        
+        if not receiver_is_active:
+            socketio.emit('new_private_notification', {
+                'sender': current_user.username,
+                'receiver': receiver_username
+            })
         return
 
     # 🌟 通道 B：常规群聊
@@ -1484,11 +1518,15 @@ def handle_combined_message(data):
         return
 
     reply_id = data.get('reply_to_id')
+    reply_content = None
     if not reply_id or reply_id == "null" or reply_id == "":
         reply_id = None
     else:
         try:
             reply_id = int(reply_id)
+            parent_msg = db.session.get(Message, reply_id)
+            if parent_msg:
+                reply_content = parent_msg.content
         except (ValueError, TypeError):
             reply_id = None
 
@@ -1499,21 +1537,27 @@ def handle_combined_message(data):
         reply_to_id=reply_id
     )
     db.session.add(message)
-    db.session.commit()
+    db.session.flush()
 
-    emit('receive_message', {
+    socketio.emit('receive_message', {        
         'room': room,
+        'id': message.id,
         'username': current_user.username,
         'message': message.content,
-        'reply_to_id': message.reply_to_id
+        'reply_to_id': message.reply_to_id,
+        'reply_to_content': reply_content
     }, room=room)
 
     for username in get_task_member_usernames(task):
         if username != current_user.username:
             member = User.query.filter_by(username=username).first()
             if member:
-                role = 'created' if username == task.user else 'applied'
-                socketio.emit('new_unread', {'task_id': int(room), 'role': role}, room=str(member.id))
+                if is_user_in_room(username, room):
+                    db.session.add(MessageRead(message_id=message.id, username=username))
+                else:
+                    role = 'created' if username == task.user else 'applied'
+                    socketio.emit('new_unread', {'task_id': int(room), 'role': role}, room=str(member.id))
+    db.session.commit()
 
 
 @socketio.on('edit_message')
@@ -1548,8 +1592,7 @@ def handle_edit(data):
         msg.content = new_content
         msg.is_edited = True
         db.session.commit()
-        emit('message_edited', {'message_id': msg.id, 'new_content': msg.content}, room=room_id)
-
+        socketio.emit('message_edited', {'message_id': msg.id, 'new_content': msg.content}, room=room_id)
 
 @socketio.on('delete_message')
 def handle_delete(data):
@@ -1571,8 +1614,8 @@ def handle_delete(data):
         if dm_msg and dm_msg.sender_username == current_user.username:
             db.session.delete(dm_msg)
             db.session.commit()
-            emit('message_deleted', {'message_id': msg_id}, room=room_id)
-            emit('private_message_deleted', {'message_id': msg_id}, room=room_id)
+            socketio.emit('message_deleted', {'message_id': msg_id}, room=room_id)
+            socketio.emit('private_message_deleted', {'message_id': msg_id}, room=room_id)
         return
 
     # 🌟 通道 B：群聊表软删除
@@ -1580,7 +1623,7 @@ def handle_delete(data):
     if msg and msg.sender == current_user.username:
         msg.is_deleted = True
         db.session.commit()
-        emit('message_deleted', {'message_id': msg.id}, room=room_id)
+        socketio.emit('message_deleted', {'message_id': msg.id}, room=room_id)
 
 
 @socketio.on('connect')
@@ -1588,6 +1631,14 @@ def handle_connect():
     if 'user_id' in session:
         join_room(str(session['user_id']))
         print(f"User {session['user_id']} connected to their private room.")
+
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    user = db.session.get(User, session.get('user_id'))
+    if user and user.username in active_rooms:
+        active_rooms.pop(user.username, None)
+    print(f"🔌 User disconnected, cleared active rooms.")
 
 
 # =========================
@@ -1655,7 +1706,13 @@ def private_chat(username):
         for msg in unread_msgs:
             msg.is_read = True
         db.session.commit()
+
+        print(f"🔔 EMITTING clear_private_notification to receiver={current_user.username}")
+        socketio.emit('clear_private_notification', {
+            'receiver': current_user.username
+        })
     
+
     if request.method == 'POST':
         msg_content = request.form.get('content')
         if msg_content:
@@ -1713,14 +1770,6 @@ def inject_global_private_unread_count():
     return dict(total_unread=0)
 
 # app.py 里的 Socket 监听区域追加：
-
-@socketio.on('new_private_notification')
-def handle_private_notification(data):
-    # 💡 收到前端发来的私聊通知信号后，立刻将其以全站广播形式砸向所有页面
-    socketio.emit('new_private_notification', {
-        'sender': data.get('sender'),
-        'receiver': data.get('receiver')
-    })
 
 
 
