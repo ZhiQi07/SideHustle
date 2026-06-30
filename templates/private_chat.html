@@ -94,6 +94,11 @@
         socket.emit('join', { room: roomName, username: currentUsername });
     });
 
+    // 离开页面时，告诉 server 我离开了这个房间
+    window.addEventListener('beforeunload', () => {
+        socket.emit('leave', { room: roomName });
+    });
+
     // 💡 核心免刷新监听：当房间内收到私聊时，直接无刷新追加 DOM 节点
     socket.on('receive_private_message', function(data) {
         if (document.querySelector(`.msg-bubble-container[data-container-msg-id="${data.id}"]`)) {
@@ -198,12 +203,6 @@
             username: currentUsername, 
             message: msg, 
             reply_to_id: currentReplyId 
-        });
-
-        // 2. 💡【免刷新红点发射桩】：通过 Socket 直接全站发射实时通知，绕过 POST 刷新！
-        socket.emit('new_private_notification', {
-            'sender': currentUsername,
-            'receiver': targetUsername
         });
         
         document.getElementById('msg-input').value = "";

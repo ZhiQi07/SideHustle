@@ -27,6 +27,12 @@
                     {% endif %}
                 </div>
             </div>
+            
+            <div class="sidebar-bottom" style="margin-top: auto; width: 100%; border-top: 1px solid #eee; padding-top: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <a href="#" onclick="openGuide(); return false;" class="sidebar-help-link">
+                    Need help❓Click me❗️
+                </a>
+            </div>
         </div>
 
         <div class="top-nav">
@@ -44,7 +50,6 @@
 <script>
     window.currentUsername = "{{ user.username if user else '' }}";
 </script>
-<script src="{{ url_for('static', filename='js/notification.js') }}"></script> 
 
 <script src="{{ url_for('static', filename='js/pm_notification.js') }}?v=3"></script>
 <script src="{{ url_for('static', filename='js/bell_notification.js') }}?v=3"></script>
@@ -294,6 +299,117 @@ globalSocket.on('receive_private_message', function(data) {
 
     // Trigger the slide-in notification toast
     launchToastAlert(`New Direct Message from @${data.sender}: "${data.message.substring(0, 30)}..."`);
+});
+</script>
+
+<!-- ==========================================
+     GENSHIN IMPACT STYLE USER GUIDE MODAL
+     ========================================== -->
+<div id="guide-modal" class="guide-modal-overlay" style="display: none;">
+    <div class="guide-card">
+        <span class="guide-close" onclick="closeGuide()">&times;</span>
+        
+        <div class="guide-image-container">
+            <img id="guide-img" src="{{ url_for('static', filename='guide_step1.png') }}" alt="Guide Screenshot">
+        </div>
+        
+        <div class="guide-footer">
+            <button id="guide-prev-btn" class="guide-btn" onclick="prevGuideStep()">Back</button>
+            <div id="guide-dots" class="guide-dots"></div>
+            <button id="guide-next-btn" class="guide-btn" onclick="nextGuideStep()">Next</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const guideSteps = [
+    "{{ url_for('static', filename='guide_step1.png') }}",
+    "{{ url_for('static', filename='guide_step2.png') }}",
+    "{{ url_for('static', filename='guide_step3.png') }}",
+    "{{ url_for('static', filename='guide_step4.png') }}",
+    "{{ url_for('static', filename='guide_step5.png') }}",
+    "{{ url_for('static', filename='guide_step6.png') }}",
+    "{{ url_for('static', filename='guide_step7.png') }}",
+    "{{ url_for('static', filename='guide_step8.png') }}",
+    "{{ url_for('static', filename='guide_step9.png') }}",
+    "{{ url_for('static', filename='guide_step10.png') }}",
+    "{{ url_for('static', filename='guide_step11.png') }}",
+    "{{ url_for('static', filename='guide_step12.png') }}",
+    "{{ url_for('static', filename='guide_step13.png') }}",
+    "{{ url_for('static', filename='guide_step14.png') }}",
+    "{{ url_for('static', filename='guide_step15.png') }}",
+    "{{ url_for('static', filename='guide_step16.png') }}"
+];
+
+let currentGuideStep = 0;
+
+function openGuide() {
+    currentGuideStep = 0;
+    renderGuideStep();
+    document.getElementById('guide-modal').style.display = 'flex';
+}
+
+function closeGuide() {
+    document.getElementById('guide-modal').style.display = 'none';
+}
+
+function renderGuideStep() {
+    const stepImage = guideSteps[currentGuideStep];
+    const guideImgElement = document.getElementById('guide-img');
+    if (guideImgElement) {
+        guideImgElement.src = stepImage;
+    }
+    
+    // 控制“上一条”按钮的禁用状态
+    const prevBtn = document.getElementById('guide-prev-btn');
+    if (prevBtn) {
+        prevBtn.disabled = (currentGuideStep === 0);
+    }
+    
+    // 控制“下一条”按钮的文字
+    const nextBtn = document.getElementById('guide-next-btn');
+    if (nextBtn) {
+        if (currentGuideStep === guideSteps.length - 1) {
+            nextBtn.innerText = "Finish";
+        } else {
+            nextBtn.innerText = "Next";
+        }
+    }
+    
+    // 渲染页码指示点点
+    const dotsContainer = document.getElementById('guide-dots');
+    if (dotsContainer) {
+        dotsContainer.innerHTML = '';
+        for (let i = 0; i < guideSteps.length; i++) {
+            const dot = document.createElement('div');
+            dot.className = 'guide-dot' + (i === currentGuideStep ? ' active' : '');
+            dotsContainer.appendChild(dot);
+        }
+    }
+}
+
+function prevGuideStep() {
+    if (currentGuideStep > 0) {
+        currentGuideStep--;
+        renderGuideStep();
+    }
+}
+
+function nextGuideStep() {
+    if (currentGuideStep < guideSteps.length - 1) {
+        currentGuideStep++;
+        renderGuideStep();
+    } else {
+        closeGuide();
+    }
+}
+
+// 点击遮罩外部区域自动关闭弹窗
+window.addEventListener('click', function(event) {
+    const modal = document.getElementById('guide-modal');
+    if (event.target === modal) {
+        closeGuide();
+    }
 });
 </script>
 <script src="{{ url_for('static', filename='js/task_progress.js') }}?v=3"></script>
