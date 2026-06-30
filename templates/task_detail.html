@@ -35,15 +35,20 @@
 
                 <div class="detail-sidebar-column">
                     <p style="text-align: right; color: #b71c1c; font-weight: 700; font-size: 13px; cursor: pointer; margin-bottom: 15px; transition: 0.2s;" onclick="openReportModal()">⚠️ Report Task</p>
+                    
                     {% if user and user.is_admin %}
                         <div style="width: 100%; display: flex; justify-content: flex-end; margin-bottom: 15px;">
-                            <a href="{{ url_for('admin_force_delete_task', task_id=task.id) }}" 
-                            style="display: inline-flex; align-items: center; gap: 6px; background-color: #fff5f5; color: #cc1f1f; padding: 10px 16px; border-radius: 12px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid #fcdbd9; text-decoration: none; box-shadow: 0 2px 8px rgba(211, 47, 47, 0.05); transition: all 0.2s ease; cursor: pointer;"
-                            onmouseover="this.style.backgroundColor='#cc1f1f'; this.style.color='#ffffff'; this.style.borderColor='#cc1f1f';"
-                            onmouseout="this.style.backgroundColor='#fff5f5'; this.style.color='#cc1f1f'; this.style.borderColor='#fcdbd9';"
-                            onclick="return confirm('🛡️ Admin Warning: Execute instant force deletion sequence for this campaign entry?');">
-                            🛑 Admin Force Destroy
-                            </a>
+                            <form action="{{ url_for('admin_force_delete_task', task_id=task.id) }}" method="POST" style="display: inline;">
+                                <input type="hidden" name="delete_action" value="delete_only">
+                                
+                                <button type="submit" 
+                                        style="display: inline-flex; align-items: center; gap: 6px; background-color: #fff5f5; color: #cc1f1f; padding: 10px 16px; border-radius: 12px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid #fcdbd9; box-shadow: 0 2px 8px rgba(211, 47, 47, 0.05); transition: all 0.2s ease; cursor: pointer; font-family: inherit;"
+                                        onmouseover="this.style.backgroundColor='#cc1f1f'; this.style.color='#ffffff'; this.style.borderColor='#cc1f1f';"
+                                        onmouseout="this.style.backgroundColor='#fff5f5'; this.style.color='#cc1f1f'; this.style.borderColor='#fcdbd9';"
+                                        onclick="return confirm('🛡️ Admin Warning: Execute instant force deletion sequence for this campaign entry?');">
+                                    Admin Force Delete
+                                </button>
+                            </form>
                         </div>
                     {% endif %}
                     

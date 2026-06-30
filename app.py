@@ -49,6 +49,7 @@ class User(db.Model):
     
     skills = db.Column(db.Text, default="No skills listed")
     is_admin = db.Column(db.Boolean, default=False)
+    warning_count = db.Column(db.Integer, default=0)
     credit = db.Column(db.Float, default=0.0)
     total_rating = db.Column(db.Float, default=5.0)
     review_count = db.Column(db.Integer, default=1)
@@ -162,6 +163,13 @@ class Report(db.Model):
     reason = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text, nullable=False)
     timestamp = db.Column(db.DateTime, default=db.func.now())
+
+    @property
+    def target_client(self):
+        task = Task.query.get(self.task_id)
+        if task:
+            return User.query.filter_by(username=task.user).first()
+        return None
 
 class Rating(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -1790,34 +1798,6 @@ def admin_dismiss_report(report_id):
     flash("Report dismissed cleanly!")
     return redirect(url_for('admin_dashboard'))
 
-@app.route('/admin/delete_task/<int:task_id>')
-def admin_force_delete_task(task_id):
-    if 'user_id' not in session: return redirect(url_for('login'))
-    current_user = db.session.get(User, session['user_id'])
-    if not current_user or not current_user.is_admin: return redirect(url_for('marketplace'))
-        
-    task = Task.query.get_or_404(task_id)
-    
-    # Notify creator their post was removed for violating community guidelines
-    owner = User.query.filter_by(username=task.user).first()
-    if owner:
-        db.session.add(Notification(
-            user_id=owner.id,
-            message=f"🛡️ Admin Alert: Your listing '{task.title}' was removed for violating community post terms."
-        ))
-    
-    # Clear outstanding applications and tasks from Neon database tables
-    Application.query.filter_by(task_id=task.id).delete()
-    Report.query.filter_by(task_id=task.id).delete()
-    db.session.delete(task)
-    db.session.commit()
-    
-    if owner:
-        send_socket_notification(owner.id, f"🛡️ Admin Alert: Your listing '{task.title}' was removed for violating terms.")
-        
-    flash("Violating task has been force removed from marketplace.")
-    return redirect(url_for('admin_dashboard'))
-
 @app.route('/admin/toggle_user_admin/<int:target_user_id>')
 def admin_toggle_user_role(target_user_id):
     if 'user_id' not in session: return redirect(url_for('login'))
@@ -1832,6 +1812,62 @@ def admin_toggle_user_role(target_user_id):
         
     return redirect(url_for('admin_dashboard'))
 
+@app.route('/admin/delete_task/<int:task_id>', methods=['POST'])
+def admin_force_delete_task(task_id):
+    if 'user_id' not in session: 
+        return redirect(url_for('login'))
+    current_user = db.session.get(User, session['user_id'])
+    if not current_user or not current_user.is_admin: 
+        return redirect(url_for('marketplace'))
+        
+    task = Task.query.get_or_404(task_id)
+    action_type = request.form.get('delete_action') # 'delete_only' or 'delete_and_warn'
+    
+    owner = User.query.filter_by(username=task.user).first()
+    
+    if action_type == 'delete_and_warn' and owner:
+        if owner.warning_count is None:
+            owner.warning_count = 0
+        owner.warning_count += 1
+        
+        if owner.warning_count >= 3:
+            # Automatic Strike 3 Termination handling sequence
+            send_socket_notification(owner.id, "🛑 Your account has been permanently terminated by administration.")
+            db.session.delete(owner)
+            Task.query.filter_by(user=owner.username).delete()
+            flash(f"🔨 Task scrubbed & @{owner.username} was AUTOMATICALLY BANNED for reaching 3 warnings!")
+        else:
+            db.session.add(Notification(
+                user_id=owner.id,
+                message=f"🚨 OFFICIAL CONTENT STRIKE ({owner.warning_count}/3): Your task listing '{task.title}' was force-removed for violating platform terms. Reaching 3 strikes results in account deletion."
+            ))
+            send_socket_notification(owner.id, f"🚨 CONTENT WARNING RECEIVED: ({owner.warning_count}/3)")
+            flash(f"Task removed and system warning strike ({owner.warning_count}/3) issued to @{owner.username}.")
+    else:
+        # Standard deletion notification sequence
+        if owner:
+            db.session.add(Notification(
+                user_id=owner.id,
+                message=f"🛡️ Admin Alert: Your listing '{task.title}' was removed by a moderator for violating community formatting rules."
+            ))
+            send_socket_notification(owner.id, f"🛡️ Admin Alert: Your listing '{task.title}' was removed.")
+        flash("Violating task has been force removed cleanly from the marketplace.")
+
+# 🧼 CLEANUP SEQUENCE: Erase all entries referencing this task to satisfy foreign keys
+    Application.query.filter_by(task_id=task.id).delete()
+    Report.query.filter_by(task_id=task.id).delete()
+    Notification.query.filter_by(task_id=task.id).delete()  # 🚨 Added to fix your current crash
+    Rating.query.filter_by(task_id=task.id).delete()        # 🚨 Added to protect against rating logs
+    
+    # Clean up chat channel messages linked to this task
+    Message.query.filter_by(task_id=task.id).delete()       # 🚨 Added to protect against group chat text locks
+
+    # Now it is completely safe to purge the task entry from production
+    db.session.delete(task)
+    db.session.commit()
+    
+    return redirect(url_for('admin_dashboard'))
+
 @app.route('/admin/resolve_payment_dispute/<int:report_id>/<int:task_id>', methods=['POST'])
 def admin_resolve_payment_dispute(report_id, task_id):
     if 'user_id' not in session: 
@@ -1840,48 +1876,58 @@ def admin_resolve_payment_dispute(report_id, task_id):
     if not current_user or not current_user.is_admin: 
         return redirect(url_for('marketplace'))
         
-    action = request.form.get('action') # 'approve' or 'dismiss'
+    action = request.form.get('action') # 'warning', 'ban', or 'dismiss'
     report = Report.query.get_or_404(report_id)
     task = Task.query.get_or_404(task_id)
     
-    # Identify the worker who opened the dispute
-    worker = User.query.filter_by(username=report.reporter_username).first()
+    # Identify the client/owner who created the task and didn't pay
+    client = User.query.filter_by(username=task.user).first()
     
-    if action == 'approve' and worker:
-        # 1. Credit the worker's wallet balance safely
-        if worker.credit is None: 
-            worker.credit = 0.0
-        worker.credit += task.price
-        
-        # 2. Log it into their clear ledger earnings index history
-        db.session.add(Earning(
-            user_id=worker.id,
-            activity=f"Dispute Approved: Overrode Payment for '{task.title}'",
-            amount=task.price,
-            timestamp=datetime.now()
-        ))
-        
-        # 3. Update task tracking statistics parameters
-        if worker.tasks_completed is None: 
-            worker.tasks_completed = 0
-        worker.tasks_completed += 1
-        
-        # 4. Issue system confirmation notifications
-        db.session.add(Notification(
-            user_id=worker.id,
-            message=f"🛡️ Dispute Resolved: Admin approved your default report for '{task.title}'. RM {task.price} has been credited."
-        ))
-        send_socket_notification(worker.id, f"🛡️ Dispute Resolved: RM {task.price} credited.")
-        flash(f"Dispute approved! Paid RM {task.price} to @{worker.username}.")
-        
-    else:
-        flash("Dispute dismissed without executing credit changes.")
+    if not client:
+        db.session.delete(report)
+        db.session.commit()
+        flash("Target client account no longer exists.")
+        return redirect(url_for('admin_dashboard'))
 
-    # Clean up the report tracking row out of the dashboard feed
-    db.session.delete(report)
+    # Helper function to completely purge/ban a user from the database
+    def execute_permanent_ban(user_obj):
+        send_socket_notification(user_obj.id, "🛑 Your account has been permanently terminated by administration.")
+        db.session.delete(user_obj)
+        Task.query.filter_by(user=user_obj.username).delete()
+        db.session.delete(report)
+
+    if action == 'warning':
+        if client.warning_count is None:
+            client.warning_count = 0
+            
+        client.warning_count += 1
+
+        if client.warning_count >= 3:
+            # AUTOMATIC BAN TRIGGERED AT STRIKE 3
+            execute_permanent_ban(client)
+            flash(f"🔨 Account @{client.username} reached {client.warning_count} warnings and was AUTOMATICALLY BANNED!")
+        else:
+            # Issue standard warnings for Strikes 1 and 2
+            db.session.add(Notification(
+                user_id=client.id,
+                message=f"🚨 OFFICIAL WARNING ({client.warning_count}/3): You have been flagged for failing to fulfill payment obligations for task '{task.title}'. If you reach 3 warnings, your account will be deleted permanently."
+            ))
+            send_socket_notification(client.id, f"🚨 WARNING STRIKE RECEIVED: ({client.warning_count}/3)")
+            flash(f"Official system warning strike ({client.warning_count}/3) issued to @{client.username}.")
+            db.session.delete(report)
+
+    elif action == 'ban':
+        # Instant override manual ban button clicked
+        execute_permanent_ban(client)
+        flash(f"🔨 Account @{client.username} has been manually banned by administration.")
+
+    elif action == 'dismiss':
+        db.session.delete(report)
+        flash("Dispute dismissed without disciplinary actions.")
+
     db.session.commit()
     return redirect(url_for('admin_dashboard'))
-    
+
 if __name__ == '__main__':
     with app.app_context():
         if 'postgresql' not in app.config['SQLALCHEMY_DATABASE_URI']:

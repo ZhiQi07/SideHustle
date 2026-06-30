@@ -1766,9 +1766,8 @@ body {
 }
 
 /* ==========================================================================
-   🛡️ SYSTEM ADMINISTRATION THEME STYLES
+   🛡️ SYSTEM ADMINISTRATION THEME STYLES (COMPREHENSIVE UPDATE)
    ========================================================================== */
-/* Changed from dark red to a premium deep royal purple gradient */
 .admin-header-container {
     background: linear-gradient(135deg, #4c2893, #2b1360);
     border-radius: 20px;
@@ -1789,7 +1788,6 @@ body {
     gap: 12px;
 }
 
-/* Softer lavender text for the subtitle */
 .admin-header-subtitle {
     color: #e3d2f0;
     font-size: 14px;
@@ -1815,11 +1813,10 @@ body {
     letter-spacing: -0.2px;
 }
 
-/* Left accent indicators updated to matching brand colors */
-.report-title-border { border-left: 4px solid #ff9800; } /* Warning Orange */
-.user-title-border { border-left: 4px solid #5a32a8; }   /* Brand Purple */
+.report-title-border { border-left: 4px solid #ff9800; }
+.user-title-border { border-left: 4px solid #5a32a8; }
 
-/* Table Refinements */
+/* Table System Mechanics */
 .admin-table {
     width: 100%;
     border-collapse: collapse;
@@ -1847,7 +1844,7 @@ body {
 
 .admin-table tr:last-child td { border-bottom: none; }
 
-/* Custom Badge Pill Profiles */
+/* Infraction & Tracking Status Elements */
 .infraction-badge {
     background-color: #ffebee;
     color: #c62828;
@@ -1859,28 +1856,102 @@ body {
     text-transform: uppercase;
 }
 
-.admin-pill-badge {
+.admin-role-badge {
     background-color: #e8f5e9;
     color: #2e7d32;
     border: 1px solid #c8e6c9;
-}
-
-/* Premium Sidebar Admin Button Style Overrides */
-.sidebar-menu a.admin-nav-item {
-    background-color: #f6f0fa;
-    color: #5a32a8;
-    border: 1px solid #e3d2f0;
+    font-size: 11px;
     font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 6px;
+    display: inline-block;
 }
 
-.sidebar-menu a.admin-nav-item:hover {
-    background-color: #5a32a8;
-    color: white;
+.student-role-badge {
+    background-color: #f5f4f8;
+    color: #6a5280;
+    border: 1px solid #e1dde6;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 6px;
+    display: inline-block;
+}
+
+/* Scroll Window & Live Search Mechanics */
+.admin-scroll-wrapper {
+    max-height: 380px;
+    overflow-y: auto;
+    border: 1px solid #eae6f0;
+    border-radius: 14px;
+    background: #ffffff;
+    padding: 5px;
+}
+
+.admin-search-wrapper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.admin-search-field {
+    padding: 10px 16px 10px 16px;
+    border: 1px solid #eae6f0;
+    border-radius: 12px;
+    font-size: 13px;
+    width: 260px;
+    outline: none;
+    background-color: #fdfcff;
+    transition: all 0.2s ease;
+}
+
+.admin-search-field:focus {
     border-color: #5a32a8;
-    box-shadow: 0 4px 12px rgba(90, 50, 168, 0.15);
+    box-shadow: 0 0 0 3px rgba(90, 50, 168, 0.1);
 }
 
-/* Button UI Normalization */
+.admin-empty-notice {
+    text-align: center;
+    padding: 40px;
+    color: #8c8599;
+    font-style: italic;
+    font-size: 14px;
+}
+
+/* Interactive Status Pill Markers */
+.dispute-strike-tracker {
+    font-size: 11px;
+    font-weight: 700;
+    background-color: #fce8e6;
+    color: #b71c1c;
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 1px solid #fcdbd9;
+}
+
+.report-context-quote {
+    font-size: 13px;
+    color: #6a5280;
+    margin-top: 6px;
+    font-style: italic;
+    background: #fffcfc;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px dashed #fcdbd9;
+    line-height: 1.4;
+}
+
+/* Action Control Flex Buttons */
+.admin-inline-actions {
+    display: inline-flex;
+    gap: 8px;
+    justify-content: flex-end;
+    align-items: center;
+}
+
 .btn-admin-action {
     display: inline-flex;
     align-items: center;
@@ -1899,6 +1970,9 @@ body {
 
 .btn-admin-delete { background: #b71c1c; color: white; border: none; }
 .btn-admin-delete:hover { background: #961515; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(183, 28, 28, 0.2); }
+
+.btn-admin-warn-orange { background: #ff9800; color: white; border: none; }
+.btn-admin-warn-orange:hover { background: #e68a00; transform: translateY(-1px); }
 
 .btn-admin-dismiss { background: #ffffff; color: #666; border: 1px solid #eae6f0; }
 .btn-admin-dismiss:hover { background: #eee; color: #333; transform: translateY(-1px); }
