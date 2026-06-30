@@ -471,6 +471,7 @@ def login():
         user = User.query.filter_by(email=email, password=password).first()
         if user:
             session['user_id'] = user.id
+            session['username'] = user.username
             return redirect(url_for('marketplace'))
         flash("Invalid email or password!")
     return render_template('login.html')
@@ -582,6 +583,7 @@ def update_profile():
         old_username = user.username
         user.username = value
         Task.query.filter_by(user=old_username).update({Task.user: value})
+        session['username'] = value
     elif field == 'bio':
         user.bio = value
     elif field == 'skills':
