@@ -27,7 +27,12 @@
                     </div>
                     <div class="form-group flex-1">
                         <label>People Needed</label>
-                        <input type="number" name="capacity" value="{{ task.capacity }}" min="1" required>
+                        <input type="number" name="capacity" value="{{ task.capacity }}" min="{{ task.get_hired_count() }}" required>
+                        {% if task.get_hired_count() > 0 %}
+                            <span class="lock-notice" style="color: #ef6c00; font-size: 11px; display: block; margin-top: 5px;">
+                                ⚠️ Min limit: {{ task.get_hired_count() }} helper(s) already active.
+                            </span>
+                        {% endif %}
                     </div>
                 </div>
 

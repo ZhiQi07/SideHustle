@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block content %}
+
+<div class="archive-section-wrapper" style="width: 100%; max-width: 1100px; margin: 10px auto 40px auto;">
+    
+    <div class="admin-header-container">
+        <h1 class="admin-header-title">🛡️ Platform Control Center</h1>
+        <p class="admin-header-subtitle">Monitor community infraction logs, process active violations, and manage systemic developer privileges.</p>
+    </div>
+
+    <div class="admin-card" style="border-top: 4px solid #2e7d32;">
+        <h2 class="admin-section-title" style="border-left: 4px solid #2e7d32; padding-left: 10px;">💵 Outstanding Payment Default Disputes</h2>
+        
+        {% set dispute_count = namespace(value=0) %}
+        <div style="overflow-x: auto;">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th style="width: 20%;">Task Details</th>
+                        <th style="width: 15%;">Disputing Worker</th>
+                        <th style="width: 35%;">Dispute Reason & Logs</th>
+                        <th style="width: 30%; text-align: right;">Financial Action Controls</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in reports %}
+                        {% if "Pay" in r.reason or "Client" in r.reason or "Disagreement" in r.reason or "Dispute" in r.reason %}
+                        {% set dispute_count.value = dispute_count.value + 1 %}
+                        <tr>
+                            <td><strong>Campaign #{{ r.task_id }}</strong></td>
+                            <td><span style="font-weight: 600;">@{{ r.reporter_username }}</span></td>
+                            <td>
+                                <div style="margin-bottom: 8px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">
+                                    <span class="tag urgent-tag" style="background-color: #fff3e0; color: #e65100; border: 1px solid #ffe0b2; margin-right: 0;">{{ r.reason }}</span>
+                                    
+                                    <span class="dispute-strike-tracker">
+                                        ⚠️ Warnings Issued: {{ r.target_client.warning_count if r.target_client and r.target_client.warning_count else '0' }}/3
+                                    </span>
+                                </div>
+                                <p style="font-size: 13px; color: #555; font-style: italic; line-height: 1.4;">"{{ r.description }}"</p>
+                            </td>
+                            <td style="text-align: right;">
+                                <form action="{{ url_for('admin_resolve_payment_dispute', report_id=r.id, task_id=r.task_id) }}" method="POST" class="admin-inline-actions">
+                                    <button type="submit" name="action" value="warning" class="btn-admin-action btn-admin-warn-orange" onclick="return confirm('Issue warning strike? Reaching 3 strikes forces a permanent ban.');">
+                                        ⚠️ Issue Warning
+                                    </button>
+                                    
+                                    <button type="submit" name="action" value="ban" class="btn-admin-action btn-admin-delete" onclick="return confirm('🔨 CRITICAL MANUAL OVERRIDE: Permanently ban this user immediately?');">
+                                        🔨 Ban User
+                                    </button>
+                                    
+                                    <button type="submit" name="action" value="dismiss" class="btn-admin-action btn-admin-dismiss" onclick="return confirm('Dismiss this dispute without action?');">
+                                        Dismiss
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% if dispute_count.value == 0 %}
+                <p class="admin-empty-notice">🎉 Perfect! No unpaid default payment disputes filed by workers.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="admin-card" style="margin-top: 30px;">
+        <h2 class="admin-section-title report-title-border">Active Marketplace Content Flags</h2>
+        <div style="overflow-x: auto;">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th style="width: 18%;">Target Listing</th>
+                        <th style="width: 15%;">Flagged By</th>
+                        <th style="width: 32%;">Infraction Parameters</th>
+                        <th style="width: 35%; text-align: right;">Moderation Action Controls</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set content_count = namespace(value=0) %}
+                    {% for r in reports %}
+                        {% if "Pay" not in r.reason and "Client" not in r.reason and "Disagreement" not in r.reason and "Dispute" not in r.reason %}
+                        {% set content_count.value = content_count.value + 1 %}
+                        <tr>
+                            <td>
+                                <strong style="color: #1e1233;">Campaign #{{ r.task_id }}</strong>
+                                <div style="font-size: 11px; color: #999; margin-top: 3px;">{{ r.timestamp.strftime('%Y-%m-%d') }}</div>
+                            </td>
+                            <td style="font-weight: 600; color: #4a4257;">@{{ r.reporter_username }}</td>
+                            <td>
+                                <div style="margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+                                    <span class="infraction-badge">{{ r.reason }}</span>
+                                    <span class="dispute-strike-tracker">
+                                        Strikes: {{ r.target_client.warning_count if r.target_client and r.target_client.warning_count else '0' }}/3
+                                    </span>
+                                </div>
+                                <p class="report-context-quote">"{{ r.description }}"</p>
+                            </td>
+                            <td style="text-align: right;">
+                                <div class="admin-inline-actions">
+                                    <a href="{{ url_for('task_detail', task_id=r.task_id) }}" class="btn-admin-action btn-admin-view">🔍 Review</a>
+                                    
+                                    <form action="{{ url_for('admin_force_delete_task', task_id=r.task_id) }}" method="POST" style="display: inline;">
+                                        <button type="submit" name="delete_action" value="delete_only" class="btn-admin-action btn-admin-dismiss" onclick="return confirm('Remove task without issuing account strikes?');">
+                                            🗑️ Just Delete
+                                        </button>
+                                        <button type="submit" name="delete_action" value="delete_and_warn" class="btn-admin-action btn-admin-delete" onclick="return confirm('Remove post AND issue warning strike to author? Reaching 3 strikes triggers an automatic ban.');">
+                                            🚨 Delete + Warn
+                                        </button>
+                                    </form>
+
+                                    <a href="{{ url_for('admin_dismiss_report', report_id=r.id) }}" class="btn-admin-action btn-admin-dismiss">✓ Dismiss</a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% if content_count.value == 0 %}
+                <div class="admin-empty-notice">😴 No open platform violation listings need review right now.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="admin-card">
+        <div class="admin-search-wrapper">
+            <h2 class="admin-section-title user-title-border" style="margin-bottom: 0;">Student Privilege Matrix</h2>
+            <input type="text" id="adminEmailSearch" placeholder="🔍 Search university email..." class="admin-search-field">
+        </div>
+
+        <div class="admin-scroll-wrapper">
+            <table class="admin-table" id="privilegeTable">
+                <thead style="position: sticky; top: 0; z-index: 10; background-color: #fbfafc;">
+                    <tr>
+                        <th style="width: 25%;">Student Profiler</th>
+                        <th style="width: 35%;">University Email Axis</th>
+                        <th style="width: 20%;">Authorization Domain</th>
+                        <th style="width: 20%; text-align: right;">Privilege Switch</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in users %}
+                    <tr class="user-row-item">
+                        <td><strong style="color: #1e1233; font-size: 15px;">@{{ u.username }}</strong></td>
+                        <td class="target-email-cell" style="color: #6a5280; font-family: monospace;">{{ u.email }}</td>
+                        <td>
+                            {% if u.is_admin %}
+                                <span class="admin-role-badge">🛡️ System Admin</span>
+                            {% else %}
+                                <span class="student-role-badge">🎓 Student Worker</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: right;">
+                            <a href="{{ url_for('admin_toggle_user_role', target_user_id=u.id) }}" class="btn-admin-action btn-admin-toggle">
+                                {% if u.is_admin %}Demote{% else %}Promote{% endif %}
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            
+            <div id="noSearchMatches" class="admin-empty-notice" style="display: none;">
+                🔍 No students found matching that email query entry.
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('adminEmailSearch').addEventListener('input', function() {
+    const inputFilter = this.value.toLowerCase().trim();
+    const tableRows = document.querySelectorAll('.user-row-item');
+    let visibleMatchCount = 0;
+
+    tableRows.forEach(function(row) {
+        const emailFieldText = row.querySelector('.target-email-cell').textContent.toLowerCase();
+        if (emailFieldText.includes(inputFilter)) {
+            row.style.display = "";
+            visibleMatchCount++;
+        } else {
+            row.style.display = "none";
+        }
+    });
+
+    document.getElementById('noSearchMatches').style.display = (visibleMatchCount === 0) ? "block" : "none";
+});
+</script>
+
+{% endblock %}

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-
+{% block title %}Marketplace{% endblock %}
 {% block content %}
 <h1 style="text-align: left; margin-bottom: 20px;">MARKETPLACE</h1>
 
@@ -30,6 +30,7 @@
         <button type="submit" class="btn-search">Search</button>
     </form>
 
+<!-- 🚀 REPLACED CORRECT HOOK: -->
     <div class="category-chips">
         <a href="{{ url_for('marketplace') }}" class="chip {% if not request.args.get('cat') %}active{% endif %}">All Tasks</a>
         
@@ -40,7 +41,7 @@
         <a href="{{ url_for('marketplace', cat='Technical & IT') }}" class="chip chip-technical {% if request.args.get('cat') == 'Technical & IT' %}active{% endif %}">Technical & IT</a>
         <a href="{{ url_for('marketplace', cat='Others') }}" class="chip chip-others {% if request.args.get('cat') == 'Others' %}active{% endif %}">Others</a>
     </div>
-</div>
+</div> <!-- Only ONE closing div belongs here to cleanly close your .search-container! -->
 
 <div class="task-grid">
     {% if tasks %}
@@ -91,4 +92,13 @@
 </div>
 
 <a href="{{ url_for('post_task') }}" class="fab">+ Create Task</a>
+
+<script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
+<script>
+    const socket = io();
+    socket.on('new_unread', function(data) {
+        const dot = document.querySelector('#my-task-link .dot-small');
+        if (dot) dot.style.display = 'inline-block';
+    });
+</script>
 {% endblock %}

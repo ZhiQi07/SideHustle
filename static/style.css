@@ -1,4 +1,7 @@
-/* --- 1. THE "MAGIC" RESET --- */
+/* ==========================================================
+   # GLOBAL RESET & BASE THEME
+   # This section controls the default page reset and body styling.
+   ========================================================== */
 * {
     box-sizing: border-box;
     margin: 0;
@@ -12,7 +15,10 @@ body {
     overflow-x: hidden;
 }
 
-/* --- 2. LAYOUT: SIDEBAR & TOP NAV --- */
+/* ==========================================================
+   # LAYOUT: SIDEBAR & TOP NAVIGATION
+   # This section styles the main dashboard structure and nav area.
+   ========================================================== */
 .main-layout {
     display: flex;
 }
@@ -81,14 +87,15 @@ body {
 .profile-circle {
     width: 45px;
     height: 45px;
-    background: #b194d5;
+    background: #b194d5 !important;
     border:  none;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    pointer-events: none;
+    pointer-events: auto;
+    cursor: pointer;
 }
 
 .profile-circle img {
@@ -98,14 +105,139 @@ body {
 }
 
 .profile-circle .default-view-icon {
-    font-size: 24px;
-    color: #ffffff;
+    font-size: 24px !important;
+    color: #ffffff !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.profile-circle:hover {
+    transform: scale(1.04);
+}
+
+.profile-popup {
+    display: none;
+    position: absolute;
+    top: 50px;
+    right: 0;
+    width: 350px;
+    height: 400px;
+    background: #d6bef8;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    z-index: 5000;
+    overflow: hidden;
+    border-radius: 12px;
+    border: 1px solid #E3D7F4;
+    animation: fadeInDown 0.2s ease-out;
+}
+
+.profile-popup-avatar-row {
+    padding: 16px 16px 4px 16px;
+    display: flex;
+    justify-content: flex-start;
+}
+
+.profile-popup-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #2b2d31;
+    border: none;
+    overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-/* --- 3. MAIN CONTENT --- */
+.profile-popup-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.profile-popup-avatar .default-view-icon {
+    font-size: 28px;
+    color: #ffffff;
+}
+
+.profile-popup-info {
+    padding: 4px 16px 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.profile-popup-detail-section {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.profile-popup-label {
+    color: #000000;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+}
+
+.profile-popup-value {
+    color: #6f6f6f;
+    font-size: 14px;
+    font-weight: 600;
+    word-break: break-word;
+    line-height: 1.35;
+}
+
+.profile-popup-value.bio-text,
+.profile-popup-value.skills-text {
+    color: #6f6f6f;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.profile-popup-divider {
+    border: none;
+    border-top: 1px solid #2b2d31;
+    margin: 4px 12px;
+}
+
+.profile-popup-menu {
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.profile-popup-menu .logout-link-btn {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    text-align: center;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 12px 0;
+    border-radius: 10px !important;
+    color: #4d4d4d !important;
+    background-color: whitesmoke !important;
+    border: 1px solid whitesmoke !important;
+    border-radius: 4px !important;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.popup-panel-btn.logout-link-btn:hover {
+    background-color: #E3D7F4 !important;
+    border-color: #E3D7F4 !important;
+    color: #545252 !important;
+}
+
+/* ==========================================================
+   # MAIN CONTENT AREA
+   # This section controls the spacing and wrapper for page content.
+   ========================================================== */
 .content {
     margin-left: 240px; 
     margin-top: 80px;  
@@ -113,7 +245,11 @@ body {
     width: calc(100% - 240px);
     box-sizing: border-box;
 }
-/* --- 4. MARKETPLACE CARDS (3 Tasks Per Row) --- */
+
+/* ==========================================================
+   # MARKETPLACE CARDS & TASK GRID
+   # This section styles the task listing cards and their layout.
+   ========================================================== */
 .task-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -227,7 +363,10 @@ body {
 .urgent-tag { background: #ffebee; color: #c62828; }
 .available-tag { background: #e8f5e9; color: #2e7d32; }
 
-/* --- 5. BUTTONS --- */
+/* ==========================================================
+   # BUTTONS & ACTION ELEMENTS
+   # This section styles all primary, secondary, and action buttons.
+   ========================================================== */
 .btn-primary {
     display: block;
     width: 100%;
@@ -352,7 +491,10 @@ body {
     color: #333;
 }
 
-/* --- 6. CENTERED PAGES (POST & APPLY) --- */
+/* ==========================================================
+   # CENTERED FORM PAGES
+   # This section is used for post-task, apply, and similar centered layouts.
+   ========================================================== */
 .center-screen {
     display: flex;
     justify-content: center;
@@ -387,7 +529,10 @@ body {
     margin-bottom: 20px;
 }
 
-/* --- 7. DETAIL PAGE --- */
+/* ==========================================================
+   # TASK DETAIL PAGE
+   # This section styles the detailed task view and side information blocks.
+   ========================================================== */
 .detail-layout { display: flex; gap: 40px; }
 
 .blue-box {
@@ -407,7 +552,10 @@ body {
     align-items: center;
 }
 
-/* --- 8. SEARCH BAR --- */
+/* ==========================================================
+   # SEARCH & FILTER CONTROLS
+   # This section styles the search bar, category chips, and filter UI.
+   ========================================================== */
 .search-container {
     margin: 20px 0 50px 0;
     display: flex;
@@ -571,9 +719,12 @@ body {
     border-color: #e3d2f0 !important;
     box-shadow: 0 4px 12px rgba(106, 82, 128, 0.15); /* Soft matching purple shadow glow */
 }
-/* --- MY TASKS DASHBOARD --- */
+/* ==========================================================
+   # MY TASKS DASHBOARD
+   # This section styles the task tabs and dashboard card layouts.
+   ========================================================== */
 
-/* 1. Tab Buttons at the top */
+/* # Tab buttons at the top of the dashboard */
 .task-tabs {
     display: flex;
     gap: 20px;
@@ -613,7 +764,10 @@ body {
 
 .status-text { font-size: 12px; color: #888; }
 
-/* --- 10. PROGRESS BAR --- */
+/* ==========================================================
+   # PROGRESS BAR & STATUS UI
+   # This section styles progress indicators and task status visuals.
+   ========================================================== */
 .progress-bar {
     width: 100%;
     height: 10px;
@@ -696,7 +850,10 @@ body {
     font-weight: bold;
 }
 
-/* --- 12. UNREAD / RED DOT SYSTEM --- */
+/* ==========================================================
+   # UNREAD / RED DOT SYSTEM
+   # This section controls notification indicators and unread markers.
+   ========================================================== */
 .unread-badge {
     position: absolute;
     top: -8px;
@@ -723,7 +880,10 @@ body {
     border: 1px solid white;
 }
 
-/* --- 13. NOTIFICATION POPUP --- */
+/* ==========================================================
+   # NOTIFICATION POPUP
+   # This section styles the popup panel for alerts and updates.
+   ========================================================== */
 .notification-container { position: relative; }
 
 .notification-popup {
@@ -1588,3 +1748,234 @@ body {
     padding: 30px 0;
     font-style: italic;
 }
+
+/* ==========================================================================
+   📌 PRIORITY STAR PINNING UI ALIGNMENT
+   ========================================================================== */
+.pinned-card {
+    border: 2px solid #ff9800 !important; /* Elegant Gold accent border link */
+    background-color: #fffdf9 !important; /* Clean warm paper background color tint */
+    box-shadow: 0 8px 24px rgba(255, 152, 0, 0.05) !important;
+    position: relative;
+}
+
+.pin-action-badge {
+    position: absolute;
+    top: -12px;
+    left: 0;
+}
+
+/* ==========================================================================
+   🛡️ SYSTEM ADMINISTRATION THEME STYLES (COMPREHENSIVE UPDATE)
+   ========================================================================== */
+.admin-header-container {
+    background: linear-gradient(135deg, #4c2893, #2b1360);
+    border-radius: 20px;
+    padding: 35px;
+    color: white;
+    margin-bottom: 35px;
+    box-shadow: 0 10px 25px rgba(90, 50, 168, 0.12);
+}
+
+.admin-header-title {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    margin: 0 0 8px 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.admin-header-subtitle {
+    color: #e3d2f0;
+    font-size: 14px;
+    margin: 0;
+    font-weight: 500;
+}
+
+.admin-card {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 30px;
+    border: 1px solid #eae6f0;
+    box-shadow: 0 4px 20px rgba(90, 50, 168, 0.02);
+    margin-bottom: 35px;
+}
+
+.admin-section-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e1233;
+    margin-bottom: 20px;
+    padding-left: 12px;
+    letter-spacing: -0.2px;
+}
+
+.report-title-border { border-left: 4px solid #ff9800; }
+.user-title-border { border-left: 4px solid #5a32a8; }
+
+/* Table System Mechanics */
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.admin-table th {
+    background-color: #fbfafc;
+    color: #5a32a8;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    padding: 14px 18px;
+    border-bottom: 2px solid #eae6f0;
+}
+
+.admin-table td {
+    padding: 18px;
+    border-bottom: 1px solid #f5f2f9;
+    vertical-align: middle;
+    font-size: 14px;
+    color: #2d263b;
+}
+
+.admin-table tr:last-child td { border-bottom: none; }
+
+/* Infraction & Tracking Status Elements */
+.infraction-badge {
+    background-color: #ffebee;
+    color: #c62828;
+    border: 1px solid #ffcdcf;
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.admin-role-badge {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    border: 1px solid #c8e6c9;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 6px;
+    display: inline-block;
+}
+
+.student-role-badge {
+    background-color: #f5f4f8;
+    color: #6a5280;
+    border: 1px solid #e1dde6;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 6px;
+    display: inline-block;
+}
+
+/* Scroll Window & Live Search Mechanics */
+.admin-scroll-wrapper {
+    max-height: 380px;
+    overflow-y: auto;
+    border: 1px solid #eae6f0;
+    border-radius: 14px;
+    background: #ffffff;
+    padding: 5px;
+}
+
+.admin-search-wrapper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.admin-search-field {
+    padding: 10px 16px 10px 16px;
+    border: 1px solid #eae6f0;
+    border-radius: 12px;
+    font-size: 13px;
+    width: 260px;
+    outline: none;
+    background-color: #fdfcff;
+    transition: all 0.2s ease;
+}
+
+.admin-search-field:focus {
+    border-color: #5a32a8;
+    box-shadow: 0 0 0 3px rgba(90, 50, 168, 0.1);
+}
+
+.admin-empty-notice {
+    text-align: center;
+    padding: 40px;
+    color: #8c8599;
+    font-style: italic;
+    font-size: 14px;
+}
+
+/* Interactive Status Pill Markers */
+.dispute-strike-tracker {
+    font-size: 11px;
+    font-weight: 700;
+    background-color: #fce8e6;
+    color: #b71c1c;
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 1px solid #fcdbd9;
+}
+
+.report-context-quote {
+    font-size: 13px;
+    color: #6a5280;
+    margin-top: 6px;
+    font-style: italic;
+    background: #fffcfc;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px dashed #fcdbd9;
+    line-height: 1.4;
+}
+
+/* Action Control Flex Buttons */
+.admin-inline-actions {
+    display: inline-flex;
+    gap: 8px;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.btn-admin-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.btn-admin-view { background: #f3f0fa; color: #5a32a8; border: 1px solid #e3d2f0; }
+.btn-admin-view:hover { background: #5a32a8; color: white; transform: translateY(-1px); }
+
+.btn-admin-delete { background: #b71c1c; color: white; border: none; }
+.btn-admin-delete:hover { background: #961515; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(183, 28, 28, 0.2); }
+
+.btn-admin-warn-orange { background: #ff9800; color: white; border: none; }
+.btn-admin-warn-orange:hover { background: #e68a00; transform: translateY(-1px); }
+
+.btn-admin-dismiss { background: #ffffff; color: #666; border: 1px solid #eae6f0; }
+.btn-admin-dismiss:hover { background: #eee; color: #333; transform: translateY(-1px); }
+
+.btn-admin-toggle { background: #ffffff; color: #5a32a8; border: 1px solid #eae6f0; }
+.btn-admin-toggle:hover { background: #f3f0fa; border-color: #5a32a8; transform: translateY(-1px); }
