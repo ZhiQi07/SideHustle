@@ -67,7 +67,7 @@ body {
     left: 240px;
     right: 0;
     height: 80px;
-    background-color: #5a32a8;
+    background: linear-gradient(160deg, #7683d8, #8f69db);
     display: flex;
     justify-content: flex-end;
     align-items: center;
@@ -123,12 +123,12 @@ body {
     right: 0;
     width: 350px;
     height: 400px;
-    background: #d6bef8;
+    background: #b898f7;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
     z-index: 5000;
     overflow: hidden;
     border-radius: 12px;
-    border: 1px solid #E3D7F4;
+    border: 1px solid #b898f7;
     animation: fadeInDown 0.2s ease-out;
 }
 
@@ -175,14 +175,14 @@ body {
 }
 
 .profile-popup-label {
-    color: #000000;
+    color: #3a3939;
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.6px;
 }
 
 .profile-popup-value {
-    color: #6f6f6f;
+    color: rgba(255, 255, 255, 0.868);
     font-size: 14px;
     font-weight: 600;
     word-break: break-word;
@@ -191,7 +191,7 @@ body {
 
 .profile-popup-value.bio-text,
 .profile-popup-value.skills-text {
-    color: #6f6f6f;
+    color: rgba(255, 255, 255, 0.868);
     font-size: 13px;
     font-weight: 500;
 }
@@ -311,7 +311,7 @@ body {
     font-size: 12px;
     font-weight: 600;
     background: #f1ecf7;
-    color: #5a32a8;
+    color: #8f69db;
     margin-right: 8px;
 }
 
