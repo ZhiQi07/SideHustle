@@ -78,7 +78,7 @@
                 <div style="display: flex; align-items: center; gap: 10px; font-size: 14px;">
                     <div style="width: 30px; height: 30px; background: #8e9aaf; border-radius: 50%;"></div>
                     <span><strong>{{ task.user }}</strong></span>
-                    <span>⭐ {{ task.rating if task.rating else '5.0' }}</span>
+                    <span>⭐ {{ task.owner_rating }}</span>
                 </div>
                 
                 <a href="{{ url_for('task_detail', task_id=task.id) }}" class="btn-primary" style="display: block; text-align: center; margin-top: 15px; text-decoration: none;">SEE MORE INFO</a>
