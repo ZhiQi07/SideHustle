@@ -72,7 +72,22 @@
 
                     <div class="premium-side-card">
                         <div class="author-profile-box" style="display: flex; flex-direction: column; align-items: center; width: 100%;">
-                            <div class="author-avatar"></div>
+                            {% set task_avatar = task.user|get_user_avatar %}
+                            {% set task_owner = task.user|get_user_by_username %}
+                            {% set t_bio = task.user|get_user_bio %}
+                            {% set t_skills = task.user|get_user_skills %}
+                            {% set owner_rating = '%.1f'|format(task_owner.total_rating / task_owner.review_count) if task_owner and task_owner.review_count else '5.0' %}
+
+                            <div class="author-avatar" 
+                                style="overflow: hidden; display: flex; align-items: center; justify-content: center; cursor: pointer;"
+                                onclick="openUserProfileModal('{{ task.user }}', '{{ task_owner.display_name if task_owner and task_owner.display_name else task.user }}', '{{ owner_rating }}', '{{ task_avatar if task_avatar else '' }}', '{{ t_skills }}', '{{ t_bio }}')">
+                                {% set task_avatar = task.user|get_user_avatar %}
+                                {% if task_avatar %}
+                                    <img src="{{ url_for('static', filename='uploads/' + task_avatar) }}" alt="User Avatar" style="width: 100%; height: 100%; object-fit: cover;">
+                                {% else %}
+                                    <i class="fi fi-rr-user" style="color: white; font-size: 24px;"></i>
+                                {% endif %}
+                            </div>
                             <p class="label-text" style="margin-bottom: 2px;">Posted By</p>
                             <p style="font-size: 18px; font-weight: 700; color: #1e1233;">{{ task.user }}</p>
                             
@@ -85,6 +100,128 @@
                         </div>
                     </div>
                 </div> 
+            </div>
+
+            <div id="userProfileModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.4); z-index: 9999; justify-content: center; align-items: center;">
+                <div style="background: white; border-radius: 24px; width: 500px; min-height: 380px; padding: 32px 40px; position: relative; box-shadow: 0 12px 35px rgba(0,0,0,0.15); border: 1px solid #eae6f0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+        
+                    <button onclick="closeUserProfileModal()" style="position: absolute; top: 20px; right: 20px; background: none; border: none; font-size: 22px; color: #999; cursor: pointer; line-height: 1;">&times;</button>
+
+                    <h3 style="margin: 0 0 18px 0; font-size: 16px; font-weight: 800; color: #1e1233; letter-spacing: 0.5px;">
+                        USER PROFILE
+                    </h3>
+
+                    <div style="display: grid; grid-template-columns: 92px 155px 145px; gap: 14px; align-items: start;margin: 0 0 20px 0; font-size: 16px; font-weight: bold; color: #1e1233; letter-spacing: 0.5px; text-align: left;">
+                        <div id="modalUserAvatarContainer" style="width: 88px; height: 88px; border-radius: 50%; background: #7f9abb; overflow: hidden; display: flex; align-items: center; justify-content: center;"></div>
+
+                        <div style="display: flex; flex-direction: column; gap: 8px; padding-top: 0px;">
+                            <a id="modalChatButton" href="#" style="background: #2d263b; color: white; border: 1px solid #2d263b; height: 42px; width: 155px; border-radius: 50px; font-weight: bold; text-decoration: none; font-size: 14px; display: flex; align-items: center; justify-content: center;">
+                                MESSAGE
+                            </a>
+                            <button id="reportButton"
+                                onclick="openReportModal();"
+                                style="background: #fff; color: #c62828; border: 1px solid #ffebee; padding: 12px; border-radius: 50px; font-weight: bold; font-size: 14px; cursor: pointer;">
+                                    REPORT
+                            </button>
+                        </div>
+
+                        <div style="background: #6444a4; color: white; border-radius: 18px; width: 145px; height: 90px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 700;">
+                            <div style="font-size: 15px;">User Rating ⭐</div>
+                            <div id="modalUserRating" style="font-size: 22px; margin-top: 6px;">5.0 / 5.0</div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 8px; padding: 0 5px;">
+
+                        <p style="margin: 0 0 4px 0; font-size: 12px; font-weight: bold; color: #5a32a8; letter-spacing: 0.5px;">
+                            DISPLAY NAME
+                        </p>
+                        <p id="modalDisplayName" style="margin: 0 0 16px 0; font-size: 14px; color: #555; line-height: 1.4;">
+                            Display Name
+                        </p>
+
+                        <p style="margin: 0 0 4px 0; font-size: 12px; font-weight: bold; color: #5a32a8; letter-spacing: 0.5px;">
+                            USERNAME
+                        </p>
+                        <p id="modalUsername" style="margin: 0 0 16px 0; font-size: 14px; color: #555; line-height: 1.4;">
+                            Username
+                        </p>
+
+                        <p style="margin: 0 0 4px 0; font-size: 12px; font-weight: bold; color: #5a32a8; letter-spacing: 0.5px;">
+                            BIO
+                        </p>
+                        <p id="modalUserBio" style="margin: 0 0 16px 0; font-size: 14px; color: #555; line-height: 1.4; word-wrap: break-word;">
+                            No bio currently
+                        </p>
+
+                        <p style="margin: 0 0 4px 0; font-size: 12px; font-weight: bold; color: #5a32a8; letter-spacing: 0.5px;">
+                                SKILLS
+                        </p>
+                        <p id="modalUserSkills" style="margin: 0 0 16px 0; font-size: 14px; color: #555; line-height: 1.4;">
+                            No skills listed
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="reportModal"
+                style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,.45); z-index:10000; justify-content:center; align-items:center;">
+
+                <div style="background:white; width:420px; border-radius:20px; padding:30px; position:relative;">
+                    <button onclick="closeReportModal()"
+                            style="position:absolute; top:15px; right:20px; border:none; background:none; font-size:24px; cursor:pointer;">&times;
+                    </button>
+
+                    <h2 style="margin-top:0;">Report User</h2>
+
+                    <form action="/report_user"
+                        method="POST"
+                        onsubmit="return submitReport(event)">
+                        <input type="hidden" id="reportedUsername" name="reported_username">
+                        <label>Reason</label>
+
+                        <select
+                            name="reason"
+                            style="width:100%; padding:10px; margin:10px 0 20px 0;" required>
+                            <option value="">Select Reason</option>
+                            <option>Harassment</option>
+                            <option>Spam</option>
+                            <option>Fake Profile</option>
+                            <option>Scam</option>
+                            <option>Other</option>
+                        </select>
+
+                        <label>Description</label>
+
+                        <textarea
+                            name="description"
+                            rows="5"
+                            style="width:100%; padding:10px; resize:none;"required></textarea>
+                        <button
+                            type="submit"
+                            style="margin-top:20px; width:100%; padding:12px; border:none; border-radius:30px; background:#8268d3; color:white; font-weight:bold;">
+                            Submit Report
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div id="reportSuccessModal"
+                style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,.45); z-index:10001; justify-content:center; align-items:center;">
+                <div style=" width:500px; background:#bea9e8; border-radius:25px; padding:45px 40px; text-align:center; color:white; box-shadow:0 10px 30px rgba(0,0,0,.2);">
+                    <h1 style=" margin:0; font-size:50px; font-family:'Georgia',serif; font-weight:normal;">
+                        SUCCESSFUL
+                    </h1>
+                    <p style=" margin:25px 0 35px; font-size:18px; line-height:1.5;">
+                        Your report to the user has been successful.<br>
+                        Admin will take action immediately.
+                    </p>
+                    <button
+                        onclick="closeSuccessModal()"
+                        style=" width:220px; height:50px; border:none; border-radius:30px; background:#9885d1; color:white; font-size:18px; cursor:pointer; font-weight:bold;">
+                        CONTINUE
+                    </button>
+                </div>
             </div>
 
             <div id="reportModal" class="report-modal-overlay">
@@ -119,17 +256,79 @@
             </div>
 
             <script>
+                const currentUser = "{{ session.get('username', '') }}";
+
                 function openReportModal() {
                     document.getElementById('reportModal').style.display = 'flex';
                 }
                 function closeReportModal() {
                     document.getElementById('reportModal').style.display = 'none';
                 }
+
+                function openUserProfileModal(username, displayName, rating, avatarFilename, skills, bio) {
+                    document.getElementById('modalDisplayName').textContent = displayName || username;
+                    document.getElementById('modalUsername').textContent = username;
+                    document.getElementById('modalUserRating').textContent = rating + " / 5.0";
+                    document.getElementById('modalUserSkills').textContent = skills;
+                    document.getElementById('modalUserBio').textContent = bio;
+                    document.getElementById('modalChatButton').href = "/private_chat/" + encodeURIComponent(username);
+
+                    const avatarContainer = document.getElementById('modalUserAvatarContainer');
+                    if (avatarFilename && avatarFilename.trim() !== '') {
+                        avatarContainer.innerHTML = '<img src="/static/uploads/' + avatarFilename + '" style="width: 100%; height: 100%; object-fit: cover;">';
+                    } else {
+                        avatarContainer.innerHTML = '<i class="fi fi-rr-user" style="color: white; font-size: 36px;"></i>';
+                    }
+
+                    document.getElementById('userProfileModal').style.display = 'flex';
+                }
+
+                function closeUserProfileModal() {
+                    document.getElementById('userProfileModal').style.display = 'none';
+                }
+
+                function openReportModal(){
+                    const reportedUser =
+                        document.getElementById("modalUsername").textContent.trim();
+                    console.log("Clicked:", reportedUser);
+                    console.log("Current:", currentUser);
+                    if(reportedUser === currentUser){
+                        alert("You cannot report yourself.");
+                        return;
+                    }
+                    document.getElementById("reportedUsername").value = reportedUser;
+                    document.getElementById("reportModal").style.display = "flex";
+                }
+
+                function closeReportModal(){
+                    document.getElementById("reportModal").style.display = "none";
+                }
+
+                function submitReport(event){
+                    event.preventDefault();
+                    closeReportModal();
+                    document.getElementById("reportSuccessModal").style.display="flex";
+                    return false;
+                }
+
+                function closeSuccessModal(){
+                    document.getElementById("reportSuccessModal").style.display="none";
+                }
+
                 // Close modal if user clicks outside content panel box background area
                 window.addEventListener('click', function(event) {
                     const modal = document.getElementById('reportModal');
                     if (event.target === modal) {
                         closeReportModal();
+                    }
+                    const reportModal = document.getElementById('reportModal');
+                    const profileModal = document.getElementById('userProfileModal');
+
+                    if (event.target === reportModal) {
+                        closeReportModal();
+                    }
+                    if (event.target === profileModal) {
+                        closeUserProfileModal();
                     }
                 });
             </script>

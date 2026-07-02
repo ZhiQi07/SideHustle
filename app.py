@@ -491,6 +491,7 @@ def login():
         user = User.query.filter_by(email=email, password=password).first()
         if user:
             session['user_id'] = user.id
+            session['username'] = user.username
             return redirect(url_for('marketplace'))
         flash("Invalid email or password!")
     return render_template('login.html')
@@ -599,7 +600,10 @@ def update_profile():
     if field == 'displayname':
         user.display_name = value
     elif field == 'username':
+        old_username = user.username
         user.username = value
+        Task.query.filter_by(user=old_username).update({Task.user: value})
+        session['username'] = value
     elif field == 'bio':
         user.bio = value
     elif field == 'skills':
@@ -608,7 +612,7 @@ def update_profile():
         file = request.files.get('avatar')
         if file and file.filename != '':
 
-            upload_folder = os.path.join(basedir, 'static', 'uploads')
+            upload_folder = os.path.join('static', 'uploads')
             os.makedirs(upload_folder, exist_ok=True)
             
             filename = f"user_{user.id}_{file.filename}"
@@ -1944,16 +1948,13 @@ def admin_force_delete_task(task_id):
             send_socket_notification(owner.id, f"🛡️ Admin Alert: Your listing '{task.title}' was removed.")
         flash("Violating task has been force removed cleanly from the marketplace.")
 
-# 🧼 CLEANUP SEQUENCE: Erase all entries referencing this task to satisfy foreign keys
+    # Cleanup Sequence
     Application.query.filter_by(task_id=task.id).delete()
     Report.query.filter_by(task_id=task.id).delete()
-    Notification.query.filter_by(task_id=task.id).delete()  # 🚨 Added to fix your current crash
-    Rating.query.filter_by(task_id=task.id).delete()        # 🚨 Added to protect against rating logs
-    
-    # Clean up chat channel messages linked to this task
-    Message.query.filter_by(task_id=task.id).delete()       # 🚨 Added to protect against group chat text locks
+    Notification.query.filter_by(task_id=task.id).delete()
+    Rating.query.filter_by(task_id=task.id).delete()
+    Message.query.filter_by(task_id=task.id).delete()
 
-    # Now it is completely safe to purge the task entry from production
     db.session.delete(task)
     db.session.commit()
     
@@ -1971,7 +1972,6 @@ def admin_resolve_payment_dispute(report_id, task_id):
     report = Report.query.get_or_404(report_id)
     task = Task.query.get_or_404(task_id)
     
-    # Identify the client/owner who created the task and didn't pay
     client = User.query.filter_by(username=task.user).first()
     
     if not client:
@@ -1980,7 +1980,6 @@ def admin_resolve_payment_dispute(report_id, task_id):
         flash("Target client account no longer exists.")
         return redirect(url_for('admin_dashboard'))
 
-    # Helper function to completely purge/ban a user from the database
     def execute_permanent_ban(user_obj):
         send_socket_notification(user_obj.id, "🛑 Your account has been permanently terminated by administration.")
         db.session.delete(user_obj)
@@ -1994,11 +1993,9 @@ def admin_resolve_payment_dispute(report_id, task_id):
         client.warning_count += 1
 
         if client.warning_count >= 3:
-            # AUTOMATIC BAN TRIGGERED AT STRIKE 3
             execute_permanent_ban(client)
             flash(f"🔨 Account @{client.username} reached {client.warning_count} warnings and was AUTOMATICALLY BANNED!")
         else:
-            # Issue standard warnings for Strikes 1 and 2
             db.session.add(Notification(
                 user_id=client.id,
                 message=f"🚨 OFFICIAL WARNING ({client.warning_count}/3): You have been flagged for failing to fulfill payment obligations for task '{task.title}'. If you reach 3 warnings, your account will be deleted permanently."
@@ -2008,7 +2005,6 @@ def admin_resolve_payment_dispute(report_id, task_id):
             db.session.delete(report)
 
     elif action == 'ban':
-        # Instant override manual ban button clicked
         execute_permanent_ban(client)
         flash(f"🔨 Account @{client.username} has been manually banned by administration.")
 
@@ -2019,8 +2015,40 @@ def admin_resolve_payment_dispute(report_id, task_id):
     db.session.commit()
     return redirect(url_for('admin_dashboard'))
 
+
+# ==========================================
+# 👤 USER PROFILE TEMPLATE FILTERS
+# ==========================================
+
+@app.template_filter('get_user_avatar')
+def get_user_avatar(username):
+    target_user = User.query.filter_by(username=username).first()
+    if target_user and target_user.avatar:
+        return target_user.avatar
+    return None
+
+@app.template_filter('get_user_by_username')
+def get_user_by_username(username):
+    return User.query.filter_by(username=username).first()
+
+@app.template_filter('get_user_bio')
+def get_user_bio(username):
+    target_user = User.query.filter_by(username=username).first()
+    if target_user and target_user.bio and target_user.bio.strip():
+        return target_user.bio
+    return "No bio currently"
+
+@app.template_filter('get_user_skills')
+def get_user_skills(username):
+    target_user = User.query.filter_by(username=username).first()
+    if target_user and target_user.skills and target_user.skills.strip():
+        return target_user.skills
+    return "No skills listed"
+
 if __name__ == '__main__':
     with app.app_context():
+        os.makedirs(os.path.join('static', 'uploads'), exist_ok=True)
+
         if 'postgresql' not in app.config['SQLALCHEMY_DATABASE_URI']:
             try:
                 patch_database()
