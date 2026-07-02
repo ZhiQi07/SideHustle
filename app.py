@@ -1598,6 +1598,9 @@ def private_chat(username):
 def on_join(data):
     room_id = str(data.get('room', ''))
     user = db.session.get(User, session.get('user_id'))
+
+    explicit_user_id = data.get('user_id')
+    user = db.session.get(User, explicit_user_id) if explicit_user_id else None
     
     if not user or not room_id:
         return
@@ -1623,6 +1626,9 @@ def handle_combined_message(data):
     msg_content = data.get('message') or data.get('content')
     current_user = db.session.get(User, session.get('user_id'))
 
+    explicit_user_id = data.get('user_id')
+    current_user = db.session.get(User, explicit_user_id) if explicit_user_id else None
+    
     if not room or not msg_content or not current_user:
         return
 
@@ -1754,6 +1760,7 @@ def handle_delete(data):
 
 @socketio.on('connect')
 def handle_connect():
+    user_id = request.args.get('user_id')
     if 'user_id' in session:
         join_room(str(session['user_id']))
         print(f"User {session['user_id']} connected to their private room.")

@@ -95,7 +95,23 @@
 
 <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
 <script>
-    const socket = io();
+    // 🚀 Update standard socket connection to pass explicit storage variables
+    const userId = sessionStorage.getItem("user_id");
+
+    // Initialize socket connection options passing explicit handshake parameters
+    const socket = io({
+        query: {
+            user_id: userId
+        }
+    });
+
+    socket.on('connect', function() {
+        if (userId) {
+            // Explicitly join the notification room based on sessionStorage context
+            socket.emit('join', { room: userId, user_id: userId });
+        }
+    });
+
     socket.on('new_unread', function(data) {
         const dot = document.querySelector('#my-task-link .dot-small');
         if (dot) dot.style.display = 'inline-block';

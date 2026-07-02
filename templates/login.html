@@ -55,6 +55,10 @@
             this.classList.toggle('fi-rr-eye');
             this.classList.toggle('fi-rr-eye-crossed');
         });
+
+        {% if session.get('user_id') %}
+            sessionStorage.setItem("user_id", "{{ session['user_id'] }}");
+        {% endif %}
     </script>
 </body>
 </html>

@@ -176,7 +176,6 @@
                     <div class="full-width">
                         <div class="hired-info-box">
                             <div class="user-meta">
-                                <div class="mini-profile"></div>
                                 <span>Hired: <strong>{{ task.get_hired_count() }} / {{ task.capacity }}</strong></span>
                             </div>
                             <a href="{{ url_for('view_applicants', task_id=task.id) }}" class="btn-outline">View Team</a>
