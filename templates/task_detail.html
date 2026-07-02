@@ -75,7 +75,6 @@
                             <div class="author-avatar"></div>
                             <p class="label-text" style="margin-bottom: 2px;">Posted By</p>
                             <p style="font-size: 18px; font-weight: 700; color: #1e1233;">{{ task.user }}</p>
-                            <p style="margin-top: 5px; font-size: 14px; color: #ff9800; font-weight: 600;">⭐ {{ task.owner_rating }}</p>
                             
                             {% if user and task.user != user.username %}
                                 <a href="{{ url_for('private_chat', username=task.user) }}" class="btn-message-pm" 

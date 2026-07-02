@@ -124,12 +124,6 @@ class Task(db.Model):
                 count += 1
         return count
     
-    @property
-    def owner_rating(self):
-        owner = User.query.filter_by(username=self.user).first()
-        if owner and owner.review_count > 0:
-            return round(owner.total_rating / owner.review_count, 1)
-        return 5.0
 #Application database model
 class Application(db.Model):
     id = db.Column(db.Integer, primary_key=True)
