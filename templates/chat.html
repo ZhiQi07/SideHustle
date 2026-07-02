@@ -37,19 +37,17 @@
             background-color: #ededed !important; 
         }
         
-        /* 💡 绝对锁定：阻断任何来自 style.css 的全局 width: 100% 污染 */
         .msg-container {
             display: flex !important;
             flex-direction: column !important;
             max-width: 60% !important; 
             margin-bottom: 4px !important;
-            width: fit-content !important; /* 核心：防止容器自发拉满 */
+            width: fit-content !important;
             position: relative !important;
         }
         .my-container { align-self: flex-end !important; align-items: flex-end !important; margin-left: auto !important; }
         .others-container { align-self: flex-start !important; align-items: flex-start !important; margin-right: auto !important; }
 
-        /* 💡 终极锁定：保证气泡在任何时候都是紧贴文字的 */
         .message {
             padding: 8px 14px !important;
             border-radius: 12px !important;
@@ -93,7 +91,7 @@
         .msg-action-menu {
             display: none !important;
             position: absolute !important;
-            top: 0;                        /* 💡 归零，防止它在下方撑开隐形怪圈 */
+            top: 0;
             left: 0;
             z-index: 9999 !important;
             min-width: 108px !important;
@@ -125,7 +123,6 @@
         .msg-action-menu button:hover { background: #f3f1f7 !important; color: #4a148c !important; }
         .msg-action-menu button.danger { color: #d92d20 !important; }
 
-        /* 【样式优化】：重构引用样式，使其与之前的半透明高级卡片质感一模一样 */
         .reply-quote {
             padding: 6px 10px !important;
             margin-bottom: 8px !important;
@@ -138,7 +135,6 @@
             box-sizing: border-box !important;
         }
 
-        /* 💡 优化回复栏与编辑栏：定位在固定输入框的正上方 */
         .chat-input-container {
             flex-shrink: 0 !important;
             background: #f0f2f5 !important;
@@ -161,7 +157,6 @@
             box-sizing: border-box;
         }
 
-        /* 编辑预览提示条样式 */
         #edit-preview-bar {
             display: none;
             padding: 8px 20px;
@@ -213,6 +208,8 @@
         .is-deleted { font-style: italic !important; color: #8696a0 !important; } 
     </style>
 </head>
+
+
 <body>
 
     <div class="chat-header">
@@ -232,6 +229,8 @@
                         @{{ task.user }}
                     {% endif %}
                 </span>
+                <!-- 💡 私聊红点：当你在群聊时，如果别人私聊你，这个红点会免刷新亮起 -->
+                <span id="global-nav-red-dot" style="display: {% if total_unread and total_unread > 0 %}inline-block{% else %}none{% endif %}; width: 10px; height: 10px; background: red; border-radius: 50%; margin-left: 8px;" title="You have unread private messages!"></span>
             </h2>
             <small style="color: #777;">Topic: {{ task.title }}</small>
         </div>
@@ -263,7 +262,7 @@
                     <div class="message {% if not m.is_deleted %}can-open-actions{% endif %} {% if m.sender == user.username %}my-msg{% else %}others-msg{% endif %}" {% if not m.is_deleted %}oncontextmenu="openMsgMenu(event, '{{ m.id }}')" title="Right-click for actions"{% endif %}>
                         
                         {% if m.reply_to_id and not m.is_deleted %}
-                            <div class="reply-quote" data-quote-raw="{{ m.replied_message.content }}" data-is-origin-deleted="{% if m.replied_message.is_deleted or m.replied_message.content.startswith('[DELETED_PRIVATE_MSG]') %}true{% else %}false{% endif %}">
+                            <div class="reply-quote quote-for-{{ m.reply_to_id }}" data-quote-raw="{{ m.replied_message.content }}" data-is-origin-deleted="{% if m.replied_message.is_deleted or m.replied_message.content.startswith('[DELETED_PRIVATE_MSG]') %}true{% else %}false{% endif %}">
                                 {{ m.replied_message.content }}
                             </div>
                         {% endif %}
@@ -304,12 +303,9 @@
         <div class="input-area" style="position: relative;">
             <textarea id="message-input" placeholder="Type a message..." rows="1" autocomplete="off"></textarea>
             
-            <!-- Emoji button (placed next to Send on its left) -->
             <button type="button" id="emoji-btn" style="background: none; border: none; font-size: 20px; cursor: pointer; padding: 5px 8px; outline: none; transition: transform 0.1s ease; user-select: none; align-self: center;" title="Insert Emoji">😀</button>
-
             <button id="send-btn" class="btn-send">Send</button>
 
-            <!-- Emoji Picker Popup -->
             <div id="emoji-picker" style="display: none; position: absolute; bottom: 100%; right: 20px; margin-bottom: 10px; background: white; border: 1px solid #ddd; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); width: 280px; padding: 10px; z-index: 1001; box-sizing: border-box; font-family: sans-serif;">
                 <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding-bottom: 6px; margin-bottom: 8px; align-items: center; user-select: none;">
                     <span style="font-size: 12px; font-weight: bold; color: #1f00a8;">Quick Emojis</span>
@@ -336,7 +332,6 @@
         let currentReplyId = null;
         let currentEditId = null;
 
-        // Emoji Picker System
         const EMOS = [
             "😀","😃","😄","😁","😆","😅","😂","🤣","😊","😇","🙂","🙃","😉","😌","😍","🥰","😘","😗","😙","😚","😋","😛","😝","😜","🤪","🤨","🧐","🤓","😎","🥸","🤩","🥳","😏","😒","😞","😔","😟","😕","🙁","☹️","😣","😖","😫","😩","🥺","😢","😭","😤","😠","😡","🤬","🤯","😳","🥵","🥶","😱","😨","😰","😥","😓","🤗","🤔","🫣","🤭","🤫","🫠","🤥","😶","😐","😑","😬","🫨","🙄","😯","😦","😧","😮","😲","🥱","😴","🤤","😪","😵","😵‍💫","🤐","🥴","🤢","🤮","🤧","😷","🤒","🤕",
             "👍","👎","👌","🤌","✌️","🤞","🫰","🤟","🤘","🫵","👉","👈","👆","🖕","👇","☝️","✋","🤚","🖐️","🖖","👋","💪","🦾","👊","✊","🤛","🤜","🤝","🙌","👏","🫶","👐","🤲","🙏","✍️","💅","🤳",
@@ -349,7 +344,6 @@
         const emojiGrid = document.getElementById('emoji-grid');
 
         if (emojiBtn && emojiPicker && emojiGrid) {
-            // Populate Emojis
             EMOS.forEach(emoji => {
                 const span = document.createElement('span');
                 span.innerText = emoji;
@@ -365,11 +359,7 @@
 
             emojiBtn.onclick = (e) => {
                 e.stopPropagation();
-                if (emojiPicker.style.display === 'block') {
-                    emojiPicker.style.display = 'none';
-                } else {
-                    emojiPicker.style.display = 'block';
-                }
+                emojiPicker.style.display = emojiPicker.style.display === 'block' ? 'none' : 'block';
             };
 
             document.addEventListener('click', (e) => {
@@ -386,9 +376,7 @@
             messageInput.value = text.substring(0, start) + emoji + text.substring(end);
             messageInput.selectionStart = messageInput.selectionEnd = start + emoji.length;
             messageInput.focus();
-            if (typeof autoResizeInput === 'function') {
-                autoResizeInput();
-            }
+            autoResizeInput();
         }
 
         function closeEmojiPicker() {
@@ -397,6 +385,10 @@
 
         chatBox.scrollTop = chatBox.scrollHeight;
         socket.emit('join', { room: ROOM_ID, username: USERNAME });
+
+        window.addEventListener('beforeunload', () => {
+            socket.emit('leave', { room: ROOM_ID });
+        });
 
         function closeMsgMenus() {
             document.querySelectorAll('.msg-action-menu.is-open').forEach((menu) => {
@@ -414,7 +406,6 @@
             menu.setAttribute('aria-hidden', 'false');
 
             const container = document.getElementById('msg-wrapper-' + id);
-            
             if (container && container.classList.contains('my-container')) {
                 menu.style.right = '0px';
                 menu.style.left = 'auto';
@@ -426,9 +417,7 @@
             if (container) {
                 const rect = container.getBoundingClientRect();
                 const bubbleCenterY = rect.top + (rect.height / 2);
-                const viewportHeight = window.innerHeight;
-
-                if (bubbleCenterY > viewportHeight / 2) {
+                if (bubbleCenterY > window.innerHeight / 2) {
                     menu.style.bottom = '100%';
                     menu.style.top = 'auto';
                 } else {
@@ -454,49 +443,33 @@
         function setupMenuButtons() {
             document.querySelectorAll('.btn-reply-trigger').forEach(btn => {
                 btn.onclick = function(e) {
-                    e.preventDefault();
-                    e.stopPropagation(); 
-                    const mid = this.getAttribute('data-id');
-                    const sender = this.getAttribute('data-sender');
-                    triggerReply(mid, sender);
+                    e.preventDefault(); e.stopPropagation(); 
+                    triggerReply(this.getAttribute('data-id'), this.getAttribute('data-sender'));
                     closeMsgMenus();
                 };
             });
 
             document.querySelectorAll('.btn-edit-trigger').forEach(btn => {
                 btn.onclick = function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const mid = this.getAttribute('data-id');
-                    triggerEdit(mid);
+                    e.preventDefault(); e.stopPropagation();
+                    triggerEdit(this.getAttribute('data-id'));
                     closeMsgMenus();
                 };
             });
 
             document.querySelectorAll('.btn-delete-trigger').forEach(btn => {
                 btn.onclick = function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const mid = this.getAttribute('data-id');
-                    deleteMsg(mid);
+                    e.preventDefault(); e.stopPropagation();
+                    deleteMsg(this.getAttribute('data-id'));
                     closeMsgMenus();
                 };
             });
         }
 
-        document.addEventListener('DOMContentLoaded', setupMenuButtons);
-        setupMenuButtons(); 
-
         document.addEventListener('click', function(event) {
-            if (!event.target.closest('.msg-action-menu')) {
-                closeMsgMenus();
-            }
+            if (!event.target.closest('.msg-action-menu')) closeMsgMenus();
         });
-
-        document.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape') closeMsgMenus();
-        });
-
+        document.addEventListener('keydown', (event) => { if (event.key === 'Escape') closeMsgMenus(); });
         chatBox.addEventListener('scroll', closeMsgMenus);
 
         function autoResizeInput() {
@@ -508,11 +481,9 @@
         function triggerReply(id, sender) {
             cancelEdit(); 
             currentReplyId = id;
-            currentEditId = null; 
             
             const bodyTextNode = document.getElementById('body-text-' + id);
             let rawText = bodyTextNode ? (bodyTextNode.getAttribute('data-raw') || "") : "";
-            
             rawText = rawText.replace(/^\[REPLY_TO:.*?\]\n?/g, "");
             const shortText = rawText.length > 20 ? rawText.substring(0, 20) + "..." : rawText;
             
@@ -529,7 +500,6 @@
         function triggerEdit(id) {
             cancelReply(); 
             currentEditId = id;
-            currentReplyId = null; 
             
             const textNode = document.getElementById('body-text-' + id);
             if (!textNode) return;
@@ -538,7 +508,7 @@
             messageInput.value = rawText; 
             messageInput.style.background = "#fff9c4"; 
             editBar.style.display = 'flex'; 
-            autoResizeInput(); 
+            autoResizeInput();
             messageInput.focus();
         }
 
@@ -574,7 +544,6 @@
         }
 
         sendBtn.onclick = doSend;
-
         messageInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -582,68 +551,70 @@
             }
         });
 
+        // 🌟 核心：全新无刷新增量追加 DOM 的实时听音管道
         socket.on('receive_message', (data) => {
-            sessionStorage.setItem('chat_focus_ref', 'true');
-            location.reload();
-        });
-
-        function formatChatReplies() {
-            document.querySelectorAll('.reply-quote').forEach(quoteBlock => {
-                const isOriginDeleted = quoteBlock.getAttribute('data-is-origin-deleted') === 'true';
-                let text = quoteBlock.getAttribute('data-quote-raw') || quoteBlock.innerText;
-                
-                if (isOriginDeleted || !text || text.trim() === "" || text.includes('[DELETED_PRIVATE_MSG]') || text.includes('This message was deleted')) {
-                    quoteBlock.innerHTML = `<span style="font-style: italic; color: #8696a0;">This message was deleted</span>`;
-                    applyQuoteStyles(quoteBlock);
-                    return;
+            // 如果收到的是 System 消息
+            if (data.username === 'System') {
+                let displayContent = data.message;
+                const atUser = '@' + USERNAME;
+                if (displayContent.startsWith(atUser)) {
+                    displayContent = 'You' + displayContent.substring(atUser.length);
                 }
+                displayContent = displayContent.replaceAll(atUser, 'you');
 
-                const match = text.match(/^\[REPLY_TO:(.*?)\]\n([\s\S]*)$/);
-                if (match) {
-                    text = match[2]; 
-                }
-                
-                if (text.includes('[DELETED_PRIVATE_MSG]') || text.includes('This message was deleted')) {
-                    quoteBlock.innerHTML = `<span style="font-style: italic; color: #8696a0;">This message was deleted</span>`;
-                    applyQuoteStyles(quoteBlock);
-                    return;
-                }
-
-                text = text.replace(/^@[a-zA-Z0-9_\u4e00-\u9fa5]+:\s*/, "");
-                
-                if (text.length > 40) {
-                    text = text.substring(0, 40) + "...";
-                }
-
-                quoteBlock.innerText = text;
-                applyQuoteStyles(quoteBlock);
-            });
-        }
-
-        function applyQuoteStyles(quoteBlock) {
-            const isMyBubble = quoteBlock.parentElement.classList.contains('my-msg');
-            if (isMyBubble) {
-                quoteBlock.style.background = 'rgba(255, 255, 255, 0.25)';
-                if(!quoteBlock.querySelector('span')) quoteBlock.style.color = '#4a148c';
-                quoteBlock.style.borderLeft = '3px solid #6500a8';
-            } else {
-                quoteBlock.style.background = 'rgba(101, 0, 168, 0.06)';
-                if(!quoteBlock.querySelector('span')) quoteBlock.style.color = '#6500a8';
-                quoteBlock.style.borderLeft = '3px solid #6500a8';
-            }
-        }
-
-        window.addEventListener('load', () => {
-            formatChatReplies(); 
-            if (sessionStorage.getItem('chat_focus_ref') === 'true') {
-                sessionStorage.removeItem('chat_focus_ref');
-                messageInput.focus();
+                const sysDiv = document.createElement('div');
+                sysDiv.className = "system-msg-container";
+                sysDiv.style.cssText = "align-self: center !important; margin: 10px auto !important; max-width: 80% !important; text-align: center;";
+                sysDiv.innerHTML = `
+                    <div class="system-msg" style="display: inline-block; background-color: #e2e8fd; border: 1px solid #dcd8f3; color: #4f3cba; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 600; line-height: 1.4; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                        📢 ${displayContent}
+                    </div>`;
+                chatBox.appendChild(sysDiv);
                 chatBox.scrollTop = chatBox.scrollHeight;
+                return;
             }
-            setupMenuButtons(); 
+
+            // 如果已经存在该消息（本地自发渲染的防重复锁）
+            if (document.getElementById(`msg-wrapper-${data.id}`)) return;
+
+            const isMe = data.username === USERNAME;
+            const container = document.createElement('div');
+            container.id = `msg-wrapper-${data.id}`;
+            container.className = `msg-container ${isMe ? 'my-container' : 'others-container'}`;
+
+            let nameHintHTML = (!isMe) ? `<div class="sender-name-hint">@${data.username}</div>` : '';
+            
+            let replyQuoteHTML = '';
+            if (data.reply_to_id && data.reply_to_content) {
+                replyQuoteHTML = `<div class="reply-quote quote-for-${data.reply_to_id}" data-quote-raw="${data.reply_to_content}" data-is-origin-deleted="false">${data.reply_to_content}</div>`;
+            }
+
+            let opsBarHTML = `
+                <div id="ops-bar-${data.id}" class="msg-action-menu" aria-hidden="true" onclick="event.stopPropagation()">
+                    <button type="button" class="btn-reply-trigger" data-id="${data.id}" data-sender="${data.username}">Reply</button>
+                    ${isMe ? `
+                        <button type="button" class="btn-edit-trigger" data-id="${data.id}">Edit</button>
+                        <button type="button" class="btn-delete-trigger danger" data-id="${data.id}">Delete</button>
+                    ` : ''}
+                </div>`;
+
+            container.innerHTML = `
+                ${nameHintHTML}
+                <div class="message can-open-actions ${isMe ? 'my-msg' : 'others-msg'}" oncontextmenu="openMsgMenu(event, '${data.id}')" title="Right-click for actions">
+                    ${replyQuoteHTML}
+                    <div class="msg-content-text">
+                        <span id="body-text-${data.id}" class="text-body" data-raw="${data.message}">${data.message}</span>
+                    </div>
+                </div>
+                ${opsBarHTML}
+            `;
+
+            chatBox.appendChild(container);
+            setupMenuButtons();
+            formatChatReplies();
+            chatBox.scrollTop = chatBox.scrollHeight;
         });
 
-        // 💡【核心优化点】：当收到别人或自己编辑消息成功的 socket 广播时，无刷新追加 (edited) 标签
         socket.on('message_edited', (data) => {
             const container = document.getElementById(`msg-wrapper-${data.message_id}`);
             if (container) {
@@ -652,8 +623,6 @@
                     textBody.innerText = data.new_content;
                     textBody.setAttribute('data-raw', data.new_content); 
                 }
-                
-                // 💡 检查当前消息块里是否已经挂了 (edited) 标签，如果没有，立刻塞一个进去
                 const contentTextDiv = container.querySelector('.msg-content-text');
                 if (contentTextDiv && !contentTextDiv.querySelector('.edited-label-hint')) {
                     const smallTag = document.createElement('small');
@@ -665,10 +634,94 @@
             }
         });
 
+        // 🌟 核心：抹除软删除刷新，改用无刷新就地改写文本样式
         socket.on('message_deleted', (data) => {
-            sessionStorage.setItem('chat_focus_ref', 'true');
-            location.reload();
+            const container = document.getElementById(`msg-wrapper-${data.message_id}`);
+            if (container) {
+                const textBody = container.querySelector('.text-body');
+                if (textBody) {
+                    textBody.innerText = "This message was deleted";
+                    textBody.classList.add('is-deleted');
+                }
+                const quoteBlock = container.querySelector('.reply-quote');
+                if (quoteBlock) quoteBlock.remove();
+                
+                const menu = container.querySelector('.msg-action-menu');
+                if (menu) menu.remove();
+
+                const msgBubble = container.querySelector('.message');
+                if (msgBubble) {
+                    msgBubble.classList.remove('can-open-actions');
+                    msgBubble.removeAttribute('oncontextmenu');
+                }
+            }
+
+            // 2. ⚡ 【新增免刷新黑科技】：全场搜捕所有引用了这条消息的引用框，瞬间就地抹杀！
+    const relatedQuotes = document.querySelectorAll(`.quote-for-${data.message_id}`);
+    relatedQuotes.forEach(quote => {
+        // 更新它的属性和内部 HTML 结构，使其与 formatChatReplies 判定删除后的长相一模一样
+        quote.setAttribute('data-is-origin-deleted', 'true');
+        quote.innerHTML = `<span style="font-style: italic; color: #8696a0;">This message was deleted</span>`;
+        
+        // 重新着色成半透明优雅的灰色警告线
+        quote.style.background = quote.parentElement.classList.contains('my-msg') 
+            ? 'rgba(255, 255, 255, 0.25)' 
+            : 'rgba(101, 0, 168, 0.06)';
+        quote.style.borderLeft = '3px solid #6500a8';
+    });
+});
+
+
+    
+
+        function formatChatReplies() {
+            document.querySelectorAll('.reply-quote').forEach(quoteBlock => {
+                const isOriginDeleted = quoteBlock.getAttribute('data-is-origin-deleted') === 'true';
+                let text = quoteBlock.getAttribute('data-quote-raw') || quoteBlock.innerText;
+                
+                if (isOriginDeleted || !text || text.trim() === "" || text.includes('This message was deleted')) {
+                    quoteBlock.innerHTML = `<span style="font-style: italic; color: #8696a0;">This message was deleted</span>`;
+                    applyQuoteStyles(quoteBlock);
+                    return;
+                }
+
+                const match = text.match(/^\[REPLY_TO:(.*?)\]\n([\s\S]*)$/);
+                if (match) text = match[2]; 
+
+                text = text.replace(/^@[a-zA-Z0-9_\u4e00-\u9fa5]+:\s*/, "");
+                if (text.length > 40) text = text.substring(0, 40) + "...";
+
+                quoteBlock.innerText = text;
+                applyQuoteStyles(quoteBlock);
+            });
+        }
+
+        function applyQuoteStyles(quoteBlock) {
+            const isMyBubble = quoteBlock.parentElement.classList.contains('my-msg');
+            quoteBlock.style.background = isMyBubble ? 'rgba(255, 255, 255, 0.25)' : 'rgba(101, 0, 168, 0.06)';
+            if(!quoteBlock.querySelector('span')) quoteBlock.style.color = '#6500a8';
+            quoteBlock.style.borderLeft = '3px solid #6500a8';
+        }
+
+        window.addEventListener('load', () => {
+            formatChatReplies(); 
+            setupMenuButtons(); 
+        });
+
+        socket.on('new_private_notification', function(data) {
+            if (data.receiver === USERNAME) {
+                const globalDot = document.getElementById('global-nav-red-dot');
+                if (globalDot) globalDot.style.display = 'inline-block';
+            }
+        });
+
+        socket.on('clear_private_notification', function(data) {
+            if (data.receiver === USERNAME) {
+                const globalDot = document.getElementById('global-nav-red-dot');
+                if (globalDot) globalDot.style.display = 'none';
+            }
         });
     </script>
+
 </body>
 </html>
